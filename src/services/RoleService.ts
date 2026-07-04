@@ -25,7 +25,7 @@ export class RoleService {
     try {
       return await this.rest.getAllItems<IAppAdministrator>(
         ADMINISTRATORS_LIST_TITLE,
-        'Id,Title,AM_User/Id,AM_User/Title,AM_User/Email',
+        'Id,Title,AM_User/Id,AM_User/Title,AM_User/EMail',
         'AM_User',
         undefined,
         'Title asc'

@@ -29,7 +29,7 @@ export interface ICancelBookInput {
 }
 
 const ASSIGNMENT_SELECT =
-  'Id,Title,AM_Action,AM_AssignmentDate,AM_ExpectedReturnDate,AM_ActualReturnDate,AM_Notes,AM_Asset/Id,AM_Asset/Title,AM_AssignedTo/Id,AM_AssignedTo/Title,AM_AssignedTo/Email';
+  'Id,Title,AM_Action,AM_AssignmentDate,AM_ExpectedReturnDate,AM_ActualReturnDate,AM_Notes,AM_Asset/Id,AM_Asset/Title,AM_AssignedTo/Id,AM_AssignedTo/Title,AM_AssignedTo/EMail';
 
 /** Assignment transactions against AM_Assets and AM_Assignments. */
 export class AssignmentService {
@@ -98,13 +98,20 @@ export class AssignmentService {
   }
 
   public async getAssignments(filter?: string): Promise<IAssignment[]> {
-    return this.rest.getAllItems<IAssignment>(
-      ASSIGNMENTS_LIST_TITLE,
-      ASSIGNMENT_SELECT,
-      'AM_Asset,AM_AssignedTo',
-      filter,
-      'AM_AssignmentDate desc'
-    );
+    const items = await this.rest.getAllItems<
+      IAssignment & { AM_AssignedTo?: { Id: number; Title: string; EMail?: string; Email?: string } }
+    >(ASSIGNMENTS_LIST_TITLE, ASSIGNMENT_SELECT, 'AM_Asset,AM_AssignedTo', filter, 'AM_AssignmentDate desc');
+
+    return items.map((item) => ({
+      ...item,
+      AM_AssignedTo: item.AM_AssignedTo
+        ? {
+            Id: item.AM_AssignedTo.Id,
+            Title: item.AM_AssignedTo.Title,
+            Email: item.AM_AssignedTo.Email ?? item.AM_AssignedTo.EMail
+          }
+        : undefined
+    }));
   }
 
   public async getOpenBookings(): Promise<IAssignment[]> {

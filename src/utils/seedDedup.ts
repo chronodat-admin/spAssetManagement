@@ -111,7 +111,9 @@ export function indexExistingSeedKeys(
     }
 
     if (listTitle === SUB_CATEGORIES_LIST_TITLE) {
-      const parent = item.ParentCategory as { Title?: string } | undefined;
+      const parent = (item.AM_ParentCategory ?? item.ParentCategory) as
+        | { Title?: string }
+        | undefined;
       if (parent?.Title) {
         row.ParentCategoryTitle = parent.Title;
       }
@@ -185,7 +187,9 @@ export function buildSeedRowFromListItem(
   }
 
   if (listTitle === SUB_CATEGORIES_LIST_TITLE) {
-    const parent = item.ParentCategory as { Title?: string } | undefined;
+    const parent = (item.AM_ParentCategory ?? item.ParentCategory) as
+      | { Title?: string }
+      | undefined;
     if (parent?.Title) {
       row.ParentCategoryTitle = parent.Title;
     }
@@ -241,7 +245,7 @@ export function buildSeedExistenceFilters(
   }
 
   if (listTitle === SUB_CATEGORIES_LIST_TITLE && context?.parentCategoryId) {
-    filters.push(`Title eq '${safeTitle}' and ParentCategoryId eq ${context.parentCategoryId}`);
+    filters.push(`Title eq '${safeTitle}' and AM_ParentCategoryId eq ${context.parentCategoryId}`);
     filters.push(`Title eq '${safeTitle}'`);
     return filters;
   }

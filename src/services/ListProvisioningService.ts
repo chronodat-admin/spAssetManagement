@@ -836,8 +836,8 @@ export class ListProvisioningService {
       if (def.title === SUB_CATEGORIES_LIST_TITLE) {
         const items = await this.rest.getAllItems<Record<string, unknown>>(
           operationalListTitle,
-          'Title,ParentCategory/Id,ParentCategory/Title',
-          'ParentCategory'
+          'Title,AM_ParentCategory/Id,AM_ParentCategory/Title',
+          'AM_ParentCategory'
         );
         return indexExistingSeedKeys(SUB_CATEGORIES_LIST_TITLE, items);
       }
@@ -972,7 +972,7 @@ export class ListProvisioningService {
     const listId = this.listIds[def.title];
     await this.rest.waitForFields(
       listId,
-      ['ParentCategory'],
+      ['AM_ParentCategory'],
       { attempts: 24, delayMs: 500, listTitle: def.title }
     );
 
@@ -1009,7 +1009,7 @@ export class ListProvisioningService {
         listId,
         {
           Title: title,
-          ParentCategoryId: parentId
+          AM_ParentCategoryId: parentId
         },
         def.fields
       );
@@ -1399,13 +1399,13 @@ export class ListProvisioningService {
 
 
   private async seedCurrentAdministrator(): Promise<void> {
-    const list = await this.rest.getListByTitle('Administrators');
+    const list = await this.rest.getListByTitle(ADMINISTRATORS_LIST_TITLE);
     if (!list) {
       return;
     }
 
-    const listId = this.listIds['Administrators'] || list.Id;
-    const missing = await this.rest.listMissingFields(listId, ['UserName1']);
+    const listId = this.listIds[ADMINISTRATORS_LIST_TITLE] || list.Id;
+    const missing = await this.rest.listMissingFields(listId, ['AM_User']);
     if (missing.length > 0) {
       return;
     }
@@ -1413,16 +1413,16 @@ export class ListProvisioningService {
     try {
       const user = await this.rest.getCurrentUser();
       const alreadyAdministrator = await this.rest.itemExistsByFilter(
-        'Administrators',
-        `UserName1Id eq ${user.Id}`
+        ADMINISTRATORS_LIST_TITLE,
+        `AM_UserId eq ${user.Id}`
       );
       if (alreadyAdministrator) {
         return;
       }
 
-      await this.rest.addListItem('Administrators', {
+      await this.rest.addListItem(ADMINISTRATORS_LIST_TITLE, {
         Title: user.Title,
-        UserName1Id: user.Id
+        AM_UserId: user.Id
       });
     } catch {
       /* Admin seed is best-effort; setup can still complete */
@@ -1814,8 +1814,8 @@ export class ListProvisioningService {
       if (def.title === SUB_CATEGORIES_LIST_TITLE) {
         return this.rest.getAllItems<Record<string, unknown>>(
           operationalListTitle,
-          'Id,Title,ParentCategory/Id,ParentCategory/Title',
-          'ParentCategory'
+          'Id,Title,AM_ParentCategory/Id,AM_ParentCategory/Title',
+          'AM_ParentCategory'
         );
       }
 

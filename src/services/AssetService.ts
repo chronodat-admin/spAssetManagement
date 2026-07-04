@@ -464,11 +464,11 @@ export class AssetService {
       const items = await this.rest.getAllItems<{
         Id: number;
         Title: string;
-        UserName1?: { Id: number; Title: string; EMail?: string };
+        AM_User?: { Id: number; Title: string; EMail?: string };
       }>(
         ADMINISTRATORS_LIST_TITLE,
-        'Id,Title,UserName1/Id,UserName1/Title,UserName1/EMail',
-        'UserName1',
+        'Id,Title,AM_User/Id,AM_User/Title,AM_User/EMail',
+        'AM_User',
         undefined,
         'Id asc'
       );
@@ -476,7 +476,7 @@ export class AssetService {
       const administrators = items.map((item) => ({
         Id: item.Id,
         Title: item.Title,
-        UserName1: toUserValue(item.UserName1)
+        AM_User: toUserValue(item.AM_User)
       }));
 
       return this.deduplicateAppAdministrators(administrators);
@@ -489,8 +489,10 @@ export class AssetService {
     const seen = new Set<string>();
 
     return administrators.filter((administrator) => {
-      const userId = administrator.UserName1?.Id;
-      const email = administrator.UserName1?.Email?.trim().toLowerCase();
+      const userId = administrator.AM_User?.Id ?? administrator.UserName1?.Id;
+      const email = (administrator.AM_User?.Email ?? administrator.UserName1?.Email)
+        ?.trim()
+        .toLowerCase();
       const key = userId ? `id:${userId}` : email ? `email:${email}` : `title:${administrator.Title.trim().toLowerCase()}`;
 
       if (seen.has(key)) {
@@ -505,7 +507,7 @@ export class AssetService {
   private async isAppAdministratorPerson(person: IPersonPickerItem): Promise<boolean> {
     const existsByUserId = await this.rest.itemExistsByFilter(
       ADMINISTRATORS_LIST_TITLE,
-      `UserName1Id eq ${person.id}`
+      `AM_UserId eq ${person.id}`
     );
     if (existsByUserId) {
       return true;
@@ -519,7 +521,10 @@ export class AssetService {
     this.invalidateDataCache('appAdministrators');
     const administrators = await this.loadAppAdministratorsFromList();
     return administrators.some(
-      (administrator) => administrator.UserName1?.Email?.trim().toLowerCase() === normalizedEmail
+      (administrator) =>
+        (administrator.AM_User?.Email ?? administrator.UserName1?.Email)
+          ?.trim()
+          .toLowerCase() === normalizedEmail
     );
   }
 
@@ -534,7 +539,8 @@ export class AssetService {
         this.getAppAdministrators()
       ]);
       const isAppAdministrator = administrators.some(
-        (administrator) => administrator.UserName1?.Id === user.Id
+        (administrator) =>
+          administrator.AM_User?.Id === user.Id || administrator.UserName1?.Id === user.Id
       );
       this.appAdministratorCache = isAppAdministrator;
       return isAppAdministrator;
@@ -562,7 +568,7 @@ export class AssetService {
         return false;
       }
 
-      const missing = await this.rest.listMissingFields(list.Id, ['UserName1']);
+      const missing = await this.rest.listMissingFields(list.Id, ['AM_User']);
       if (missing.length > 0) {
         return false;
       }
@@ -570,7 +576,7 @@ export class AssetService {
       const user = await this.getCurrentUser();
       const alreadyAdministrator = await this.rest.itemExistsByFilter(
         ADMINISTRATORS_LIST_TITLE,
-        `UserName1Id eq ${user.Id}`
+        `AM_UserId eq ${user.Id}`
       );
       if (alreadyAdministrator) {
         this.appAdministratorCache = true;
@@ -579,13 +585,13 @@ export class AssetService {
 
       await this.rest.addListItem(ADMINISTRATORS_LIST_TITLE, {
         Title: user.Title,
-        UserName1Id: user.Id
+        AM_UserId: user.Id
       });
 
       await this.logAudit({
         entity: 'Administrators',
         action: 'CREATE',
-        details: { Title: user.Title, UserName1Id: user.Id, autoProvisioned: true }
+        details: { Title: user.Title, AM_UserId: user.Id, autoProvisioned: true }
       });
       this.invalidateAppAdministratorCache();
       this.appAdministratorCache = true;
@@ -606,13 +612,13 @@ export class AssetService {
 
     await this.rest.addListItem(ADMINISTRATORS_LIST_TITLE, {
       Title: person.title,
-      UserName1Id: person.id
+      AM_UserId: person.id
     });
 
     await this.logAudit({
       entity: 'Administrators',
       action: 'CREATE',
-      details: { Title: person.title, UserName1Id: person.id }
+      details: { Title: person.title, AM_UserId: person.id }
     });
     this.invalidateAppAdministratorCache();
     return true;
@@ -1004,11 +1010,11 @@ export class AssetService {
     const items = await this.rest.getAllItems<{
       Id: number;
       Title: string;
-      ParentCategory?: { Id: number; Title: string };
+      AM_ParentCategory?: { Id: number; Title: string };
     }>(
       SUB_CATEGORIES_LIST_TITLE,
-      'Id,Title,ParentCategory/Id,ParentCategory/Title',
-      'ParentCategory',
+      'Id,Title,AM_ParentCategory/Id,AM_ParentCategory/Title',
+      'AM_ParentCategory',
       undefined,
       'Title asc'
     );
@@ -1016,8 +1022,8 @@ export class AssetService {
     return items.map((item) => ({
       Id: item.Id,
       Title: item.Title,
-      ParentCategoryId: item.ParentCategory?.Id,
-      ParentCategory: item.ParentCategory
+      AM_ParentCategoryId: item.AM_ParentCategory?.Id,
+      AM_ParentCategory: item.AM_ParentCategory
     }));
   }
 
@@ -1029,8 +1035,8 @@ export class AssetService {
     const safeTitle = title.replace(/'/g, "''");
     const filter =
       excludeId !== undefined
-        ? `Title eq '${safeTitle}' and ParentCategoryId eq ${parentCategoryId} and Id ne ${excludeId}`
-        : `Title eq '${safeTitle}' and ParentCategoryId eq ${parentCategoryId}`;
+        ? `Title eq '${safeTitle}' and AM_ParentCategoryId eq ${parentCategoryId} and Id ne ${excludeId}`
+        : `Title eq '${safeTitle}' and AM_ParentCategoryId eq ${parentCategoryId}`;
     const items = await this.rest.getItems<{ Id: number }>(
       SUB_CATEGORIES_LIST_TITLE,
       'Id',
@@ -1049,13 +1055,13 @@ export class AssetService {
 
     await this.rest.addListItem(SUB_CATEGORIES_LIST_TITLE, {
       Title: title,
-      ParentCategoryId: parentCategoryId
+      AM_ParentCategoryId: parentCategoryId
     });
 
     await this.logAudit({
       entity: 'SubCategories',
       action: 'CREATE',
-      details: { Title: title, ParentCategoryId: parentCategoryId }
+      details: { Title: title, AM_ParentCategoryId: parentCategoryId }
     });
     this.invalidateAfterListMutation(SUB_CATEGORIES_LIST_TITLE);
   }
@@ -1071,14 +1077,14 @@ export class AssetService {
 
     await this.rest.updateItem(SUB_CATEGORIES_LIST_TITLE, id, {
       Title: title,
-      ParentCategoryId: parentCategoryId
+      AM_ParentCategoryId: parentCategoryId
     });
 
     await this.logAudit({
       entity: 'SubCategories',
       action: 'UPDATE',
       entityId: String(id),
-      details: { Title: title, ParentCategoryId: parentCategoryId }
+      details: { Title: title, AM_ParentCategoryId: parentCategoryId }
     });
     this.invalidateAfterListMutation(SUB_CATEGORIES_LIST_TITLE);
   }

@@ -24,6 +24,7 @@ import { resolveEmailDeliveryMode, shouldAppDeliverEmail } from '../lib/workflow
 import { hydrateNotificationWorkflowsFromAppSettings } from '../lib/workflow-settings/storage';
 import { filterValidEmailRecipients } from '../lib/workflow-settings/notificationLogic';
 import { SharePointRestService } from './SharePointRestService';
+import { ADMINISTRATORS_LIST_TITLE } from '../models/IListDefinitions';
 import { SubscriptionService } from './SubscriptionService';
 import { sendMailViaMicrosoftGraph } from './GraphEmailService';
 import { DEFAULT_APP_TITLE, resolveAppDisplayName } from '../constants/spfxComponents';
@@ -38,7 +39,7 @@ import type { AadHttpClientFactory } from '@microsoft/sp-http';
 export type { IAssetNotificationUpdateInput };
 
 interface IAdministratorUser {
-  UserName1?: { Id: number; Title: string; EMail?: string };
+  AM_User?: { Id: number; Title: string; EMail?: string };
 }
 
 export interface INotificationMatrixPriority {
@@ -292,12 +293,12 @@ export class NotificationService {
 
     try {
       const items = await this.rest.getItems<IAdministratorUser>(
-        'Administrators',
-        'Id,UserName1/Id,UserName1/Title,UserName1/EMail',
-        'UserName1'
+        ADMINISTRATORS_LIST_TITLE,
+        'Id,AM_User/Id,AM_User/Title,AM_User/EMail',
+        'AM_User'
       );
       const emails = items
-        .map((item) => item.UserName1?.EMail)
+        .map((item) => item.AM_User?.EMail)
         .filter((email): email is string => Boolean(email && email.includes('@')));
       this.adminEmailsCache = emails;
       return emails;

@@ -556,19 +556,20 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
     ]
   },
   {
+    // The audit trail is written/read by AuditService using flat, self-describing columns
+    // (Entity/EntityId/Action + a serialized Details blob and denormalized user display fields).
+    // These internal names must match AuditService.write/getLogs exactly; the built-in Created
+    // column supplies the timestamp.
     title: AUDIT_LOG_LIST_TITLE,
     description: 'Append-only audit trail',
     titleFieldDisplayName: 'Summary',
     fields: [
-      { internalName: 'AM_EntityType', displayName: 'Entity Type', type: 'Text', optional: true },
-      { internalName: 'AM_EntityId', displayName: 'Entity ID', type: 'Text', optional: true },
-      { internalName: 'AM_Action', displayName: 'Action', type: 'Text', optional: true },
-      { internalName: 'AM_FieldName', displayName: 'Field Name', type: 'Text', optional: true },
-      { internalName: 'AM_OldValue', displayName: 'Old Value', type: 'Note', optional: true },
-      { internalName: 'AM_NewValue', displayName: 'New Value', type: 'Note', optional: true },
-      { internalName: 'AM_User', displayName: 'User', type: 'User', optional: true },
-      { internalName: 'AM_Timestamp', displayName: 'Timestamp', type: 'DateTime', optional: true },
-      { internalName: 'AM_IpAddress', displayName: 'IP Address', type: 'Text', optional: true }
+      { internalName: 'Entity', displayName: 'Entity', type: 'Text', optional: true },
+      { internalName: 'EntityId', displayName: 'Entity ID', type: 'Text', optional: true },
+      { internalName: 'Action', displayName: 'Action', type: 'Text', optional: true },
+      { internalName: 'UserDisplayName', displayName: 'User', type: 'Text', optional: true },
+      { internalName: 'UserEmail', displayName: 'User Email', type: 'Text', optional: true },
+      { internalName: 'Details', displayName: 'Details', type: 'Note', optional: true }
     ]
   }
 ];

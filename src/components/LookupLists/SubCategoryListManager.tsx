@@ -37,7 +37,11 @@ const SUB_CATEGORY_COLUMNS: ListColumnMeta[] = [
 
 const SUB_CATEGORY_DATA_COLUMNS: IDataListColumn<ILookupItem>[] = [
   { key: 'title', label: 'Title', isPrimary: true, render: (item) => item.Title },
-  { key: 'category', label: 'Category', render: (item) => item.ParentCategory?.Title || '—' }
+  {
+    key: 'category',
+    label: 'Category',
+    render: (item) => item.AM_ParentCategory?.Title || item.ParentCategory?.Title || '—'
+  }
 ];
 
 export interface ISubCategoryListManagerProps {
@@ -73,7 +77,7 @@ export const SubCategoryListManager: React.FC<ISubCategoryListManagerProps> = ({
 
   const lookupOptions = React.useMemo(
     () => ({
-      ParentCategory: categories.map((category) => ({ id: category.Id, title: category.Title }))
+      AM_ParentCategory: categories.map((category) => ({ id: category.Id, title: category.Title }))
     }),
     [categories]
   );
@@ -375,7 +379,7 @@ export const SubCategoryListManager: React.FC<ISubCategoryListManagerProps> = ({
         subtitle={editingItem?.Title}
         riskService={riskService}
         settings={settings}
-        includeFields={['Title', 'ParentCategory']}
+        includeFields={['Title', 'AM_ParentCategory']}
         lookupOptions={lookupOptions}
         onClose={closePanel}
         onEdit={panelMode === 'view' ? () => setPanelMode('edit') : undefined}

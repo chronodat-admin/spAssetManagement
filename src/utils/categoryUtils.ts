@@ -9,7 +9,14 @@ export function filterSubCategoriesByCategory(
   }
 
   return subCategories.filter(
-    (item) => String(item.ParentCategoryId ?? item.ParentCategory?.Id ?? '') === categoryId
+    (item) =>
+      String(
+        item.AM_ParentCategoryId ??
+          item.AM_ParentCategory?.Id ??
+          item.ParentCategoryId ??
+          item.ParentCategory?.Id ??
+          ''
+      ) === categoryId
   );
 }
 
@@ -28,6 +35,12 @@ export function isSubCategoryValidForCategory(
   return subCategories.some(
     (item) =>
       String(item.Id) === subCategoryId &&
-      String(item.ParentCategoryId ?? item.ParentCategory?.Id ?? '') === categoryId
+      String(
+        item.AM_ParentCategoryId ??
+          item.AM_ParentCategory?.Id ??
+          item.ParentCategoryId ??
+          item.ParentCategory?.Id ??
+          ''
+      ) === categoryId
   );
 }

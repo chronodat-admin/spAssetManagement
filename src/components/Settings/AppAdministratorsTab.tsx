@@ -66,8 +66,8 @@ export const AppAdministratorsTab: React.FC<IAppAdministratorsTabProps> = ({
     }
 
     return administrators.filter((administrator) => {
-      const name = administrator.UserName1?.Title || administrator.Title;
-      const email = administrator.UserName1?.Email || '';
+      const name = administrator.AM_User?.Title || administrator.UserName1?.Title || administrator.Title;
+      const email = administrator.AM_User?.Email || administrator.UserName1?.Email || '';
       return name.toLowerCase().includes(query) || email.toLowerCase().includes(query);
     });
   }, [administrators, search]);
@@ -80,15 +80,15 @@ export const AppAdministratorsTab: React.FC<IAppAdministratorsTabProps> = ({
         isPrimary: true,
         render: (item) => (
           <UserCell
-            name={item.UserName1?.Title || item.Title}
-            email={item.UserName1?.Email}
+            name={item.AM_User?.Title || item.UserName1?.Title || item.Title}
+            email={item.AM_User?.Email || item.UserName1?.Email}
           />
         )
       },
       {
         key: 'email',
         label: 'Email',
-        render: (item) => item.UserName1?.Email || '—'
+        render: (item) => item.AM_User?.Email || item.UserName1?.Email || '—'
       }
     ],
     []
@@ -142,7 +142,7 @@ export const AppAdministratorsTab: React.FC<IAppAdministratorsTabProps> = ({
       return;
     }
 
-    const displayName = administrator.UserName1?.Title || administrator.Title;
+    const displayName = administrator.AM_User?.Title || administrator.UserName1?.Title || administrator.Title;
     const confirmed = await confirm({
       title: 'Remove app administrator',
       message: `Remove ${displayName} from app administrators? They will no longer be able to open Settings.`,
@@ -244,7 +244,7 @@ export const AppAdministratorsTab: React.FC<IAppAdministratorsTabProps> = ({
             emptyMessage="No app administrators yet. Click Add administrator to grant Settings access."
             getItemKey={(item) => item.Id}
             renderActions={renderActions}
-            getSelectionLabel={(item) => item.UserName1?.Title || item.Title}
+            getSelectionLabel={(item) => item.AM_User?.Title || item.UserName1?.Title || item.Title}
           />
         )}
       </ContentCard>

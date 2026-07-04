@@ -56,7 +56,15 @@ export function applyLookupListFilters(
     }
 
     if (options?.categoryField && filters.categoryId !== 'all') {
-      if (String(item.ParentCategoryId ?? item.ParentCategory?.Id ?? '') !== filters.categoryId) {
+      if (
+        String(
+          item.AM_ParentCategoryId ??
+            item.AM_ParentCategory?.Id ??
+            item.ParentCategoryId ??
+            item.ParentCategory?.Id ??
+            ''
+        ) !== filters.categoryId
+      ) {
         return false;
       }
     }
