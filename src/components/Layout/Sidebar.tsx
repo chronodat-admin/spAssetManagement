@@ -3,6 +3,7 @@
 import { makeStyles, mergeClasses, tokens, Text, Caption1, Button, ToolbarButton } from '@fluentui/react-components';
 
 import {
+  ArrowSyncRegular,
   BoxRegular,
   BuildingRegular,
   DismissRegular,
@@ -48,6 +49,7 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
   { id: 'retired', label: 'Retired', icon: <ToolboxRegular />, section: 'ASSETS' },
   { id: 'deletedAssets', label: 'Deleted Assets', icon: <HistoryRegular />, section: 'ASSETS' },
   { id: 'assignAsset', label: 'Assign Asset', icon: <PersonRegular />, section: 'OPERATIONS' },
+  { id: 'returnAsset', label: 'Return Asset', icon: <ArrowSyncRegular />, section: 'OPERATIONS' },
   { id: 'bookAsset', label: 'Book Asset', icon: <ShoppingBagRegular />, section: 'OPERATIONS' },
   { id: 'bookingDetails', label: 'Booking Details', icon: <TableRegular />, section: 'OPERATIONS' },
   { id: 'software', label: 'Software Licenses', icon: <TagRegular />, section: 'OPERATIONS' },

@@ -84,7 +84,7 @@ export function getDashboardTitle(
   settings: IAppSettings | undefined,
   filters: IDashboardFilters,
   businesses: Array<{ Id: number; Title: string }>,
-  projects: Array<{ Id: number; Title: string; BusinessId?: number }>
+  projects: Array<{ Id: number; Title: string; BusinessId?: number | string }>
 ): string {
   const label = getDashboardLabel(settings);
   if (!isDashboardDynamicNamingEnabled(settings)) {
@@ -116,9 +116,9 @@ export function getDashboardSubtitle(
   settings: IAppSettings | undefined,
   filters: IDashboardFilters,
   businesses: Array<{ Id: number; Title: string }>,
-  projects: Array<{ Id: number; Title: string; BusinessId?: number }>
+  projects: Array<{ Id: number; Title: string; BusinessId?: number | string }>
 ): string {
-  const defaultSubtitle = 'Overview of risks, severity, and status across your organization.';
+  const defaultSubtitle = 'Overview of assets, status, and assignments across your organization.';
   if (!isDashboardDynamicNamingEnabled(settings)) {
     return defaultSubtitle;
   }
@@ -136,10 +136,10 @@ export function getDashboardSubtitle(
     return defaultSubtitle;
   }
   if (filters.businessId !== 'all' && filters.projectId === 'all') {
-    return `Showing risks for ${business?.Title || 'the selected business'}.`;
+    return `Showing assets for ${business?.Title || 'the selected business'}.`;
   }
   if (filters.businessId !== 'all' && filters.projectId !== 'all') {
-    return `Showing risks for ${project?.Title || 'the selected project'} in ${business?.Title || 'the selected business'}.`;
+    return `Showing assets for ${project?.Title || 'the selected project'} in ${business?.Title || 'the selected business'}.`;
   }
   return defaultSubtitle;
 }

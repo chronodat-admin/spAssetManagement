@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!-- PnP provisioning template stub — list instances mirror IListDefinitions.ts (spec 9.22). -->
+<pnp:ProvisioningTemplate xmlns:pnp="http://schemas.dev.office.com/PnP/2022/09/ProvisioningSchema">
+  <pnp:Lists>
+    <pnp:ListInstance Title="AM_Categories" TemplateType="100" />
+    <pnp:ListInstance Title="AM_SubCategories" TemplateType="100" />
+    <pnp:ListInstance Title="AM_AssetTypes" TemplateType="100" />
+    <pnp:ListInstance Title="AM_AssetStatuses" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Vendors" TemplateType="100" />
+    <pnp:ListInstance Title="AM_ModelNumbers" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Locations" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Projects" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Roles" TemplateType="100" />
+    <pnp:ListInstance Title="AM_UserRoles" TemplateType="100" />
+    <pnp:ListInstance Title="AM_CustomColumnDefs" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Administrators" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Licenses" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Settings" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Assets" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Assignments" TemplateType="100" />
+    <pnp:ListInstance Title="AM_SoftwareLicenses" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Maintenance" TemplateType="100" />
+    <pnp:ListInstance Title="AM_Inventory" TemplateType="100" />
+    <pnp:ListInstance Title="AM_AuditLog" TemplateType="100" />
+  </pnp:Lists>
+</pnp:ProvisioningTemplate>

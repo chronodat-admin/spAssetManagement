@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.0",
+  "version": "1.0.0.3",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -12,7 +12,7 @@
     "serve": "gulp serve",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "test": "npm run build && node --test scripts/*.mjs",
+    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/depreciationTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs",
     "test:spfx": "gulp test",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",

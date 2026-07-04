@@ -27,11 +27,11 @@ import {
   mergeNotificationWorkflowsWithRefresh
 } from '../lib/lib/workflow-settings/templateRefresh.js';
 
-const sampleRisk = {
+const sampleAsset = {
   Id: 42,
-  Title: 'Server outage risk',
-  RiskID: 'R-0042',
-  Riskstatus: 'Open',
+  Title: 'Production laptop',
+  AM_AssetId: 'AM-0042',
+  AM_Status: 'Open',
   Likelihood: 'Medium',
   Consequence: 'High',
   RiskDueDate: '2026-06-15T00:00:00Z',
@@ -45,44 +45,44 @@ const sampleRisk = {
 describe('notification placeholders', () => {
   it('substitutes known tokens and leaves unknown tokens intact', () => {
     const values = {
-      RiskID: 'R-001',
-      Title: 'Test risk',
+      AM_AssetId: 'AM-001',
+      Title: 'Test asset',
       Status: 'Open',
-      RiskUrl: 'https://tenant.sharepoint.com/sites/rm/Lists/Risks/DispForm.aspx?ID=1'
+      AssetUrl: 'https://tenant.sharepoint.com/sites/am/Lists/AM_Assets/DispForm.aspx?ID=1'
     };
 
     const subject = substituteNotificationPlaceholders(
-      'Risk {RiskID} - {Title} ({Status})',
+      'Asset {AM_AssetId} - {Title} ({Status})',
       values
     );
-    assert.equal(subject, 'Risk R-001 - Test risk (Open)');
+    assert.equal(subject, 'Asset AM-001 - Test asset (Open)');
 
-    const body = substituteNotificationPlaceholders('View {RiskUrl} or {UnknownToken}', values);
+    const body = substituteNotificationPlaceholders('View {AssetUrl} or {UnknownToken}', values);
     assert.match(body, /View https:\/\/tenant\.sharepoint\.com/);
     assert.match(body, /\{UnknownToken\}/);
   });
 
   it('substitutes field-name aliases used in confirmation templates', () => {
     const values = {
-      RiskID: 'R-001',
-      Title: 'Test risk',
+      AM_AssetId: 'AM-001',
+      Title: 'Test asset',
       Status: 'Open',
       Category: 'Operational',
       CreatedByName: 'Casey Creator',
-      RiskDescription: 'Summary text',
-      LinkTitle: 'Test risk',
-      RiskUrl: 'https://tenant.sharepoint.com/sites/rm/SitePages/Risk.aspx?riskItemId=1&riskSource=email'
+      AM_Notes: 'Summary text',
+      LinkTitle: 'Test asset',
+      AssetUrl: 'https://tenant.sharepoint.com/sites/am/SitePages/Asset-Management.aspx?riskItemId=1&riskSource=email'
     };
 
     const body = substituteNotificationPlaceholders(
-      'Created By: {CreatedBy}\nStatus: {Riskstatus}\nCategory: {RiskCategory}\nSummary: {RiskDescription}\n{LinkTitle}',
+      'Created By: {CreatedBy}\nStatus: {AM_Status}\nCategory: {RiskCategory}\nSummary: {AM_Notes}\n{LinkTitle}',
       values
     );
     assert.match(body, /Created By: Casey Creator/);
     assert.match(body, /Status: Open/);
     assert.match(body, /Category: Operational/);
     assert.match(body, /Summary: Summary text/);
-    assert.match(body, /Test risk$/);
+    assert.match(body, /Test asset$/);
   });
 
   it('builds a risk display form URL from web URL and item id', () => {
@@ -131,7 +131,7 @@ describe('email template resolution', () => {
       DEFAULT_EMAIL_TEMPLATES
     );
 
-    assert.match(content.subject, /Risk \{RiskID\}/);
+    assert.match(content.subject, /Asset \{AM_AssetId\}/);
     assert.match(content.body, /<p>/);
     assert.equal(content.isHtml, true);
   });
@@ -158,7 +158,7 @@ describe('recipient resolution', () => {
   it('resolves creator, assignee, org email, and administrators', () => {
     const recipients = resolveNotificationRecipientEmails(
       ['creator', 'assignee', 'org_email', 'org_admins'],
-      sampleRisk,
+      sampleAsset,
       {
         supportGroup: 'riskdesk@example.com',
         adminEmails: ['admin1@example.com', 'admin2@example.com']
@@ -176,7 +176,7 @@ describe('recipient resolution', () => {
 
   it('falls back to current user email when creator email is missing', () => {
     const recipients = resolveNotificationRecipientEmails(['creator'], {
-      ...sampleRisk,
+      ...sampleAsset,
       Author: { Id: 3, Title: 'Casey Creator' }
     }, {
       currentUserEmail: 'editor@example.com'
@@ -186,7 +186,7 @@ describe('recipient resolution', () => {
   });
 
   it('does not treat Support Group text without @ as org_email recipient', () => {
-    const recipients = resolveNotificationRecipientEmails(['org_email'], sampleRisk, {
+    const recipients = resolveNotificationRecipientEmails(['org_email'], sampleAsset, {
       supportGroup: 'Asset Management Desk'
     });
 
@@ -195,7 +195,7 @@ describe('recipient resolution', () => {
 
   it('skips assignee notifications when AssignedTo users have no email', () => {
     const recipients = resolveNotificationRecipientEmails(['assignee'], {
-      ...sampleRisk,
+      ...sampleAsset,
       AssignedTo: [{ Id: 7, Title: 'Alex Owner' }]
     });
 
@@ -212,15 +212,15 @@ describe('recipient resolution', () => {
 
 describe('risk update notification event selection', () => {
   const baseInput = {
-    Title: sampleRisk.Title,
-    Riskstatus: sampleRisk.Riskstatus,
+    Title: sampleAsset.Title,
+    AM_Status: sampleAsset.AM_Status,
     AssignedToUserIds: [7],
-    Likelihood: sampleRisk.Likelihood,
-    Consequence: sampleRisk.Consequence,
-    RiskDueDate: sampleRisk.RiskDueDate,
-    RiskCategoryId: sampleRisk.RiskCategory.Id,
-    riskBusinessId: sampleRisk.riskBusiness.Id,
-    RiskProfileTypeId: sampleRisk.RiskProfileType.Id,
+    Likelihood: sampleAsset.Likelihood,
+    Consequence: sampleAsset.Consequence,
+    RiskDueDate: sampleAsset.RiskDueDate,
+    RiskCategoryId: sampleAsset.RiskCategory.Id,
+    riskBusinessId: sampleAsset.riskBusiness.Id,
+    RiskProfileTypeId: sampleAsset.RiskProfileType.Id,
     RiskSubCategoryId: null,
     RiskProjectId: null,
     RiskResponseId: null,
@@ -229,7 +229,7 @@ describe('risk update notification event selection', () => {
 
   it('queues assignedTo when assignee ids change', () => {
     const events = selectRiskUpdateNotificationEvents(
-      sampleRisk,
+      sampleAsset,
       { ...baseInput, AssignedToUserIds: [7, 8] },
       false
     );
@@ -239,8 +239,8 @@ describe('risk update notification event selection', () => {
 
   it('queues closed workflow when status moves to closed bucket', () => {
     const events = selectRiskUpdateNotificationEvents(
-      sampleRisk,
-      { ...baseInput, Riskstatus: 'Closed' },
+      sampleAsset,
+      { ...baseInput, AM_Status: 'Closed' },
       false
     );
 
@@ -249,7 +249,7 @@ describe('risk update notification event selection', () => {
 
   it('queues riskPriorityChanged when likelihood or consequence changes', () => {
     const events = selectRiskUpdateNotificationEvents(
-      sampleRisk,
+      sampleAsset,
       { ...baseInput, Likelihood: 'High' },
       false
     );
@@ -258,7 +258,7 @@ describe('risk update notification event selection', () => {
   });
 
   it('queues riskUpdated only when enabled and no higher-priority event fired', () => {
-    const previous = { ...sampleRisk, Title: 'Old title' };
+    const previous = { ...sampleAsset, Title: 'Old title' };
     const disabledEvents = selectRiskUpdateNotificationEvents(
       previous,
       { ...baseInput, Title: 'Server outage risk' },
@@ -276,7 +276,7 @@ describe('risk update notification event selection', () => {
 
   it('can send both assignedTo and riskUpdated when assignee and fields change', () => {
     const events = selectRiskUpdateNotificationEvents(
-      { ...sampleRisk, Title: 'Old title' },
+      { ...sampleAsset, Title: 'Old title' },
       {
         ...baseInput,
         Title: 'Server outage risk',
@@ -290,7 +290,7 @@ describe('risk update notification event selection', () => {
 
   it('does not send riskUpdated when that workflow is disabled', () => {
     const events = selectRiskUpdateNotificationEvents(
-      { ...sampleRisk, Title: 'Old title' },
+      { ...sampleAsset, Title: 'Old title' },
       {
         ...baseInput,
         Title: 'Server outage risk',
@@ -304,10 +304,10 @@ describe('risk update notification event selection', () => {
 
   it('detects general field changes via hasRiskGeneralFieldChanges', () => {
     assert.equal(
-      hasRiskGeneralFieldChanges(sampleRisk, { ...baseInput, MitigationPlan: 'New plan' }),
+      hasRiskGeneralFieldChanges(sampleAsset, { ...baseInput, MitigationPlan: 'New plan' }),
       true
     );
-    assert.equal(hasRiskGeneralFieldChanges(sampleRisk, baseInput), false);
+    assert.equal(hasRiskGeneralFieldChanges(sampleAsset, baseInput), false);
   });
 
   it('uses arraysEqual for assignee comparisons', () => {

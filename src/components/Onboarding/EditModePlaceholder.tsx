@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import {
   Card,
   makeStyles,
@@ -53,7 +53,7 @@ export const EditModePlaceholder: React.FC<IEditModePlaceholderProps> = ({ isTea
         </Title3>
         <Text style={{ color: tokens.colorNeutralForeground3, lineHeight: 1.6 }}>
           This web part is ready. Publish the page to start the one-time setup wizard that creates
-          your SharePoint lists and default risk and compliance data.
+          your SharePoint lists and default asset data.
         </Text>
         <DedicatedSubsiteWarning isTeamsHost={isTeamsHost} />
         <ol className={styles.list}>

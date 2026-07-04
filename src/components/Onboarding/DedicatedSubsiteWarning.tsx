@@ -1,4 +1,4 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import {
   MessageBar,
   MessageBarBody,
@@ -43,7 +43,7 @@ export const DedicatedSubsiteWarning: React.FC<IDedicatedSubsiteWarningProps> = 
       <MessageBarBody>
         <MessageBarTitle>Use a dedicated subsite for list isolation</MessageBarTitle>
         Add this web part to its own SharePoint subsite (for example,{' '}
-        <strong>/sites/YourSite/AssetManagement</strong>) before running setup. Setup creates SharePoint
+        <strong>/sites/YourSite/AssetManagement</strong>) before running setup. Setup creates 13
         application lists in the current site; a dedicated subsite keeps those lists separate from
         team sites, communication sites, and other content.
       </MessageBarBody>

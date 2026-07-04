@@ -7,6 +7,7 @@ export type AppPage =
   | 'retired'
   | 'deletedAssets'
   | 'assignAsset'
+  | 'returnAsset'
   | 'bookAsset'
   | 'bookingDetails'
   | 'software'
@@ -20,44 +21,22 @@ export type AppPage =
   | 'projects'
   | 'settings';
 
-export interface IProvisioningStep {
-  id: string;
-  label: string;
-  status: 'pending' | 'running' | 'complete' | 'error';
-  message?: string;
-}
+export type {
+  IAppSettings,
+  ILookupItem,
+  ILookupValue,
+  IUserValue,
+  IAsset,
+  IAssignment,
+  ISoftwareLicense,
+  IInventoryItem,
+  IAppAdministrator,
+  IProvisioningStep,
+  IProvisioningStatus,
+  IClearSeedDataResult,
+  IHeatmapDrillDownFilter,
+  AssetStatus
+} from './IAsset';
 
-export interface IProvisioningStatus {
-  complete: boolean;
-  steps: IProvisioningStep[];
-}
-
-export interface IAppSettings {
-  Id?: number;
-  Title?: string;
-  SupportGroup?: string;
-  ColorScheme?: string;
-  DashboardName?: string;
-  DashboardDynamicNaming?: string;
-  DashboardHoverEnabled?: string;
-  DashboardFinExpEnabled?: string;
-  AppearanceSettings?: string;
-  DashboardSettings?: string;
-  SampleDataSeeded?: string;
-}
-
-export interface ILookupItem {
-  id: number;
-  title: string;
-}
-
-export interface ILookupValue {
-  Id: number;
-  Title: string;
-}
-
-export interface IUserValue {
-  Id: number;
-  Title: string;
-  Email?: string;
-}
+/** @deprecated Use AssetStatus */
+export type RiskStatus = import('./IAsset').AssetStatus;
