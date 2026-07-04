@@ -1,0 +1,27 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "asset-management-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/assetManagement/AssetManagementWebPart.js",
+          "manifest": "./src/webparts/assetManagement/AssetManagementWebPart.manifest.json"
+        }
+      ]
+    },
+    "asset-form-customizer": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/assetFormCustomizer/AssetFormCustomizer.js",
+          "manifest": "./src/extensions/assetFormCustomizer/AssetFormCustomizer.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "AssetManagementWebPartStrings": "lib/webparts/assetManagement/loc/{locale}.js",
+    "AssetFormCustomizerStrings": "lib/extensions/assetFormCustomizer/loc/{locale}.js"
+  }
+}

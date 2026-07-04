@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "asset-management-client-side-solution",
+    "title": "Asset Management",
+    "iconPath": "app-icon.png",
+    "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "Your Organization",
+      "websiteUrl": "https://www.example.com",
+      "privacyUrl": "https://www.example.com/privacy",
+      "termsOfUseUrl": "https://www.example.com/terms",
+      "mpnId": "Undefined-1.21.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "Asset management for Microsoft 365 SharePoint Online"
+      },
+      "longDescription": {
+        "default": "Asset Management is a SharePoint Framework (SPFx) solution for SharePoint Online and Microsoft 365. Track hardware, software licenses, assignments, maintenance, depreciation, and inventory with dashboard analytics, bulk operations, report builder, and configurable forms. Includes an SPFx form customizer for native AM_Assets list forms. Requires SharePoint Online."
+      },
+      "videoUrl": "",
+      "categories": ["Productivity"]
+    },
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Mail.Send"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.Read"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "DeviceManagementManagedDevices.Read.All"
+      }
+    ],
+    "features": [
+      {
+        "title": "Asset Management Feature",
+        "description": "Deploys the Asset Management web part and form customizer for the AM_Assets list.",
+        "id": "cbc74d6d-aa77-4c02-b177-05d8a3c5a702",
+        "version": "1.0.0.0",
+        "componentIds": [
+          "4fa4ca04-c98a-4723-8671-f69956f65f26",
+          "013cb786-7445-49dc-aebd-9c4e8706fd98"
+        ]
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/asset-management.sppkg"
+  }
+}

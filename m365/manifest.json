@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
+  "name": {
+    "short": "Asset Management",
+    "full": "Asset Management"
+  },
+  "description": {
+    "short": "Asset management for Microsoft 365",
+    "full": "Asset Management provides a SharePoint-backed asset register, assignments, inventory, and reporting experience across Microsoft 365."
+  },
+  "developer": {
+    "name": "Your Organization",
+    "websiteUrl": "https://www.example.com",
+    "privacyUrl": "https://www.example.com/privacy",
+    "termsOfUseUrl": "https://www.example.com/terms"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#008080",
+  "staticTabs": [
+    {
+      "entityId": "assetManagement",
+      "name": "Asset Management",
+      "contentUrl": "https://{teamSiteDomain}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest=/_layouts/15/teamshostedapp.aspx%3Fteams%26personal%26componentId=4fa4ca04-c98a-4723-8671-f69956f65f26%26forceLocale={locale}",
+      "scopes": ["personal"]
+    }
+  ],
+  "configurableTabs": [
+    {
+      "configurationUrl": "https://{teamSiteDomain}{teamSitePath}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest={teamSitePath}/_layouts/15/teamshostedapp.aspx%3FopenPropertyPane=true%26teams%26componentId=4fa4ca04-c98a-4723-8671-f69956f65f26%26forceLocale={locale}",
+      "canUpdateConfiguration": true,
+      "scopes": ["team"],
+      "context": ["channelTab"]
+    }
+  ],
+  "permissions": ["identity"],
+  "validDomains": ["*.sharepoint.com", "*.sharepoint.us"],
+  "webApplicationInfo": {
+    "id": "00000003-0000-0ff1-ce00-000000000000",
+    "resource": "https://{teamSiteDomain}"
+  }
+}

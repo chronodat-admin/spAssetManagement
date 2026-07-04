@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Build outputs
+lib/
+dist/
+temp/
+release/
+sharepoint/solution/debug/
+sharepoint/solution/*.sppkg
+
+# Local dev config
+config/serve.json
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Playwright
+e2e/.auth/
+playwright-report/
+test-results/
+blob-report/
