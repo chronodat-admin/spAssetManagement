@@ -7,7 +7,11 @@ const describeE2e = process.env.PLAYWRIGHT_BASE_URL ? test.describe : test.descr
 const NAV_PAGES: Array<{ label: string; heading: string | RegExp }> = [
   { label: 'Dashboard', heading: 'Dashboard' },
   { label: 'All Assets', heading: 'All Assets' },
+  { label: 'Assigned To Me', heading: 'Assigned To Me' },
   { label: 'Available', heading: 'Available Assets' },
+  { label: 'In Repair', heading: 'In Repair' },
+  { label: 'Retired', heading: 'Retired Assets' },
+  { label: 'Deleted Assets', heading: 'Deleted Assets' },
   { label: 'Assign Asset', heading: 'Assign Asset' },
   { label: 'Return Asset', heading: 'Return Asset' },
   { label: 'Book Asset', heading: 'Book Asset' },
@@ -18,9 +22,11 @@ const NAV_PAGES: Array<{ label: string; heading: string | RegExp }> = [
   { label: 'Depreciation', heading: 'Depreciation' },
   { label: 'Audit Log', heading: 'Audit Log' },
   { label: 'Categories', heading: 'Categories' },
+  { label: 'Sub-Categories', heading: 'Sub-Categories' },
   { label: 'Vendors', heading: 'Vendors' },
   { label: 'Locations', heading: 'Locations' },
-  { label: 'Projects', heading: 'Projects' }
+  { label: 'Projects', heading: 'Projects' },
+  { label: 'Settings', heading: 'Settings' }
 ];
 
 describeE2e('Sidebar navigation', () => {

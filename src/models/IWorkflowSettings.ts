@@ -18,7 +18,7 @@ export interface IAssetCustomPriority {
   sortOrder: number;
 }
 
-export type NumberingEntityType = 'risk' | 'business' | 'project';
+export type NumberingEntityType = 'asset' | 'vendor' | 'project';
 export type NumberingResetFrequency = 'yearly' | 'monthly' | 'daily' | 'never';
 
 export interface INumberingConfig {
@@ -95,13 +95,13 @@ export interface IEmailTemplate {
   subject: string;
   bodyHtml: string;
   description?: string;
-  entityType: 'all' | 'risk' | 'business' | 'project';
+  entityType: 'all' | 'asset' | 'business' | 'project';
   variables: string[];
   isActive: boolean;
 }
 
 export type ScheduledReportFrequency = 'daily' | 'weekly' | 'monthly';
-export type ScheduledReportType = 'risks' | 'business' | 'projects';
+export type ScheduledReportType = 'assets' | 'business' | 'projects';
 
 /** How workflow notification emails are delivered from the SPFx app. */
 export type EmailDeliveryMode = 'graph' | 'powerAutomate' | 'chronodatApi';

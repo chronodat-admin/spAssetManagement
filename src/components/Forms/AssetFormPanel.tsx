@@ -1,12 +1,18 @@
 ﻿import * as React from 'react';
-import { Button, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components';
+import { Button, Spinner } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import { EditRegular, SaveRegular } from '@fluentui/react-icons';
+import { buildFormConfig } from '../../lib/form-config/build';
+import { parseFormSettings } from '../../lib/form-config/storage';
 import type { FormMode } from '../../lib/form-config/types';
 import { useListPermissions } from '../../hooks/useListPermissions';
-import { IAppSettings } from '../../models/IAssetApp';
+import { IAppSettings, ILookupItem } from '../../models/IAssetApp';
+import { ASSET_STATUSES_LIST_TITLE, SUB_CATEGORIES_LIST_TITLE } from '../../models/IListDefinitions';
 import { AssetService } from '../../services/AssetService';
 import { RightDetailPanel } from '../Layout/RightDetailPanel';
-import { DynamicAssetForm } from './DynamicAssetForm';
+import { SharePointDynamicForm } from './SharePointDynamicForm';
+
+const ASSET_FORM_ID = 'dynamic-asset-form';
 
 export interface IAssetFormPanelProps {
   open: boolean;
@@ -14,17 +20,23 @@ export interface IAssetFormPanelProps {
   risk?: import('../../models/IAssetApp').IAsset;
   riskService: AssetService;
   settings?: IAppSettings;
-  categories: import('../../models/IAssetApp').ILookupItem[];
-  subCategories: import('../../models/IAssetApp').ILookupItem[];
-  businesses: import('../../models/IAssetApp').ILookupItem[];
-  projects: import('../../models/IAssetApp').ILookupItem[];
-  profiles: import('../../models/IAssetApp').ILookupItem[];
-  responses: import('../../models/IAssetApp').ILookupItem[];
-  strategies: import('../../models/IAssetApp').ILookupItem[];
+  categories: ILookupItem[];
+  subCategories: ILookupItem[];
+  businesses: ILookupItem[];
+  projects: ILookupItem[];
+  profiles: ILookupItem[];
+  responses: ILookupItem[];
+  strategies: ILookupItem[];
   onSave: () => void;
   onCancel: () => void;
   onEdit?: () => void;
   source?: 'email';
+}
+
+type LookupOption = { id: number; title: string };
+
+function toLookupOptions(items: ILookupItem[]): LookupOption[] {
+  return items.map((item) => ({ id: item.Id, title: item.Title }));
 }
 
 export const AssetFormPanel: React.FC<IAssetFormPanelProps> = ({
@@ -34,27 +46,78 @@ export const AssetFormPanel: React.FC<IAssetFormPanelProps> = ({
   riskService,
   settings,
   categories,
-  subCategories: _subCategories,
+  subCategories,
   businesses: _businesses,
-  projects: _projects,
-  profiles: _profiles,
-  responses: _responses,
-  strategies: _strategies,
+  projects,
+  profiles,
+  responses,
+  strategies,
   onSave,
   onCancel,
   onEdit,
   source
 }) => {
   const [saving, setSaving] = React.useState(false);
+  const [statuses, setStatuses] = React.useState<ILookupItem[]>([]);
+  const [loadedSubCategories, setLoadedSubCategories] = React.useState<ILookupItem[]>([]);
   const { permissions, loading: permissionsLoading, error: permissionsError } = useListPermissions(
     riskService,
     'AM_Assets',
     mode === 'create' ? undefined : risk?.Id
   );
 
+  const formSettings = React.useMemo(() => parseFormSettings(settings), [settings]);
+  const formConfig = React.useMemo(
+    () => buildFormConfig(formSettings, 'risks', mode),
+    [formSettings, mode]
+  );
+
   React.useEffect(() => {
     setSaving(false);
   }, [mode, open]);
+
+  // AM_Status (lookup) and AM_SubCategory options are not supplied by the parent, so
+  // load them here to populate their dropdowns on the asset form.
+  React.useEffect(() => {
+    if (!open) {
+      return;
+    }
+    let cancelled = false;
+    void riskService
+      .getLookupItems(ASSET_STATUSES_LIST_TITLE)
+      .then((items) => {
+        if (!cancelled) {
+          setStatuses(items);
+        }
+      })
+      .catch(() => undefined);
+    if (subCategories.length === 0) {
+      void riskService
+        .getLookupItems(SUB_CATEGORIES_LIST_TITLE)
+        .then((items) => {
+          if (!cancelled) {
+            setLoadedSubCategories(items);
+          }
+        })
+        .catch(() => undefined);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [open, riskService, subCategories.length]);
+
+  const lookupOptions = React.useMemo<Record<string, LookupOption[]>>(
+    () => ({
+      AM_Category: toLookupOptions(categories),
+      AM_SubCategory: toLookupOptions(subCategories.length > 0 ? subCategories : loadedSubCategories),
+      AM_AssetType: toLookupOptions(profiles),
+      AM_Vendor: toLookupOptions(responses),
+      AM_Location: toLookupOptions(strategies),
+      AM_Project: toLookupOptions(projects),
+      AM_Status: toLookupOptions(statuses)
+    }),
+    [categories, subCategories, loadedSubCategories, profiles, responses, strategies, projects, statuses]
+  );
 
   const handleEditClick = (): void => {
     // Defer so the view-mode Edit click cannot land on the edit-mode Save control.
@@ -62,7 +125,7 @@ export const AssetFormPanel: React.FC<IAssetFormPanelProps> = ({
   };
 
   const handleSaveClick = (): void => {
-    (document.getElementById('dynamic-asset-form') as HTMLFormElement | null)?.requestSubmit();
+    (document.getElementById(ASSET_FORM_ID) as HTMLFormElement | null)?.requestSubmit();
   };
 
   const canOpen =
@@ -119,28 +182,27 @@ export const AssetFormPanel: React.FC<IAssetFormPanelProps> = ({
       {permissionsLoading ? (
         <Spinner label="Checking permissions..." />
       ) : permissionsError ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{permissionsError}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{permissionsError}</AppMessageBar>
       ) : !canOpen ? (
-        <MessageBar intent="warning">
-          <MessageBarBody>
-            You do not have permission to {mode === 'create' ? 'create assets in' : 'view or edit items on'} the
-            AM_Assets list.
-          </MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="warning">
+          You do not have permission to {mode === 'create' ? 'create assets in' : 'view or edit items on'} the
+          AM_Assets list.
+        </AppMessageBar>
       ) : (
-        <DynamicAssetForm
+        <SharePointDynamicForm
+          listTitle="AM_Assets"
+          itemId={mode === 'create' ? undefined : risk?.Id}
           mode={mode}
-          risk={risk}
           riskService={riskService}
-          settings={settings}
-          categories={categories}
-          onSave={onSave}
+          formConfig={formConfig}
+          excludeFields={['AM_ImageUrl']}
+          lookupOptions={lookupOptions}
+          formId={ASSET_FORM_ID}
+          onSaved={onSave}
           onCancel={onCancel}
+          onSubmittingChange={setSaving}
         />
       )}
     </RightDetailPanel>
   );
 };
-

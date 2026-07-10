@@ -226,7 +226,7 @@ export const AuditLogTab: React.FC<IAuditLogTabProps> = ({ riskService }) => {
         <SettingsPageHeader
           embedded
           title="Audit Log"
-          description="Track create, update, and delete operations across risks, lookups, settings, and compliance."
+          description="Track create, update, and delete operations across assets, lookups, settings, and compliance."
           icon={HistoryRegular}
         />
       }

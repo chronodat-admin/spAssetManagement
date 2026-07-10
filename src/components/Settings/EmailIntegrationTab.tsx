@@ -4,16 +4,13 @@ import {
   Field,
   Input,
   Link,
-  MessageBar,
-  MessageBarActions,
-  MessageBarBody,
-  MessageBarTitle,
   Radio,
   RadioGroup,
   Spinner,
   Text,
   tokens
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import {
   ArrowClockwiseRegular,
   CheckmarkCircleRegular,
@@ -32,6 +29,7 @@ import {
 } from '../../lib/workflow-settings/emailIntegration';
 import { GRAPH_MAIL_SEND_SCOPE } from '../../constants/graphMailSend';
 import type { MailSendApprovalUiStatus } from '../../models/IMailSendApproval';
+import { DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
 import { useWorkflowSettingsStyles } from './workflowSettingsStyles';
 
 const POWER_AUTOMATE_DOCS_PATH = 'docs/power-automate/README.md';
@@ -94,25 +92,23 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
 
     if (!mailSendStatus || mailSendStatus === 'checking') {
       return (
-        <MessageBar intent="info" layout="multiline">
-          <MessageBarBody>
-            <Spinner size="tiny" /> Checking Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} approval&hellip;
-          </MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="info">
+          <Spinner size="tiny" /> Checking Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} approval&hellip;
+        </AppMessageBar>
       );
     }
 
     if (mailSendStatus === 'approved') {
       return (
-        <MessageBar intent="success" layout="multiline" icon={<CheckmarkCircleRegular />}>
-          <MessageBarBody>
-            <MessageBarTitle>This option is good to go</MessageBarTitle>
-            Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} is approved for this tenant. Workflow notification
-            emails will send from the signed-in user&rsquo;s Exchange mailbox &mdash; no further setup
-            needed.
-          </MessageBarBody>
-          {recheckButton ? <MessageBarActions>{recheckButton}</MessageBarActions> : null}
-        </MessageBar>
+        <AppMessageBar
+          intent="success"
+          icon={<CheckmarkCircleRegular />}
+          title="This option is good to go"
+          actions={recheckButton || undefined}
+        >
+          Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} is approved for this tenant. Workflow notification emails
+          will send from the signed-in user&rsquo;s Exchange mailbox &mdash; no further setup needed.
+        </AppMessageBar>
       );
     }
 
@@ -125,51 +121,50 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
           : `${GRAPH_MAIL_SEND_SCOPE} approval may be required`;
 
     return (
-      <MessageBar intent={intent} layout="multiline" icon={<WarningRegular />}>
-        <MessageBarBody>
-          <MessageBarTitle>{title}</MessageBarTitle>
-          {mailSendStatus === 'unavailable'
-            ? 'Deploy the app package to a SharePoint or Teams site, then return here to approve Mail.Send.'
-            : `Graph email delivery needs a one-time tenant admin approval of the ${GRAPH_MAIL_SEND_SCOPE} permission.`}
-          <ol style={{ margin: `${tokens.spacingVerticalS} 0 0`, paddingLeft: tokens.spacingHorizontalL }}>
-            <li>Deploy the app package (.sppkg) to the tenant App Catalog.</li>
-            <li>
-              Open SharePoint Admin Center &rarr; <strong>Advanced</strong> &rarr;{' '}
-              <strong>API access</strong>.
-            </li>
-            <li>
-              Under <strong>Pending requests</strong>, approve <strong>Microsoft Graph</strong> &rarr;{' '}
-              <strong>{GRAPH_MAIL_SEND_SCOPE}</strong> (one-time per tenant).
-            </li>
-          </ol>
-        </MessageBarBody>
-        {(mailSendAdminUrl || recheckButton) && (
-          <MessageBarActions>
-            {mailSendAdminUrl ? (
-              <Button
-                appearance="primary"
-                size="small"
-                icon={<OpenRegular />}
-                onClick={() => window.open(mailSendAdminUrl, '_blank', 'noopener,noreferrer')}
-              >
-                Open API access
-              </Button>
-            ) : null}
-            {recheckButton}
-          </MessageBarActions>
-        )}
-      </MessageBar>
+      <AppMessageBar
+        intent={intent}
+        icon={<WarningRegular />}
+        title={title}
+        actions={
+          mailSendAdminUrl || recheckButton ? (
+            <>
+              {mailSendAdminUrl ? (
+                <Button
+                  appearance="primary"
+                  size="small"
+                  icon={<OpenRegular />}
+                  onClick={() => window.open(mailSendAdminUrl, '_blank', 'noopener,noreferrer')}
+                >
+                  Open API access
+                </Button>
+              ) : null}
+              {recheckButton}
+            </>
+          ) : undefined
+        }
+      >
+        {mailSendStatus === 'unavailable'
+          ? 'Deploy the app package to a SharePoint or Teams site, then return here to approve Mail.Send.'
+          : `Graph email delivery needs a one-time tenant admin approval of the ${GRAPH_MAIL_SEND_SCOPE} permission.`}
+        <ol style={{ margin: `${tokens.spacingVerticalS} 0 0`, paddingLeft: tokens.spacingHorizontalL }}>
+          <li>Deploy the app package (.sppkg) to the tenant App Catalog.</li>
+          <li>
+            Open SharePoint Admin Center &rarr; <strong>Advanced</strong> &rarr; <strong>API access</strong>.
+          </li>
+          <li>
+            Under <strong>Pending requests</strong>, approve <strong>Microsoft Graph</strong> &rarr;{' '}
+            <strong>{GRAPH_MAIL_SEND_SCOPE}</strong> (one-time per tenant).
+          </li>
+        </ol>
+      </AppMessageBar>
     );
   };
 
   return (
     <div className={styles.list}>
-      <MessageBar intent={messageBarIntent} layout="multiline">
-        <MessageBarBody>
-          <MessageBarTitle>Email delivery mode</MessageBarTitle>
-          {EMAIL_DELIVERY_MODE_DESCRIPTIONS[deliveryMode]}
-        </MessageBarBody>
-      </MessageBar>
+      <AppMessageBar intent={messageBarIntent} title="Email delivery mode">
+        {EMAIL_DELIVERY_MODE_DESCRIPTIONS[deliveryMode]}
+      </AppMessageBar>
 
       <div className={styles.numberingCard}>
         <Text weight="semibold" block style={{ marginBottom: tokens.spacingVerticalS }}>
@@ -229,28 +224,31 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             <li>Outbound HTTPS access to the Chronodat notification service.</li>
           </ul>
           {!subscriptionApiConfigured ? (
-            <MessageBar intent="warning" layout="multiline" style={{ marginTop: tokens.spacingVerticalM }}>
-              <MessageBarBody>
-                <MessageBarTitle>Chronodat Mail API unavailable</MessageBarTitle>
-                The Chronodat mail service could not be reached. Verify this tenant has an active
-                subscription, then recheck.
-              </MessageBarBody>
-              {onNavigateToSubscription ? (
-                <MessageBarActions>
+            <AppMessageBar
+              intent="warning"
+              title="Chronodat Mail API unavailable"
+              style={{ marginTop: tokens.spacingVerticalM }}
+              actions={
+                onNavigateToSubscription ? (
                   <Button appearance="secondary" size="small" onClick={onNavigateToSubscription}>
                     Open Subscription settings
                   </Button>
-                </MessageBarActions>
-              ) : null}
-            </MessageBar>
+                ) : undefined
+              }
+            >
+              The Chronodat mail service could not be reached. Verify this tenant has an active subscription,
+              then recheck.
+            </AppMessageBar>
           ) : (
-            <MessageBar intent="success" layout="multiline" icon={<CheckmarkCircleRegular />} style={{ marginTop: tokens.spacingVerticalM }}>
-              <MessageBarBody>
-                <MessageBarTitle>This option is good to go</MessageBarTitle>
-                The Chronodat mail service is reachable for this tenant. Workflow emails will send with no
-                further setup.
-              </MessageBarBody>
-            </MessageBar>
+            <AppMessageBar
+              intent="success"
+              icon={<CheckmarkCircleRegular />}
+              title="This option is good to go"
+              style={{ marginTop: tokens.spacingVerticalM }}
+            >
+              The Chronodat mail service is reachable for this tenant. Workflow emails will send with no
+              further setup.
+            </AppMessageBar>
           )}
         </div>
       ) : null}
@@ -283,17 +281,14 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
 
       {deliveryMode === 'powerAutomate' ? (
         <div className={styles.numberingCard}>
-          <MessageBar intent="warning" layout="multiline" icon={<WarningRegular />}>
-            <MessageBarBody>
-              <MessageBarTitle>Custom setup required &mdash; not shipped with the product</MessageBarTitle>
-              Power Automate flows are <strong>not included</strong> with Risk &amp; Compliance Hub. To use
-              this mode you must build and configure the flows yourself in your own tenant, or{' '}
-              <Link href={CHRONODAT_SUPPORT_URL} target="_blank" rel="noopener noreferrer">
-                contact Chronodat support
-              </Link>{' '}
-              for a paid setup engagement. In this mode the app itself does not send any email.
-            </MessageBarBody>
-          </MessageBar>
+          <AppMessageBar intent="warning" icon={<WarningRegular />} title="Custom setup required — not shipped with the product">
+            Power Automate flows are <strong>not included</strong> with {DEFAULT_APP_TITLE}. To use this
+            mode you must build and configure the flows yourself in your own tenant, or{' '}
+            <Link href={CHRONODAT_SUPPORT_URL} target="_blank" rel="noopener noreferrer">
+              contact Chronodat support
+            </Link>{' '}
+            for a paid setup engagement. In this mode the app itself does not send any email.
+          </AppMessageBar>
 
           <Field
             label="Notification mailbox (Power Automate)"
@@ -328,8 +323,8 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             following flows in your own environment:
           </Text>
           <ul style={{ margin: 0, paddingLeft: tokens.spacingHorizontalL, color: tokens.colorNeutralForeground2 }}>
-            <li>Risk lifecycle notifications (create, assign, status, update, comment)</li>
-            <li>Overdue risk checker (scheduled recurrence)</li>
+            <li>Asset lifecycle notifications (create, assign, status, update, comment)</li>
+            <li>Overdue asset checker (scheduled recurrence)</li>
             <li>Scheduled reports (reads AppSettings WorkflowSettings JSON)</li>
             <li>Workflow rules engine (notify / assign actions from stored rules)</li>
           </ul>

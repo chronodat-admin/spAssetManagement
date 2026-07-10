@@ -40,45 +40,45 @@ export function createInitialSteps(): IProvisioningStep[] {
   return [
     {
       id: 'check',
-      label: 'Verify access & detect existing lists',
-      description: 'Confirms you are a site owner and checks which SharePoint lists already exist.',
+      label: 'Access verification',
+      description: 'Confirm you can set up the app on this site and check for any existing setup.',
       status: 'pending'
     },
     {
       id: 'lookup',
-      label: 'Create lookup & reference lists',
-      description:
-        'Categories, sub-categories, asset types, statuses, vendors, models, locations, projects, roles, and audit log.',
+      label: 'Reference data',
+      description: 'Prepare categories, locations, vendors, and other lists the app relies on.',
       status: 'pending'
     },
     {
       id: 'settings',
-      label: 'Create settings & admin lists',
-      description: 'App settings, administrators, and license records that drive configuration.',
+      label: 'App configuration',
+      description: 'Set up settings, administrators, and license tracking for your workspace.',
       status: 'pending'
     },
     {
       id: 'assets',
-      label: 'Create the asset register',
-      description: 'The main AM_Assets list with all tracking fields, plus the custom asset form.',
+      label: 'Asset register',
+      description: 'Create your main asset list and the form used to add and edit assets.',
       status: 'pending'
     },
     {
       id: 'operations',
-      label: 'Create assignment & operations lists',
-      description: 'Assignments, software licenses, maintenance, and inventory (linked to assets).',
+      label: 'Operations workspace',
+      description: 'Set up assignments, software licenses, maintenance, and inventory tracking.',
       status: 'pending'
     },
     {
       id: 'seed',
-      label: 'Seed default data & sample assets',
-      description: 'Populates starter categories, statuses, and example assets so the app is usable immediately.',
+      label: 'Starter content',
+      description:
+        'Add default picklists and form templates. Demo assets and licenses are included only if you choose that option.',
       status: 'pending'
     },
     {
       id: 'ready',
-      label: 'Finish & register the asset form',
-      description: 'Registers the SPFx form extension and hides system lists from Site Contents.',
+      label: 'Finalizing setup',
+      description: 'Complete registration and prepare the app for everyday use.',
       status: 'pending'
     }
   ];

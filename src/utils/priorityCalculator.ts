@@ -1,4 +1,4 @@
-﻿import { CONSEQUENCE_CHOICES, LIKELIHOOD_CHOICES } from '../constants/assetChoices';
+﻿import { CONSEQUENCE_CHOICES, LIKELIHOOD_CHOICES } from '../constants/assetChoices.js';
 
 export type MatrixPriority = 'Critical' | 'Major' | 'Moderate' | 'Low' | 'Not Assessed';
 

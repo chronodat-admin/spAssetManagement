@@ -11,8 +11,6 @@ import {
   DialogTitle,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Option,
   ProgressBar,
   Spinner,
@@ -42,7 +40,8 @@ import {
   getAssessmentStatusAppearance,
   getComplianceRate
 } from '../../utils/complianceAnalytics';
-import { ContentCard } from '../Layout/ContentCard';
+import { ContentCard } from '../Layout/ContentCard';import { AppMessageBar } from '../Layout/AppMessageBar';
+
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   useCollapsibleSectionHeaderStyles
@@ -345,14 +344,10 @@ export const ComplianceHub: React.FC<IComplianceHubProps> = ({
   return (
     <div className={styles.root}>
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
       )}
       {success && (
-        <MessageBar intent="success">
-          <MessageBarBody>{success}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="success">{success}</AppMessageBar>
       )}
 
       <div className={styles.headerRow}>

@@ -32,6 +32,8 @@ export interface IAppearanceSettings {
   hideSharePointTopBar: boolean;
   /** Hide SharePoint app bar, site header, and left navigation on pages hosting this app. */
   hideSharePointLeftNav: boolean;
+  /** When false, asset table/list views omit the image thumbnail column. */
+  showAssetImageColumn: boolean;
 }
 
 export const DEFAULT_APPEARANCE_SETTINGS: IAppearanceSettings = {
@@ -53,5 +55,6 @@ export const DEFAULT_APPEARANCE_SETTINGS: IAppearanceSettings = {
   hideAppTopBar: false,
   hideSharePointPageBar: false,
   hideSharePointTopBar: false,
-  hideSharePointLeftNav: true
+  hideSharePointLeftNav: true,
+  showAssetImageColumn: true
 };

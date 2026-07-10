@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Button, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components';
+import { Button, Spinner } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import { EditRegular, SaveRegular } from '@fluentui/react-icons';
 import { buildFormConfig } from '../../lib/form-config/build';
 import { parseFormSettings } from '../../lib/form-config/storage';
@@ -120,16 +121,12 @@ export const ListFormPanel: React.FC<IListFormPanelProps> = ({
       {permissionsLoading ? (
         <Spinner label="Checking permissions..." />
       ) : permissionsError ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{permissionsError}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{permissionsError}</AppMessageBar>
       ) : !canOpen ? (
-        <MessageBar intent="warning">
-          <MessageBarBody>
-            You do not have permission to {mode === 'create' ? 'create items in' : 'view or edit items on'} this
-            list.
-          </MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="warning">
+          You do not have permission to {mode === 'create' ? 'create items in' : 'view or edit items on'} this
+          list.
+        </AppMessageBar>
       ) : (
         <SharePointDynamicForm
           listTitle={listTitle}

@@ -120,6 +120,10 @@ export function parseAppearanceSettings(settings?: IAppSettings | null): IAppear
       hideSharePointLeftNav: normalizeBoolean(
         parsed.hideSharePointLeftNav,
         DEFAULT_APPEARANCE_SETTINGS.hideSharePointLeftNav
+      ),
+      showAssetImageColumn: normalizeBoolean(
+        parsed.showAssetImageColumn,
+        DEFAULT_APPEARANCE_SETTINGS.showAssetImageColumn
       )
     };
   } catch {

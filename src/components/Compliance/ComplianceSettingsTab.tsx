@@ -8,8 +8,6 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-  MessageBar,
-  MessageBarBody,
   Spinner,
   Switch,
   Table,
@@ -31,7 +29,8 @@ import {
   getDataTableLayoutStyle,
   getListColumnStyle
 } from '../../lib/list-view/columnWidths';
-import { CustomFrameworkDialog } from './CustomFrameworkDialog';
+import { CustomFrameworkDialog } from './CustomFrameworkDialog';import { AppMessageBar } from '../Layout/AppMessageBar';
+
 
 const useStyles = makeStyles({
   root: {
@@ -183,14 +182,10 @@ export const ComplianceSettingsTab: React.FC<IComplianceSettingsTabProps> = ({ c
   return (
     <div className={styles.root}>
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
       )}
       {success && (
-        <MessageBar intent="success">
-          <MessageBarBody>{success}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="success">{success}</AppMessageBar>
       )}
 
       <div className={styles.banner}>

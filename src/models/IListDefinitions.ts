@@ -1,4 +1,11 @@
-﻿import { DEFAULT_APP_TITLE } from '../constants/spfxComponents';
+﻿import { DEFAULT_APP_TITLE } from '../constants/spfxComponents.js';
+import { ASSET_SEED_DATA } from '../constants/assetSeedData.js';
+import { ASSET_SUB_CATEGORY_SEED_DATA } from '../constants/assetSubCategorySeedData.js';
+import { SOFTWARE_LICENSE_SEED_DATA } from '../constants/softwareLicenseSeedData.js';
+import {
+  ASSET_ROLE_CHOICES,
+  ROLE_PERMISSIONS_SEED_DATA
+} from '../constants/rolePermissionsSeedData.js';
 
 export interface IListFieldDefinition {
   internalName: string;
@@ -41,6 +48,7 @@ export const ASSIGNMENTS_LIST_TITLE = 'AM_Assignments';
 export const SOFTWARE_LICENSES_LIST_TITLE = 'AM_SoftwareLicenses';
 export const MAINTENANCE_LIST_TITLE = 'AM_Maintenance';
 export const INVENTORY_LIST_TITLE = 'AM_Inventory';
+export const ASSET_REQUESTS_LIST_TITLE = 'AM_AssetRequests';
 export const CATEGORIES_LIST_TITLE = 'AM_Categories';
 export const SUB_CATEGORIES_LIST_TITLE = 'AM_SubCategories';
 export const ASSET_TYPES_LIST_TITLE = 'AM_AssetTypes';
@@ -53,6 +61,7 @@ export const SETTINGS_LIST_TITLE = 'AppSettings';
 export const AUDIT_LOG_LIST_TITLE = 'AM_AuditLog';
 export const ROLES_LIST_TITLE = 'AM_Roles';
 export const USER_ROLES_LIST_TITLE = 'AM_UserRoles';
+export const ROLE_PERMISSIONS_LIST_TITLE = 'AM_RolePermissions';
 export const CUSTOM_COLUMN_DEFS_LIST_TITLE = 'AM_CustomColumnDefs';
 export const ADMINISTRATORS_LIST_TITLE = 'AM_Administrators';
 export const LICENSES_LIST_TITLE = 'AM_Licenses';
@@ -89,6 +98,7 @@ export const REQUIRED_LIST_TITLES = [
   PROJECTS_LIST_TITLE,
   ROLES_LIST_TITLE,
   USER_ROLES_LIST_TITLE,
+  ROLE_PERMISSIONS_LIST_TITLE,
   ADMINISTRATORS_LIST_TITLE,
   LICENSES_LIST_TITLE,
   SETTINGS_LIST_TITLE,
@@ -97,6 +107,7 @@ export const REQUIRED_LIST_TITLES = [
   SOFTWARE_LICENSES_LIST_TITLE,
   MAINTENANCE_LIST_TITLE,
   INVENTORY_LIST_TITLE,
+  ASSET_REQUESTS_LIST_TITLE,
   AUDIT_LOG_LIST_TITLE,
   CUSTOM_COLUMN_DEFS_LIST_TITLE
 ];
@@ -138,7 +149,8 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
         required: true
       },
       { internalName: 'AM_SortOrder', displayName: 'Sort Order', type: 'Number', optional: true }
-    ]
+    ],
+    seedData: ASSET_SUB_CATEGORY_SEED_DATA
   },
   {
     title: ASSET_TYPES_LIST_TITLE,
@@ -172,6 +184,7 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
     title: VENDORS_LIST_TITLE,
     description: 'Vendors',
     fields: [
+      { internalName: 'AM_Code', displayName: 'Code', type: 'Text', optional: true },
       { internalName: 'AM_ContactName', displayName: 'Contact Name', type: 'Text', optional: true },
       { internalName: 'AM_Email', displayName: 'Email', type: 'Text', optional: true },
       { internalName: 'AM_Phone', displayName: 'Phone', type: 'Text', optional: true },
@@ -180,7 +193,8 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
     seedData: [
       { Title: 'Dell Technologies', AM_ContactName: 'Sales', AM_Email: 'sales@dell.com' },
       { Title: 'Microsoft', AM_ContactName: 'Licensing', AM_Email: 'licensing@microsoft.com' },
-      { Title: 'Apple', AM_ContactName: 'Enterprise', AM_Email: 'enterprise@apple.com' }
+      { Title: 'Apple', AM_ContactName: 'Enterprise', AM_Email: 'enterprise@apple.com' },
+      { Title: 'Adobe', AM_ContactName: 'Volume Licensing', AM_Email: 'volume@adobe.com' }
     ]
   },
   {
@@ -269,23 +283,50 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
     ]
   },
   {
-    title: CUSTOM_COLUMN_DEFS_LIST_TITLE,
-    description: 'Custom column definitions',
+    title: ROLE_PERMISSIONS_LIST_TITLE,
+    description: 'Fine-grained resource/action permissions by application role (SPA UX gating)',
     fields: [
-      { internalName: 'AM_InternalName', displayName: 'Internal Name', type: 'Text', required: true },
-      { internalName: 'AM_DisplayName', displayName: 'Display Name', type: 'Text', required: true },
       {
-        internalName: 'AM_FieldType',
-        displayName: 'Field Type',
+        internalName: 'Role',
+        displayName: 'Role',
         type: 'Choice',
-        choices: ['Text', 'Number', 'Date', 'Choice', 'Boolean', 'User'],
+        choices: [...ASSET_ROLE_CHOICES],
         required: true
       },
-      { internalName: 'AM_Choices', displayName: 'Choices', type: 'Note', optional: true },
-      { internalName: 'AM_Required', displayName: 'Required', type: 'Boolean', optional: true },
-      { internalName: 'AM_ShowInList', displayName: 'Show In List', type: 'Boolean', defaultValue: '1', optional: true },
-      { internalName: 'AM_ShowInForm', displayName: 'Show In Form', type: 'Boolean', defaultValue: '1', optional: true },
-      { internalName: 'AM_SortOrder', displayName: 'Sort Order', type: 'Number', optional: true }
+      { internalName: 'Resource', displayName: 'Resource', type: 'Text', required: true },
+      { internalName: 'Action', displayName: 'Action', type: 'Text', required: true },
+      {
+        internalName: 'IsAllowed',
+        displayName: 'Is Allowed',
+        type: 'Boolean',
+        defaultValue: '1',
+        required: true
+      }
+    ],
+    seedData: ROLE_PERMISSIONS_SEED_DATA
+  },
+  {
+    title: CUSTOM_COLUMN_DEFS_LIST_TITLE,
+    description: 'Category-specific asset form templates',
+    titleFieldDisplayName: 'Template Name',
+    fields: [
+      {
+        internalName: 'TemplateCategory',
+        displayName: 'Asset Category',
+        type: 'Lookup',
+        lookupListTitle: CATEGORIES_LIST_TITLE,
+        lookupField: 'Title',
+        optional: true
+      },
+      { internalName: 'TemplateFields', displayName: 'Template Fields', type: 'Note', optional: true },
+      { internalName: 'TemplateTabs', displayName: 'Template Tabs', type: 'Note', optional: true },
+      {
+        internalName: 'IsActive',
+        displayName: 'Is Active',
+        type: 'Boolean',
+        defaultValue: '1',
+        optional: true
+      }
     ]
   },
   {
@@ -449,7 +490,8 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
       { internalName: 'AM_DeletedDate', displayName: 'Deleted Date', type: 'DateTime', optional: true },
       { internalName: 'AM_DeletedBy', displayName: 'Deleted By', type: 'User', optional: true },
       { internalName: 'AM_CustomJson', displayName: 'Custom JSON', type: 'Note', hidden: true, optional: true }
-    ]
+    ],
+    seedData: ASSET_SEED_DATA
   },
   {
     title: ASSIGNMENTS_LIST_TITLE,
@@ -501,7 +543,8 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
       { internalName: 'AM_Cost', displayName: 'Cost', type: 'Currency', optional: true },
       { internalName: 'AM_Notes', displayName: 'Notes', type: 'Note', optional: true },
       { internalName: 'AM_IsActive', displayName: 'Is Active', type: 'Boolean', defaultValue: '1', optional: true }
-    ]
+    ],
+    seedData: SOFTWARE_LICENSE_SEED_DATA
   },
   {
     title: MAINTENANCE_LIST_TITLE,
@@ -556,7 +599,41 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
     ]
   },
   {
-    // The audit trail is written/read by AuditService using flat, self-describing columns
+    title: ASSET_REQUESTS_LIST_TITLE,
+    description: 'End-user asset requests',
+    fields: [
+      { internalName: 'AM_RequestedBy', displayName: 'Requested By', type: 'User', required: true },
+      {
+        internalName: 'AM_Category',
+        displayName: 'Category',
+        type: 'Lookup',
+        lookupListTitle: CATEGORIES_LIST_TITLE,
+        lookupField: 'Title',
+        optional: true
+      },
+      { internalName: 'AM_Justification', displayName: 'Justification', type: 'Note', optional: true },
+      {
+        internalName: 'AM_Status',
+        displayName: 'Status',
+        type: 'Choice',
+        choices: ['Pending', 'Approved', 'Rejected', 'Fulfilled'],
+        defaultValue: 'Pending',
+        required: true
+      },
+      { internalName: 'AM_RequestDate', displayName: 'Request Date', type: 'DateTime', format: 'DateOnly', optional: true },
+      { internalName: 'AM_ReviewedBy', displayName: 'Reviewed By', type: 'User', optional: true },
+      { internalName: 'AM_ReviewNotes', displayName: 'Review Notes', type: 'Note', optional: true },
+      {
+        internalName: 'AM_FulfilledAsset',
+        displayName: 'Fulfilled Asset',
+        type: 'Lookup',
+        lookupListTitle: ASSETS_LIST_TITLE,
+        lookupField: 'Title',
+        optional: true
+      }
+    ]
+  },
+  {
     // (Entity/EntityId/Action + a serialized Details blob and denormalized user display fields).
     // These internal names must match AuditService.write/getLogs exactly; the built-in Created
     // column supplies the timestamp.

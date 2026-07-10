@@ -1,4 +1,4 @@
-﻿import { IAsset } from '../models/IAsset';
+﻿import type { IAsset } from '../models/IAsset';
 
 function parseDate(value?: string): Date | undefined {
   if (!value) return undefined;

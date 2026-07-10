@@ -27,6 +27,7 @@ export function exportAssetsToCsv(assets: IAsset[], filename = 'assets-export.cs
     'Vendor',
     'Location',
     'Assigned To',
+    'Image URL',
     'Cost',
     'Purchase Date',
     'Warranty Expiry'
@@ -42,6 +43,7 @@ export function exportAssetsToCsv(assets: IAsset[], filename = 'assets-export.cs
     lookupTitle(asset.AM_Vendor),
     lookupTitle(asset.AM_Location),
     asset.AM_AssignedTo?.Title || asset.AM_AssignedTo?.Email || '',
+    asset.AM_ImageUrl || '',
     asset.AM_Cost != null ? String(asset.AM_Cost) : '',
     asset.AM_PurchaseDate || '',
     asset.AM_WarrantyExpiry || ''

@@ -1,9 +1,9 @@
 {
-  "name": "Your Organization",
-  "websiteUrl": "https://www.example.com",
-  "privacyUrl": "https://www.example.com/privacy",
-  "termsOfUseUrl": "https://www.example.com/terms",
-  "supportUrl": "https://www.example.com/support",
-  "supportEmail": "support@example.com",
-  "mpnId": "Undefined-1.21.1"
+  "name": "Chronodat",
+  "websiteUrl": "https://www.chronodat.com/",
+  "privacyUrl": "https://www.chronodat.com/Privacy",
+  "termsOfUseUrl": "https://www.chronodat.com/terms-conditions",
+  "supportUrl": "https://www.chronodat.com/Contact",
+  "supportEmail": "support@chronodat.com",
+  "mpnId": "6481556"
 }

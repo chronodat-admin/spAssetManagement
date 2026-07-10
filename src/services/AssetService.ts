@@ -1,6 +1,6 @@
 ﻿import { SPHttpClient } from '@microsoft/sp-http';
 
-import { BUSINESS_LIST_TITLE, CATEGORIES_LIST_TITLE, ASSET_TYPES_LIST_TITLE, VENDORS_LIST_TITLE, LOCATIONS_LIST_TITLE, FORM_TEMPLATES_LIST_TITLE, LEGACY_BUSINESS_LIST_TITLE, PROJECTS_LIST_TITLE, SUB_CATEGORIES_LIST_TITLE, ADMINISTRATORS_LIST_TITLE } from '../models/IListDefinitions';
+import { BUSINESS_LIST_TITLE, CATEGORIES_LIST_TITLE, ASSET_TYPES_LIST_TITLE, ASSET_STATUSES_LIST_TITLE, VENDORS_LIST_TITLE, LOCATIONS_LIST_TITLE, FORM_TEMPLATES_LIST_TITLE, LEGACY_BUSINESS_LIST_TITLE, PROJECTS_LIST_TITLE, SUB_CATEGORIES_LIST_TITLE, ADMINISTRATORS_LIST_TITLE } from '../models/IListDefinitions';
 import {
   BUSINESS_ITEM_EXPAND,
   BUSINESS_ITEM_SELECT,
@@ -32,7 +32,8 @@ import {
 
 import { DEFAULT_FORM_TEMPLATES } from '../lib/form-templates/defaults';
 
-import type { BuiltFormConfig } from '../lib/form-config/types';
+import type { BuiltFormConfig, FormSettings } from '../lib/form-config/types';
+import { getAssetDropdownOptionsForField } from '../utils/assetDropdownFields';
 import type { IAssetVersionHistoryEntry } from '../models/IAssetVersionHistory';
 import { buildRiskVersionFieldOrder, diffRiskVersionAllFields } from '../utils/assetVersionHistory';
 
@@ -54,6 +55,11 @@ import { APP_ADMINISTRATOR_REQUIRED_MESSAGE } from '../utils/sitePermissions';
 import { ISharePointFormField, SharePointFormValues } from '../models/ISharePointFormField';
 import { IPersonPickerItem, IPersonPickerSuggestion } from '../models/IPersonPickerItem';
 import type { IAssetAttachmentSyncInput, ISharePointAttachment } from '../models/ISharePointAttachment';
+import {
+  buildAssetImageFileName,
+  isAssetImageFileName,
+  resolveAssetImageUrl
+} from '../utils/assetImage';
 import { permissionsFromEffectivePermissions, type IListPermissions } from '../utils/listPermissions';
 import { getMatrixPriority as getMatrixPriorityUtil } from '../utils/priorityCalculator';
 import { parseWorkflowSettings, serializeWorkflowSettings } from '../lib/workflow-settings/storage';
@@ -80,8 +86,8 @@ function toUserValue(
 }
 
 const RISK_PAYLOAD_FIELD_MAP = [
-  { payloadKey: 'AM_Notes', internalName: 'AM_Notes', displayName: 'Risk/Opportunity Description' },
-  { payloadKey: 'AM_Status', internalName: 'AM_Status', displayName: 'Risk Status' },
+  { payloadKey: 'AM_Notes', internalName: 'AM_Notes', displayName: 'Description' },
+  { payloadKey: 'AM_Status', internalName: 'AM_Status', displayName: 'Asset Status' },
   { payloadKey: 'MitigationPlan', internalName: 'MitigationPlan', displayName: 'Describe' },
   { payloadKey: 'Causes', internalName: 'Causes', displayName: 'Causes' },
   { payloadKey: 'AM_Notes', internalName: 'AM_Notes', displayName: 'Consequences' },
@@ -96,7 +102,7 @@ const RISK_PAYLOAD_FIELD_MAP = [
   { payloadKey: 'Likelihood', internalName: 'Likelihood', displayName: 'Potential Likelihood' },
   { payloadKey: 'Consequence', internalName: 'Consequence', displayName: 'Potential Impact' },
   { payloadKey: 'AM_WarrantyExpiry', internalName: 'AM_WarrantyExpiry', displayName: 'Date action to be completed' },
-  { payloadKey: 'DateRiskIdentified', internalName: 'DateRiskIdentified', displayName: 'Date Risk Identified' },
+  { payloadKey: 'DateRiskIdentified', internalName: 'DateRiskIdentified', displayName: 'Purchase Date' },
   {
     payloadKey: 'Implementationreviewdate',
     internalName: 'Implementationreviewdate',
@@ -105,14 +111,14 @@ const RISK_PAYLOAD_FIELD_MAP = [
 ] as const;
 
 const RISK_LOOKUP_FIELD_MAP = [
-  { payloadKey: 'AM_CategoryId', internalName: 'AM_Category', displayName: 'Risk Category' },
-  { payloadKey: 'AM_SubCategoryId', internalName: 'AM_SubCategory', displayName: 'Risk Sub-Category' },
+  { payloadKey: 'AM_CategoryId', internalName: 'AM_Category', displayName: 'Asset Category' },
+  { payloadKey: 'AM_SubCategoryId', internalName: 'AM_SubCategory', displayName: 'Asset Sub-Category' },
   { payloadKey: 'AM_CategoryId', internalName: 'AM_Category', displayName: 'Business' },
   { payloadKey: 'AM_ProjectId', internalName: 'AM_Project', displayName: 'Project' },
-  { payloadKey: 'AM_AssetTypeId', internalName: 'AM_AssetType', displayName: 'Risk Profile Type' },
-  { payloadKey: 'AM_VendorId', internalName: 'AM_Vendor', displayName: 'Risk Response' },
-  { payloadKey: 'AM_LocationId', internalName: 'AM_Location', displayName: 'Risk Strategy' },
-  { payloadKey: 'AssignedToId', internalName: 'AssignedTo', displayName: 'Risk Owner' }
+  { payloadKey: 'AM_AssetTypeId', internalName: 'AM_AssetType', displayName: 'Asset Type' },
+  { payloadKey: 'AM_VendorId', internalName: 'AM_Vendor', displayName: 'Vendor' },
+  { payloadKey: 'AM_LocationId', internalName: 'AM_Location', displayName: 'Location' },
+  { payloadKey: 'AssignedToId', internalName: 'AssignedTo', displayName: 'Assigned To' }
 ] as const;
 
 
@@ -121,21 +127,29 @@ export interface IAssetSaveInput {
 
   Title: string;
 
+  AM_AssetId?: string;
+
   AM_Notes?: string;
 
-  AM_Status: AssetStatus;
+  AM_Status?: AssetStatus;
 
-  AM_CategoryId: number;
+  AM_CategoryId?: number;
 
   AM_SubCategoryId?: number | null;
 
   AM_ProjectId?: number | null;
 
-  AM_AssetTypeId: number;
+  AM_AssetTypeId?: number;
 
-  Likelihood: string;
+  AM_VendorId?: number | null;
 
-  Consequence: string;
+  AM_LocationId?: number | null;
+
+  AM_SerialNumber?: string;
+
+  Likelihood?: string;
+
+  Consequence?: string;
 
   PotentialLikelihood?: string;
 
@@ -153,10 +167,6 @@ export interface IAssetSaveInput {
   potentialcost?: string;
 
   Assesstheeffectivenessofcontrols?: string;
-
-  AM_VendorId?: number | null;
-
-  AM_LocationId?: number | null;
 
   AM_WarrantyExpiry?: string;
 
@@ -178,9 +188,13 @@ interface ISharePointAssetItem {
 
   AM_Notes?: string;
 
-  AM_Status?: AssetStatus;
+  AM_Status?: AssetStatus | { Id: number; Title: string };
+
+  AM_StatusId?: number;
 
   AM_AssetId?: string;
+
+  AM_SerialNumber?: string;
 
   AM_WarrantyExpiry?: string;
 
@@ -242,6 +256,58 @@ interface ISharePointAssetItem {
 
   AssignedToId?: number[] | number;
 
+  AM_AssignedTo?: { Id: number; Title: string; EMail?: string };
+
+  AM_AssignedToId?: number;
+
+  AM_AssignedDate?: string;
+
+  AM_Cost?: number;
+
+  AM_PurchaseDate?: string;
+
+  AM_PONumber?: string;
+
+  AM_DepreciationMethod?: string;
+
+  AM_UsefulLifeMonths?: number;
+
+  AM_SalvageValue?: number;
+
+  AM_ResidualValue?: number;
+
+  AM_Barcode?: string;
+
+  AM_ImageUrl?: string;
+
+  AM_QRCodeData?: string;
+
+  AM_IntuneDeviceId?: string;
+
+  AM_Manufacturer?: string;
+
+  AM_OS?: string;
+
+  AM_OSVersion?: string;
+
+  AM_CPU?: string;
+
+  AM_TotalMemory?: string;
+
+  AM_Storage?: string;
+
+  AM_IMEI?: string;
+
+  AM_MACAddress?: string;
+
+  AM_IsDeleted?: boolean;
+
+  AM_CustomJson?: string;
+
+  AM_DeletedBy?: { Id: number; Title: string; EMail?: string };
+
+  AM_DeletedById?: number;
+
   Author?: { Id: number; Title: string; EMail?: string };
 
   AuthorId?: number;
@@ -258,6 +324,7 @@ interface IAssetLookupMaps {
   AM_AssetType: Map<number, string>;
   AM_Vendor: Map<number, string>;
   AM_Location: Map<number, string>;
+  AM_Status: Map<number, string>;
 }
 
 export interface IDataFetchOptions {
@@ -277,6 +344,7 @@ export interface IAssetLookupMapInput {
   profiles: ILookupItem[];
   responses: ILookupItem[];
   strategies: ILookupItem[];
+  statuses: ILookupItem[];
 }
 
 
@@ -373,7 +441,8 @@ export class AssetService {
       AM_Project: toMap(input.projects),
       AM_AssetType: toMap(input.profiles),
       AM_Vendor: toMap(input.responses),
-      AM_Location: toMap(input.strategies)
+      AM_Location: toMap(input.strategies),
+      AM_Status: toMap(input.statuses)
     };
   }
 
@@ -719,15 +788,10 @@ export class AssetService {
     }
 
     const resolvedLookupMaps = lookupMaps ?? (await this.loadRiskLookupMaps());
-    const ownerIds: number[] = [];
-    for (const item of items) {
-      ownerIds.push(...this.parseUserIdList(item.AssignedToId));
-    }
-    const owners = await this.rest.getSiteUsersByIds(ownerIds);
-    const ownerMap = new Map(owners.map((user) => [user.Id, user]));
+    const userMap = await this.buildUserMapFromItems(items);
 
     return items
-      .map((item) => this.mapRisk(item, resolvedLookupMaps, ownerMap))
+      .map((item) => this.mapRisk(item, resolvedLookupMaps, userMap))
       .sort((a, b) => {
         const aTime = a.Modified ? new Date(a.Modified).getTime() : 0;
         const bTime = b.Modified ? new Date(b.Modified).getTime() : 0;
@@ -745,7 +809,7 @@ export class AssetService {
 
     }
 
-    return this.getRisks(`AM_Status eq '${status}'`);
+    return this.getRisks(`AM_Status/Title eq '${status}'`);
 
   }
 
@@ -777,8 +841,8 @@ export class AssetService {
     }
 
     const lookupMaps = await this.loadRiskLookupMaps();
-    const ownerMap = await this.buildOwnerMapFromItems([item]);
-    return this.mapRisk(item, lookupMaps, ownerMap, await this.resolveRiskAuthor(item));
+    const userMap = await this.buildUserMapFromItems([item]);
+    return this.mapRisk(item, lookupMaps, userMap, await this.resolveRiskAuthor(item));
   }
 
 
@@ -883,6 +947,22 @@ export class AssetService {
     }
   }
 
+  public async syncAssetDropdownChoices(formSettings: FormSettings): Promise<void> {
+    const depreciationOptions = getAssetDropdownOptionsForField(
+      formSettings,
+      'AM_DepreciationMethod',
+      ['StraightLine', 'DecliningBalance']
+    );
+    if (depreciationOptions.length === 0) {
+      return;
+    }
+    try {
+      await this.rest.updateChoiceFieldChoices('AM_Assets', 'AM_DepreciationMethod', depreciationOptions);
+    } catch {
+      // Choice sync is best-effort for sites where the field is locked or missing.
+    }
+  }
+
   private async allocateAndPersistNumber(entityType: NumberingEntityType): Promise<string | undefined> {
     const settings = await this.getAppSettings();
     if (!settings) {
@@ -906,7 +986,7 @@ export class AssetService {
    * enable it for that entity type and persist the first number (matches risk ID behavior).
    */
   private async allocateEntityCodeOnCreate(
-    entityType: Extract<NumberingEntityType, 'business' | 'project'>
+    entityType: Extract<NumberingEntityType, 'vendor' | 'project'>
   ): Promise<string | undefined> {
     const direct = await this.allocateAndPersistNumber(entityType);
     if (direct) {
@@ -946,13 +1026,13 @@ export class AssetService {
     }
 
     const settings = await this.getAppSettings();
-    const prefix = settings?.TicketIDPrefix?.trim() || 'Risk-';
+    const prefix = settings?.TicketIDPrefix?.trim() || 'AST-';
     const originalWorkflow = parseWorkflowSettings(settings);
     let workflow = originalWorkflow;
     const riskIds: string[] = [];
 
     for (const itemId of itemIds) {
-      const allocated = allocateEntityNumber(workflow, 'risk');
+      const allocated = allocateEntityNumber(workflow, 'asset');
       const riskId = allocated?.number || `${prefix}${itemId}`;
       if (allocated) {
         workflow = allocated.updatedSettings;
@@ -1507,7 +1587,7 @@ export class AssetService {
 
     if (!trimmed) {
 
-      throw new Error('Owner email is required to assign a risk owner.');
+      throw new Error('Owner email is required to assign an asset.');
 
     }
 
@@ -1566,12 +1646,14 @@ export class AssetService {
 
     const payload = await this.buildResolvedSavePayload({
       ...input,
-      AM_Status: input.AM_Status || 'Open'
+      AM_Status: input.AM_Status || 'Available'
     });
 
     const itemId = await this.rest.addListItem('AM_Assets', payload);
 
-    const riskId = await this.assignRiskIdOnCreate(itemId);
+    if (!input.AM_AssetId?.trim()) {
+      await this.assignRiskIdOnCreate(itemId);
+    }
 
     const createdRisk = await this.getRiskById(itemId);
     if (createdRisk) {
@@ -1583,9 +1665,9 @@ export class AssetService {
       action: 'CREATE',
       entityId: String(itemId),
       details: {
-        AM_AssetId: riskId,
+        AM_AssetId: createdRisk?.AM_AssetId || input.AM_AssetId,
         Title: input.Title,
-        AM_Status: input.AM_Status || 'Open',
+        AM_Status: input.AM_Status || 'Available',
         AM_CategoryId: input.AM_CategoryId
       }
     });
@@ -1674,43 +1756,47 @@ export class AssetService {
     return { deletedIds, failed };
   }
 
-  /** Persist category form-template answers as JSON on a risk item. */
+  /** Persist category template answers keyed by field id. */
   public async updateRiskTemplateData(itemId: number, templateData: string): Promise<void> {
-    await this.rest.updateItem('AM_Assets', itemId, { TemplateData: templateData });
+    await this.rest.updateItem('AM_Assets', itemId, { AM_CustomJson: templateData });
     await this.logAudit({
       entity: 'AM_Assets',
       action: 'UPDATE',
       entityId: String(itemId),
-      details: { TemplateData: templateData }
+      details: { AM_CustomJson: templateData }
     });
     this.invalidateAfterListMutation('AM_Assets');
   }
 
   public async getFormTemplates(): Promise<AssetFormTemplate[]> {
-    const items = await this.rest.getAllItems<{
-      Id: number;
-      Title: string;
-      TemplateFields?: string;
-      TemplateTabs?: string;
-      IsActive?: boolean;
-      TemplateCategory?: { Id: number; Title: string };
-    }>(
-      FORM_TEMPLATES_LIST_TITLE,
-      'Id,Title,TemplateFields,TemplateTabs,IsActive,TemplateCategory/Id,TemplateCategory/Title',
-      'TemplateCategory',
-      undefined,
-      'Title asc'
-    );
+    try {
+      const items = await this.rest.getAllItems<{
+        Id: number;
+        Title: string;
+        TemplateFields?: string;
+        TemplateTabs?: string;
+        IsActive?: boolean;
+        TemplateCategory?: { Id: number; Title: string };
+      }>(
+        FORM_TEMPLATES_LIST_TITLE,
+        'Id,Title,TemplateFields,TemplateTabs,IsActive,TemplateCategory/Id,TemplateCategory/Title',
+        'TemplateCategory',
+        undefined,
+        'Title asc'
+      );
 
-    return items.map((item) => ({
-      id: item.Id,
-      name: item.Title,
-      categoryId: item.TemplateCategory?.Id ?? null,
-      categoryName: item.TemplateCategory?.Title ?? null,
-      fields: parseTemplateFields(item.TemplateFields),
-      tabs: parseTemplateTabs(item.TemplateTabs),
-      isActive: item.IsActive !== false
-    }));
+      return items.map((item) => ({
+        id: item.Id,
+        name: item.Title,
+        categoryId: item.TemplateCategory?.Id ?? null,
+        categoryName: item.TemplateCategory?.Title ?? null,
+        fields: parseTemplateFields(item.TemplateFields),
+        tabs: parseTemplateTabs(item.TemplateTabs),
+        isActive: item.IsActive !== false
+      }));
+    } catch {
+      return [];
+    }
   }
 
   public async createFormTemplate(input: AssetFormTemplateInput): Promise<number> {
@@ -1923,6 +2009,50 @@ export class AssetService {
     }
   }
 
+  public async syncAssetImage(
+    itemId: number,
+    input: { upload?: File; remove?: boolean }
+  ): Promise<string | undefined> {
+    await this.ensureRisksListReady();
+
+    const attachments = await this.rest.getItemAttachments('AM_Assets', itemId);
+    const existingImage = attachments.find((attachment) => isAssetImageFileName(attachment.FileName));
+
+    if (input.remove) {
+      if (existingImage) {
+        await this.rest.deleteItemAttachment('AM_Assets', itemId, existingImage.FileName);
+      }
+      await this.rest.updateItem('AM_Assets', itemId, { AM_ImageUrl: '' });
+      this.invalidateAfterListMutation('AM_Assets');
+      return undefined;
+    }
+
+    if (!input.upload) {
+      return undefined;
+    }
+
+    if (existingImage) {
+      await this.rest.deleteItemAttachment('AM_Assets', itemId, existingImage.FileName);
+    }
+
+    const fileName = buildAssetImageFileName(input.upload);
+    const content = await input.upload.arrayBuffer();
+    await this.rest.addItemAttachment('AM_Assets', itemId, fileName, content);
+
+    const updatedAttachments = await this.rest.getItemAttachments('AM_Assets', itemId);
+    const uploaded = updatedAttachments.find((attachment) => attachment.FileName === fileName);
+    const imageUrl = uploaded
+      ? resolveAssetImageUrl(this.buildAttachmentUrl(uploaded.ServerRelativeUrl), new URL(this.webUrl).origin)
+      : undefined;
+
+    if (imageUrl) {
+      await this.rest.updateItem('AM_Assets', itemId, { AM_ImageUrl: imageUrl });
+      this.invalidateAfterListMutation('AM_Assets');
+    }
+
+    return imageUrl;
+  }
+
 
 
   private async buildResolvedSavePayload(
@@ -1935,13 +2065,21 @@ export class AssetService {
 
     if (!list) {
 
-      throw new Error('Risks list not found. Run setup first.');
+      throw new Error('Assets list not found. Run setup first.');
 
     }
 
 
 
     const base = this.buildSavePayload(input);
+
+    if (typeof base.AM_Status === 'string' && base.AM_Status) {
+      const statusId = await this.resolveLookupItemId(ASSET_STATUSES_LIST_TITLE, base.AM_Status);
+      delete base.AM_Status;
+      if (statusId) {
+        base.AM_StatusId = statusId;
+      }
+    }
 
     const remapped = await this.rest.remapRiskPayloadFields(
 
@@ -1965,9 +2103,11 @@ export class AssetService {
 
       Title: input.Title,
 
+      AM_AssetId: input.AM_AssetId || '',
+
       AM_Notes: input.AM_Notes || '',
 
-      AM_Status: input.AM_Status,
+      AM_Status: input.AM_Status || 'Available',
 
       AM_CategoryId: input.AM_CategoryId,
 
@@ -1977,9 +2117,11 @@ export class AssetService {
 
       AM_AssetTypeId: input.AM_AssetTypeId,
 
-      Likelihood: input.Likelihood,
+      AM_SerialNumber: input.AM_SerialNumber || '',
 
-      Consequence: input.Consequence,
+      Likelihood: input.Likelihood || '',
+
+      Consequence: input.Consequence || '',
 
       PotentialLikelihood: input.PotentialLikelihood || '',
 
@@ -2050,20 +2192,49 @@ export class AssetService {
     return [];
   }
 
-  private async buildOwnerMapFromItems(
+  private async buildUserMapFromItems(
     items: ISharePointAssetItem[]
   ): Promise<Map<number, { Id: number; Title: string; Email?: string }>> {
-    const ownerIds: number[] = [];
+    const userIds: number[] = [];
     for (const item of items) {
-      ownerIds.push(...this.parseUserIdList(item.AssignedToId));
+      userIds.push(...this.parseUserIdList(item.AssignedToId));
+      userIds.push(...this.parseUserIdList(item.AM_AssignedToId));
+      userIds.push(...this.parseUserIdList(item.AM_DeletedById));
     }
-    const owners = await this.rest.getSiteUsersByIds(ownerIds);
-    return new Map(owners.map((user) => [user.Id, user]));
+    const users = await this.rest.getSiteUsersByIds(userIds);
+    return new Map(users.map((user) => [user.Id, user]));
+  }
+
+  private resolveSingleUser(
+    item: ISharePointAssetItem,
+    field: 'AM_AssignedTo' | 'AM_DeletedBy',
+    userMap?: Map<number, { Id: number; Title: string; Email?: string }>
+  ): IUserValue | undefined {
+    const expanded = item[field];
+    if (expanded?.Id) {
+      return {
+        Id: expanded.Id,
+        Title: expanded.Title,
+        Email: expanded.EMail
+      };
+    }
+
+    const id = field === 'AM_AssignedTo' ? item.AM_AssignedToId : item.AM_DeletedById;
+    if (!id) {
+      return undefined;
+    }
+
+    const user = userMap?.get(id);
+    if (!user) {
+      return undefined;
+    }
+
+    return { Id: user.Id, Title: user.Title, Email: user.Email };
   }
 
   private resolveAssignedTo(
     item: ISharePointAssetItem,
-    ownerMap?: Map<number, { Id: number; Title: string; Email?: string }>
+    userMap?: Map<number, { Id: number; Title: string; Email?: string }>
   ): IAsset['AssignedTo'] {
     const expanded = this.normalizeUsers(item.AssignedTo);
     if (expanded && expanded.length > 0) {
@@ -2076,7 +2247,7 @@ export class AssetService {
     }
 
     const users = ids
-      .map((id) => ownerMap?.get(id))
+      .map((id) => userMap?.get(id))
       .filter((user): user is { Id: number; Title: string; Email?: string } => !!user)
       .map((user) => ({
         Id: user.Id,
@@ -2135,7 +2306,7 @@ export class AssetService {
   private mapRisk(
     item: ISharePointAssetItem,
     lookupMaps?: IAssetLookupMaps,
-    ownerMap?: Map<number, { Id: number; Title: string; Email?: string }>,
+    userMap?: Map<number, { Id: number; Title: string; Email?: string }>,
     author?: IAsset['Author']
   ): IAsset {
 
@@ -2162,11 +2333,65 @@ export class AssetService {
 
       AM_Notes: item.AM_Notes,
 
-      AM_Status: item.AM_Status,
+      AM_Status:
+        typeof item.AM_Status === 'object' && item.AM_Status
+          ? item.AM_Status.Title
+          : item.AM_Status ||
+            resolveLookup('AM_Status', undefined, item.AM_StatusId)?.Title,
 
       AM_AssetId: item.AM_AssetId,
 
+      AM_SerialNumber: item.AM_SerialNumber,
+
+      AM_Barcode: item.AM_Barcode,
+
+      AM_AssignedTo: this.resolveSingleUser(item, 'AM_AssignedTo', userMap),
+
+      AM_AssignedDate: item.AM_AssignedDate,
+
+      AM_Cost: item.AM_Cost,
+
+      AM_PurchaseDate: item.AM_PurchaseDate,
+
+      AM_PONumber: item.AM_PONumber,
+
       AM_WarrantyExpiry: item.AM_WarrantyExpiry,
+
+      AM_DepreciationMethod: item.AM_DepreciationMethod as IAsset['AM_DepreciationMethod'],
+
+      AM_UsefulLifeMonths: item.AM_UsefulLifeMonths,
+
+      AM_SalvageValue: item.AM_SalvageValue,
+
+      AM_ResidualValue: item.AM_ResidualValue,
+
+      AM_ImageUrl: item.AM_ImageUrl,
+
+      AM_QRCodeData: item.AM_QRCodeData,
+
+      AM_IntuneDeviceId: item.AM_IntuneDeviceId,
+
+      AM_Manufacturer: item.AM_Manufacturer,
+
+      AM_OS: item.AM_OS,
+
+      AM_OSVersion: item.AM_OSVersion,
+
+      AM_CPU: item.AM_CPU,
+
+      AM_TotalMemory: item.AM_TotalMemory,
+
+      AM_Storage: item.AM_Storage,
+
+      AM_IMEI: item.AM_IMEI,
+
+      AM_MACAddress: item.AM_MACAddress,
+
+      AM_IsDeleted: item.AM_IsDeleted,
+
+      AM_DeletedBy: this.resolveSingleUser(item, 'AM_DeletedBy', userMap),
+
+      AM_CustomJson: item.AM_CustomJson,
 
       MitigationPlan: item.MitigationPlan,
 
@@ -2210,7 +2435,7 @@ export class AssetService {
 
       AM_Location: resolveLookup('AM_Location', item.AM_Location, item.AM_LocationId),
 
-      AssignedTo: this.resolveAssignedTo(item, ownerMap),
+      AssignedTo: this.resolveAssignedTo(item, userMap),
 
       Author:
         author ??
@@ -2240,7 +2465,8 @@ export class AssetService {
       projects,
       profiles,
       responses,
-      strategies
+      strategies,
+      statuses
     ] = await Promise.all([
       safeLoad(() => this.getLookupItems(CATEGORIES_LIST_TITLE)),
       safeLoad(() => this.getSubCategoryItems(fetchOptions)),
@@ -2248,7 +2474,8 @@ export class AssetService {
       safeLoad(() => this.getProjectItems(fetchOptions)),
       safeLoad(() => this.getLookupItems(ASSET_TYPES_LIST_TITLE)),
       safeLoad(() => this.getLookupItems(VENDORS_LIST_TITLE)),
-      safeLoad(() => this.getLookupItems(LOCATIONS_LIST_TITLE))
+      safeLoad(() => this.getLookupItems(LOCATIONS_LIST_TITLE)),
+      safeLoad(() => this.getLookupItems(ASSET_STATUSES_LIST_TITLE))
     ]);
 
     return this.buildLookupMaps({
@@ -2258,8 +2485,14 @@ export class AssetService {
       projects,
       profiles,
       responses,
-      strategies
+      strategies,
+      statuses
     });
+  }
+
+  private async resolveLookupItemId(listTitle: string, title: string): Promise<number | undefined> {
+    const items = await this.getLookupItems(listTitle, { skipFieldRepair: true, summary: true });
+    return items.find((item) => item.Title === title)?.Id;
   }
 
   public async getListFormFields(listTitle: string): Promise<ISharePointFormField[]> {
@@ -2366,6 +2599,10 @@ export class AssetService {
     return listTitle.trim() === PROJECTS_LIST_TITLE;
   }
 
+  private isVendorListTitle(listTitle: string): boolean {
+    return listTitle.trim() === VENDORS_LIST_TITLE;
+  }
+
   public async createListItemFromForm(
     listTitle: string,
     fields: ISharePointFormField[],
@@ -2375,7 +2612,7 @@ export class AssetService {
     const resolvedListTitle = await this.resolveListTitleForMutation(listTitle);
     const payload = applyTitleFromFormValues(buildListFormPayload(fields, values, formConfig), values);
 
-    if (this.isBusinessListTitle(resolvedListTitle)) {
+    if (this.isVendorListTitle(resolvedListTitle)) {
       const title = String(payload.Title || values.Title || '').trim();
       if (!title) {
         throw new Error('Title is required.');
@@ -2383,10 +2620,10 @@ export class AssetService {
       if (await this.lookupTitleExists(resolvedListTitle, title)) {
         throw new Error(`"${title}" already exists.`);
       }
-      if (!payload.BusinessCode) {
-        const businessCode = await this.allocateEntityCodeOnCreate('business');
-        if (businessCode) {
-          payload.BusinessCode = businessCode;
+      if (!payload.AM_Code) {
+        const vendorCode = await this.allocateEntityCodeOnCreate('vendor');
+        if (vendorCode) {
+          payload.AM_Code = vendorCode;
         }
       }
     }

@@ -1,6 +1,6 @@
-import { IAppSettings } from '../models/IAssetApp';
-import { DEFAULT_APP_TITLE, resolveAppDisplayName } from '../constants/spfxComponents';
-import { IDashboardFilters } from './dashboardAnalytics';
+import type { IAppSettings } from '../models/IAssetApp';
+import { DEFAULT_APP_TITLE, resolveAppDisplayName } from '../constants/spfxComponents.js';
+import type { IDashboardFilters } from './dashboardAnalytics';
 
 export function isSettingEnabled(value?: string, defaultEnabled = true): boolean {
   if (!value) {

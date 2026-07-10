@@ -1,9 +1,9 @@
 import { IPersonPickerItem } from '../models/IPersonPickerItem';
 
 export const WORKFLOW_ROLE_TARGETS = [
-  { value: 'owner', label: 'Risk owner' },
+  { value: 'owner', label: 'Asset assignee' },
   { value: 'assignee', label: 'Assignee' },
-  { value: 'creator', label: 'Risk creator' }
+  { value: 'creator', label: 'Asset creator' }
 ] as const;
 
 export type WorkflowRoleTarget = (typeof WORKFLOW_ROLE_TARGETS)[number]['value'];

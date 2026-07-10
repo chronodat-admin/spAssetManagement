@@ -5,8 +5,6 @@ import {
   Dropdown,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Option,
   Spinner,
   Table,
@@ -54,7 +52,8 @@ import {
 } from '../../lib/report-builder/csvExport';
 import { getDefaultSelectedColumnKeys } from '../../lib/report-builder/columns';
 import { ReportBuilderService } from '../../services/ReportBuilderService';
-import { ContentCard } from '../Layout/ContentCard';
+import { ContentCard } from '../Layout/ContentCard';import { PageNotifications } from '../Layout/PageNotifications';
+
 
 const PREVIEW_MAX_ROWS = 200;
 
@@ -425,11 +424,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
 
   return (
     <div className={styles.root}>
-      {error ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
-      ) : null}
+      <PageNotifications error={error || undefined} />
 
       {hasGenerated && data.length > 0 ? (
         <div className={styles.toolbarRow}>

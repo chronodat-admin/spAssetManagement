@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  isAssignedToUser,
   isReturnableAsset,
   resolveStatusAfterReturn,
   validateAssignInput,
@@ -40,5 +41,18 @@ describe('assignmentUtils', () => {
   it('detects bookable non-deleted assets', () => {
     assert.equal(isBookableAsset({ Id: 1, Title: 'Laptop' }), true);
     assert.equal(isBookableAsset({ Id: 2, Title: 'Removed', AM_IsDeleted: true }), false);
+  });
+
+  it('matches assigned assets to the current user', () => {
+    const asset = {
+      Id: 1,
+      Title: 'Laptop',
+      AM_AssignedTo: { Id: 7, Title: 'Alex Owner', Email: 'Alex@Example.com' }
+    };
+
+    assert.equal(isAssignedToUser(asset, { id: 7 }), true);
+    assert.equal(isAssignedToUser(asset, { email: 'alex@example.com' }), true);
+    assert.equal(isAssignedToUser(asset, { displayName: 'Alex Owner' }), true);
+    assert.equal(isAssignedToUser(asset, { id: 99 }), false);
   });
 });

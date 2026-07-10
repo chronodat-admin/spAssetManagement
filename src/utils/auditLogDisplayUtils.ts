@@ -1,4 +1,4 @@
-import { computeAuditChanges } from './auditLogUtils';
+import { computeAuditChanges } from './auditLogUtils.js';
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   CREATE: 'Created',
@@ -8,16 +8,16 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
 };
 
 export const AUDIT_ENTITY_LABELS: Record<string, string> = {
-  Risks: 'Risks',
+  Risks: 'Assets',
   Categories: 'Categories',
   SubCategories: 'Sub-categories',
   Business: 'Business',
   Projects: 'Projects',
   Likelihood: 'Likelihood',
   Consequences: 'Consequences',
-  RiskProfile: 'Risk profiles',
-  RiskResponse: 'Risk responses',
-  RiskStrategy: 'Risk strategies',
+  RiskProfile: 'Asset types',
+  RiskResponse: 'Vendors',
+  RiskStrategy: 'Locations',
   AppSettings: 'App settings',
   Administrators: 'App administrators',
   FormTemplates: 'Form templates',

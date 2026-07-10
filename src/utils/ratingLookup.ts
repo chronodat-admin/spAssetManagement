@@ -1,5 +1,5 @@
-import { ILookupItem } from '../models/IAssetApp';
-import { CONSEQUENCE_CHOICES, LIKELIHOOD_CHOICES } from '../constants/assetChoices';
+import type { ILookupItem } from '../models/IAssetApp';
+import { CONSEQUENCE_CHOICES, LIKELIHOOD_CHOICES } from '../constants/assetChoices.js';
 
 /** Build choice-title → decimal rating map from Likelihood/Consequences lookup lists. */
 export function buildRatingMap(

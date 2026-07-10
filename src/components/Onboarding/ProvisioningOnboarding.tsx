@@ -3,10 +3,9 @@ import * as ReactDOM from 'react-dom';
 import {
   Button,
   Card,
+  Checkbox,
   makeStyles,
   mergeClasses,
-  MessageBar,
-  MessageBarBody,
   shorthands,
   Spinner,
   Text,
@@ -14,6 +13,7 @@ import {
   tokens,
   webLightTheme
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import {
   CheckmarkCircleRegular,
   CircleRegular,
@@ -26,13 +26,13 @@ import {
   ListRegular,
   LockClosedRegular,
   PlayRegular,
-  SettingsRegular,
-  ShieldRegular
+  SettingsRegular
 } from '@fluentui/react-icons';
 import { IProvisioningStep } from '../../models/IAssetApp';
 import { SpfxFluentProvider } from '../SpfxFluentProvider/SpfxFluentProvider';
 import { DEFAULT_SETUP_TITLE } from '../../constants/spfxComponents';
-import { DedicatedSubsiteWarning } from './DedicatedSubsiteWarning';
+import { getListProgressLabel } from '../../utils/provisioningListLabels';
+import { SetupContextNotifications } from './SetupContextNotifications';
 import { MailSendApprovalPanel } from './MailSendApprovalPanel';
 import type { MailSendApprovalUiStatus } from '../../models/IMailSendApproval';
 
@@ -42,38 +42,39 @@ interface IFeatureHighlight {
   icon: React.ReactElement;
   title: string;
   description: string;
+  highlight?: boolean;
 }
 
 const FEATURE_HIGHLIGHTS: IFeatureHighlight[] = [
   {
     icon: <ListRegular />,
-    title: 'Asset register & operations',
-    description: 'Track hardware, software, assignments, bookings, and returns in one place.'
+    title: 'Asset register & lifecycle',
+    description:
+      'Register hardware and software, track serial numbers, warranties, assignments, check-out/return, and maintenance.'
   },
   {
     icon: <DataHistogramRegular />,
-    title: 'Dashboards & analytics',
-    description: 'Executive dashboard with asset counts, status mix, category breakdown, and warranty alerts.'
+    title: 'Asset dashboards',
+    description:
+      'See counts by category and status, warranty expirations, utilization, and portfolio health at a glance.'
   },
   {
     icon: <DataTrendingRegular />,
     title: 'Depreciation & inventory',
-    description: 'Straight-line depreciation schedules, inventory scans, and software license tracking.'
-  },
-  {
-    icon: <ShieldRegular />,
-    title: 'Compliance frameworks',
-    description: 'Optional SOC 2, ISO 27001 and more, with controls linked to assets when enabled.'
+    description:
+      'Run depreciation schedules, periodic inventory scans, and software license seat tracking against entitlements.'
   },
   {
     icon: <DocumentRegular />,
-    title: 'Reports & CSV export',
-    description: 'Board-ready reports and a configurable report builder.'
+    title: 'Asset reports & export',
+    description:
+      'Lifecycle, assignment, and depreciation reports with CSV export and a configurable report builder.'
   },
   {
     icon: <FlowchartRegular />,
-    title: 'Settings & notifications',
-    description: 'Custom fields, scoring scales, email templates, and workflows - no code.'
+    title: 'Asset forms & settings',
+    description:
+      'Custom asset fields, categories, form templates, and email notifications — no code required.'
   }
 ];
 
@@ -168,6 +169,12 @@ const useStyles = makeStyles({
     alignItems: 'flex-start',
     gap: tokens.spacingHorizontalS
   },
+  featureItemHighlight: {
+    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalS),
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    ...shorthands.border('1px', 'solid', tokens.colorBrandStroke1),
+    backgroundColor: tokens.colorBrandBackground2
+  },
   featureIcon: {
     color: tokens.colorBrandForeground1,
     fontSize: '20px',
@@ -202,8 +209,17 @@ const useStyles = makeStyles({
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
     marginTop: tokens.spacingVerticalS
+  },
+  sampleOption: {
+    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM),
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    backgroundColor: tokens.colorNeutralBackground2
   }
 });
+
+export interface IProvisioningOnboardingOptions {
+  includeSampleData: boolean;
+}
 
 export interface IProvisioningOnboardingProps {
   steps: IProvisioningStep[];
@@ -214,10 +230,16 @@ export interface IProvisioningOnboardingProps {
   mailSendAdminUrl?: string;
   onRefreshMailSendStatus?: () => void;
   refreshingMailSendStatus?: boolean;
-  onStart: () => void;
+  onStart: (options: IProvisioningOnboardingOptions) => void;
   onSkip?: () => void;
   onClose?: () => void;
   variant?: 'page' | 'modal';
+  showSetupNotifications?: boolean;
+  isSiteOwner?: boolean;
+  isAppAdministrator?: boolean;
+  ownerAccessMessage?: string;
+  onCompleteSetup?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
@@ -232,11 +254,21 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
   onStart,
   onSkip,
   onClose,
-  variant = 'page'
+  variant = 'page',
+  showSetupNotifications = true,
+  isSiteOwner = false,
+  isAppAdministrator = false,
+  ownerAccessMessage,
+  onCompleteSetup,
+  onOpenSettings
 }) => {
   const styles = useStyles();
   const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
+  const [includeSampleData, setIncludeSampleData] = React.useState(true);
   const allDone = steps.every((s) => s.status === 'done');
+  const hasError = steps.some((s) => s.status === 'error');
+  const showProgressSteps = isRunning || allDone || hasError;
+  const showPreSetupOverview = !isRunning && !allDone;
 
   React.useEffect(() => {
     if (variant === 'modal' && typeof document !== 'undefined') {
@@ -257,18 +289,36 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
         </div>
 
         <Text block style={{ color: tokens.colorNeutralForeground3 }}>
-          This web part will create all required SharePoint lists and seed default lookup data for
-          asset and inventory management.
+          This web part prepares your workspace for hardware and software asset tracking, operations,
+          and reporting. You can optionally load starter data to get up and running quickly.
         </Text>
 
-        {!isRunning && !allDone && (
+        {showSetupNotifications ? (
+          <SetupContextNotifications
+            isTeamsHost={isTeamsHost}
+            isSiteOwner={isSiteOwner}
+            isAppAdministrator={isAppAdministrator}
+            ownerAccessMessage={ownerAccessMessage}
+            showSetupActions={variant !== 'modal'}
+            onCompleteSetup={onCompleteSetup}
+            onOpenSettings={onOpenSettings}
+          />
+        ) : null}
+
+        {showPreSetupOverview && (
           <div className={styles.overview}>
             <Text size={200} className={styles.overviewLabel}>
               What you&apos;ll get
             </Text>
             <div className={styles.featureGrid}>
               {FEATURE_HIGHLIGHTS.map((feature) => (
-                <div key={feature.title} className={styles.featureItem}>
+                <div
+                  key={feature.title}
+                  className={mergeClasses(
+                    styles.featureItem,
+                    feature.highlight && styles.featureItemHighlight
+                  )}
+                >
                   <span className={styles.featureIcon} aria-hidden>
                     {feature.icon}
                   </span>
@@ -286,62 +336,73 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
             <div className={styles.trustNote}>
               <LockClosedRegular />
               <Text size={200}>
-                Everything runs inside your Microsoft 365 tenant - your data stays in SharePoint.
+                Everything runs inside your Microsoft 365 tenant — your data stays in SharePoint.
               </Text>
             </div>
           </div>
         )}
 
-        <DedicatedSubsiteWarning isTeamsHost={isTeamsHost} />
+        {showPreSetupOverview && (
+          <div className={styles.sampleOption}>
+            <Checkbox
+              checked={includeSampleData}
+              onChange={(_, data) => setIncludeSampleData(Boolean(data.checked))}
+              label="Seed sample data"
+            />
+            <Text size={200} block style={{ color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS }}>
+              Adds demo assets, software licenses, and assignments so you can explore the app right
+              away. Default picklists and form templates are always included.
+            </Text>
+          </div>
+        )}
 
-        <div className={styles.steps}>
-          {steps.map((step) => (
-            <div
-              key={step.id}
-              className={mergeClasses(
-                styles.step,
-                step.status === 'done' && styles.stepDone,
-                step.status === 'running' && styles.stepRunning,
-                step.status === 'error' && styles.stepError,
-                step.status === 'pending' && styles.stepPending
-              )}
-            >
-              {step.status === 'done' && <CheckmarkCircleRegular />}
-              {step.status === 'running' && <Spinner size="tiny" />}
-              {step.status === 'error' && <DismissCircleRegular />}
-              {step.status === 'pending' && <CircleRegular />}
-              <span>
-                {step.label}
-                {step.description && (
-                  <Text size={200} block style={{ color: tokens.colorNeutralForeground3 }}>
-                    {step.description}
-                  </Text>
+        {showProgressSteps && (
+          <div className={styles.steps}>
+            {steps.map((step) => (
+              <div
+                key={step.id}
+                className={mergeClasses(
+                  styles.step,
+                  step.status === 'done' && styles.stepDone,
+                  step.status === 'running' && styles.stepRunning,
+                  step.status === 'error' && styles.stepError,
+                  step.status === 'pending' && styles.stepPending
                 )}
-                {step.message && (
-                  <Text
-                    size={200}
-                    block
-                    style={{ color: tokens.colorBrandForeground1, fontWeight: 500 }}
-                  >
-                    {step.message}
-                  </Text>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
+              >
+                {step.status === 'done' && <CheckmarkCircleRegular />}
+                {step.status === 'running' && <Spinner size="tiny" />}
+                {step.status === 'error' && <DismissCircleRegular />}
+                {step.status === 'pending' && <CircleRegular />}
+                <span>
+                  {step.label}
+                  {!isRunning && step.description && (
+                    <Text size={200} block style={{ color: tokens.colorNeutralForeground3 }}>
+                      {step.description}
+                    </Text>
+                  )}
+                  {step.message && (
+                    <Text
+                      size={200}
+                      block
+                      style={{ color: tokens.colorBrandForeground1, fontWeight: 500 }}
+                    >
+                      {getListProgressLabel(step.message)}
+                    </Text>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {isRunning && (
           <Text size={200} block italic style={{ color: tokens.colorNeutralForeground3 }}>
-            Creating lists in the background — the SharePoint page stays responsive. Seeding sample
-            assets can take a few minutes on slower tenants; progress is shown under each step.
+            Setup may take a few minutes on slower connections; progress is shown under each step.
           </Text>
         )}
 
         {error && (
-          <MessageBar intent="error">
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
+          <AppMessageBar intent="error">{error}</AppMessageBar>
         )}
 
         {mailSendStatus && mailSendAdminUrl && (
@@ -354,20 +415,24 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
         )}
 
         <div className={styles.footer}>
-          {!isRunning && !allDone && onSkip && (
+          {showPreSetupOverview && onSkip && (
             <Button appearance="secondary" onClick={onSkip}>
-              Skip (lists already exist)
+              Skip (already set up)
             </Button>
           )}
-          {!isRunning && !allDone && (
-            <Button appearance="primary" icon={<PlayRegular />} onClick={onStart}>
+          {showPreSetupOverview && (
+            <Button
+              appearance="primary"
+              icon={<PlayRegular />}
+              onClick={() => onStart({ includeSampleData })}
+            >
               Start Setup
             </Button>
           )}
           {allDone && (
-            <MessageBar intent="success" style={{ flex: 1 }}>
-              <MessageBarBody>Setup complete! Loading application...</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="success" style={{ flex: 1 }}>
+              Setup complete! Loading application...
+            </AppMessageBar>
           )}
         </div>
       </div>

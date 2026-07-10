@@ -1,15 +1,5 @@
 import * as React from 'react';
-import {
-  Button,
-  Link,
-  MessageBar,
-  MessageBarActions,
-  MessageBarBody,
-  MessageBarTitle,
-  Spinner,
-  Text,
-  tokens
-} from '@fluentui/react-components';
+import { Button, Link, Spinner, Text, tokens } from '@fluentui/react-components';
 import {
   ArrowClockwiseRegular,
   CheckmarkCircleRegular,
@@ -19,6 +9,7 @@ import {
 } from '@fluentui/react-icons';
 import { GRAPH_MAIL_SEND_SCOPE, HIDDEN_MAIL_SEND_APPROVAL_UI } from '../../constants/graphMailSend';
 import type { MailSendApprovalUiStatus } from '../../models/IMailSendApproval';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 
 export interface IMailSendApprovalPanelProps {
   status: MailSendApprovalUiStatus;
@@ -52,11 +43,9 @@ export const MailSendApprovalPanel: React.FC<IMailSendApprovalPanelProps> = ({
       );
     }
     return (
-      <MessageBar intent="info" layout="multiline">
-        <MessageBarBody>
-          <Spinner size="tiny" /> Checking Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} approval…
-        </MessageBarBody>
-      </MessageBar>
+      <AppMessageBar intent="info">
+        <Spinner size="tiny" /> Checking Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} approval…
+      </AppMessageBar>
     );
   }
 
@@ -79,14 +68,11 @@ export const MailSendApprovalPanel: React.FC<IMailSendApprovalPanelProps> = ({
     }
 
     return (
-      <MessageBar intent="success" layout="multiline">
-        <MessageBarBody>
-          <MessageBarTitle>Email notifications ready</MessageBarTitle>
-          Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} is approved for this tenant. Workflow emails send
-          from the signed-in user&rsquo;s Exchange mailbox.
-        </MessageBarBody>
-        {onRefresh ? (
-          <MessageBarActions>
+      <AppMessageBar
+        intent="success"
+        title="Email notifications ready"
+        actions={
+          onRefresh ? (
             <Button
               appearance="secondary"
               size="small"
@@ -96,9 +82,12 @@ export const MailSendApprovalPanel: React.FC<IMailSendApprovalPanelProps> = ({
             >
               Recheck
             </Button>
-          </MessageBarActions>
-        ) : null}
-      </MessageBar>
+          ) : undefined
+        }
+      >
+        Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} is approved for this tenant. Workflow emails send from
+        the signed-in user&rsquo;s Exchange mailbox.
+      </AppMessageBar>
     );
   }
 
@@ -144,49 +133,52 @@ export const MailSendApprovalPanel: React.FC<IMailSendApprovalPanelProps> = ({
       : 'Email notifications need tenant admin approval';
 
   return (
-    <MessageBar intent={intent} layout="multiline" icon={<WarningRegular />}>
-      <MessageBarBody>
-        <MessageBarTitle>{title}</MessageBarTitle>
-        Workflow notification emails use Microsoft Graph {GRAPH_MAIL_SEND_SCOPE}. Site setup can finish
-        without this step; only email delivery requires tenant admin approval.
-        <div>
-          <ol style={{ margin: `${tokens.spacingVerticalS} 0 0`, paddingLeft: tokens.spacingHorizontalL }}>
-            <li>Deploy the app package (.sppkg) to the tenant App Catalog.</li>
-            <li>
-              Open SharePoint Admin Center → <strong>Advanced</strong> → <strong>API access</strong>.
-            </li>
-            <li>
-              On <strong>Pending requests</strong>, select <strong>Microsoft Graph</strong> →{' '}
-              <strong>{GRAPH_MAIL_SEND_SCOPE}</strong>, then choose <strong>Approve</strong>.
-            </li>
-            <li>
-              If nothing is pending, check <strong>Approved requests</strong> — approval is one-time per
-              tenant.
-            </li>
-          </ol>
-        </div>
-        <Text size={200} block style={{ marginTop: tokens.spacingVerticalS }}>
-          {status === 'unavailable'
-            ? 'Graph is unavailable in this host — deploy the app package to a SharePoint or Teams site first.'
-            : 'If you are not a Global or SharePoint administrator, ask your tenant admin to approve Mail.Send.'}
-        </Text>
-      </MessageBarBody>
-      <MessageBarActions>
-        <Button appearance="primary" size="small" icon={<OpenRegular />} onClick={openAdminCenter}>
-          Open API access
-        </Button>
-        {onRefresh ? (
-          <Button
-            appearance="secondary"
-            size="small"
-            icon={refreshing ? <Spinner size="tiny" /> : <ArrowClockwiseRegular />}
-            disabled={refreshing}
-            onClick={onRefresh}
-          >
-            Recheck
+    <AppMessageBar
+      intent={intent}
+      icon={<WarningRegular />}
+      title={title}
+      actions={
+        <>
+          <Button appearance="primary" size="small" icon={<OpenRegular />} onClick={openAdminCenter}>
+            Open API access
           </Button>
-        ) : null}
-      </MessageBarActions>
-    </MessageBar>
+          {onRefresh ? (
+            <Button
+              appearance="secondary"
+              size="small"
+              icon={refreshing ? <Spinner size="tiny" /> : <ArrowClockwiseRegular />}
+              disabled={refreshing}
+              onClick={onRefresh}
+            >
+              Recheck
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      Workflow notification emails use Microsoft Graph {GRAPH_MAIL_SEND_SCOPE}. Site setup can finish
+      without this step; only email delivery requires tenant admin approval.
+      <div>
+        <ol style={{ margin: `${tokens.spacingVerticalS} 0 0`, paddingLeft: tokens.spacingHorizontalL }}>
+          <li>Deploy the app package (.sppkg) to the tenant App Catalog.</li>
+          <li>
+            Open SharePoint Admin Center → <strong>Advanced</strong> → <strong>API access</strong>.
+          </li>
+          <li>
+            On <strong>Pending requests</strong>, select <strong>Microsoft Graph</strong> →{' '}
+            <strong>{GRAPH_MAIL_SEND_SCOPE}</strong>, then choose <strong>Approve</strong>.
+          </li>
+          <li>
+            If nothing is pending, check <strong>Approved requests</strong> — approval is one-time per
+            tenant.
+          </li>
+        </ol>
+      </div>
+      <Text size={200} block style={{ marginTop: tokens.spacingVerticalS }}>
+        {status === 'unavailable'
+          ? 'Graph is unavailable in this host — deploy the app package to a SharePoint or Teams site first.'
+          : 'If you are not a Global or SharePoint administrator, ask your tenant admin to approve Mail.Send.'}
+      </Text>
+    </AppMessageBar>
   );
 };

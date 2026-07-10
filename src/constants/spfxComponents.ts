@@ -5,7 +5,7 @@ export const ASSET_FORM_CUSTOMIZER_ID = '013cb786-7445-49dc-aebd-9c4e8706fd98';
 export const DEFAULT_APP_TITLE = 'Asset Management';
 
 /** Legal entity shown in the app shell footer. */
-export const APP_COPYRIGHT_HOLDER = 'Your Organization';
+export const APP_COPYRIGHT_HOLDER = 'Chronodat';
 
 /** Resolves the user-visible app name from settings or web part properties. */
 export function resolveAppDisplayName(title?: string, fallback = DEFAULT_APP_TITLE): string {

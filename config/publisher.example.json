@@ -1,10 +1,10 @@
 {
   "$comment": "Copy to config/publisher.json and set mpnId from Partner Center → Account settings → Identifiers.",
-  "name": "Your Organization",
-  "websiteUrl": "https://www.example.com",
-  "privacyUrl": "https://www.example.com/privacy",
-  "termsOfUseUrl": "https://www.example.com/terms",
-  "supportUrl": "https://www.example.com/support",
-  "supportEmail": "support@example.com",
+  "name": "Chronodat",
+  "websiteUrl": "https://www.chronodat.com/",
+  "privacyUrl": "https://www.chronodat.com/Privacy",
+  "termsOfUseUrl": "https://www.chronodat.com/terms-conditions",
+  "supportUrl": "https://www.chronodat.com/Contact",
+  "supportEmail": "support@chronodat.com",
   "mpnId": "YOUR-PARTNER-CENTER-MPN-ID"
 }

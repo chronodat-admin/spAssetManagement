@@ -3,8 +3,6 @@ import {
   Card,
   CardHeader,
   Link,
-  MessageBar,
-  MessageBarBody,
   makeStyles,
   mergeClasses,
   shorthands,
@@ -18,16 +16,20 @@ import {
   Title3,
   tokens
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import {
   BoxRegular,
   ArrowSyncRegular,
+  BuildingRegular,
   CalendarLtrRegular,
   ChartMultipleRegular,
   CheckmarkCircleRegular,
   ClipboardTaskListLtrRegular,
   DataBarVerticalRegular,
   FolderOpenRegular,
+  LocationRegular,
   PersonRegular,
+  ShieldRegular,
   TargetRegular,
   WarningRegular
 } from '@fluentui/react-icons';
@@ -36,11 +38,16 @@ import {
   filterDashboardRisks,
   getAssetCategoryChartData,
   getAssetDashboardStats,
+  getAssetTypeChartData,
   getCategoryChartData,
   getFinancialExposure,
+  getLocationValueChartData,
   getPriorityChartData,
+  getPurchaseTrendChartData,
   getRiskNumericRating,
   getStatusChartData,
+  getVendorChartData,
+  getWarrantyExpiringChartData,
   IDashboardFilters
 } from '../../utils/dashboardAnalytics';
 import { parseWorkflowSettings } from '../../lib/workflow-settings/storage';
@@ -72,9 +79,17 @@ const AssetStatusChart = React.lazy(() =>
 const SeveritySummaryChart = React.lazy(() =>
   import('./SeveritySummaryChart').then((m) => ({ default: m.SeveritySummaryChart }))
 );
+const DashboardDonutChart = React.lazy(() =>
+  import('./DashboardDonutChart').then((m) => ({ default: m.DashboardDonutChart }))
+);
+const DashboardTrendChart = React.lazy(() =>
+  import('./DashboardTrendChart').then((m) => ({ default: m.DashboardTrendChart }))
+);
 import { useAppTabStyles } from '../Layout/appTabStyles';
 import { getDataTableLayoutStyle, getListColumnStyle, DATA_TABLE_CLASS } from '../../lib/list-view/columnWidths';
 import { useContentCardStyles } from '../Layout/ContentCard';
+import { UserCell } from '../PeoplePicker/UserAvatar';
+import { isAssignedToUser } from '../../utils/assignmentUtils';
 
 const useStyles = makeStyles({
   root: {
@@ -144,6 +159,15 @@ const useStyles = makeStyles({
       gridTemplateColumns: '1fr'
     }
   },
+  analyticsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: tokens.spacingHorizontalL,
+    marginBottom: tokens.spacingVerticalL,
+    '@media (max-width: 900px)': {
+      gridTemplateColumns: '1fr'
+    }
+  },
   card: {
     ...shorthands.borderRadius(tokens.borderRadiusLarge),
     boxShadow: tokens.shadow4,
@@ -196,6 +220,8 @@ export interface IDashboardProps {
   consequenceItems: ILookupItem[];
   settings?: IAppSettings;
   userId?: number;
+  userEmail?: string;
+  userDisplayName?: string;
   filters?: IDashboardFilters;
   printTitle?: string;
   printSubtitle?: string;
@@ -219,6 +245,8 @@ export const Dashboard: React.FC<IDashboardProps> = ({
   consequenceItems,
   settings,
   userId,
+  userEmail,
+  userDisplayName,
   filters: filtersProp,
   printTitle,
   printSubtitle,
@@ -283,6 +311,41 @@ export const Dashboard: React.FC<IDashboardProps> = ({
     : getCategoryChartData(filteredRisks, workflowSettings);
   const priorityChartData = getPriorityChartData(filteredRisks, workflowSettings);
 
+  const locationValueChartData = React.useMemo(
+    () =>
+      getLocationValueChartData(filteredRisks)
+        .slice(0, 8)
+        .map((item) => ({ label: item.location, value: item.value })),
+    [filteredRisks]
+  );
+  const warrantyChartData = React.useMemo(
+    () =>
+      getWarrantyExpiringChartData(filteredRisks).map((item) => ({
+        label: item.bucket,
+        value: item.count
+      })),
+    [filteredRisks]
+  );
+  const assetTypeChartData = React.useMemo(
+    () =>
+      getAssetTypeChartData(filteredRisks)
+        .slice(0, 8)
+        .map((item) => ({ label: item.type, value: item.count })),
+    [filteredRisks]
+  );
+  const vendorChartData = React.useMemo(
+    () => getVendorChartData(filteredRisks).map((item) => ({ label: item.vendor, value: item.count })),
+    [filteredRisks]
+  );
+  const purchaseTrendChartData = React.useMemo(
+    () =>
+      getPurchaseTrendChartData(filteredRisks).map((item) => ({
+        label: item.month,
+        value: item.count
+      })),
+    [filteredRisks]
+  );
+
   const latestTabs: Array<{ id: LatestTab; label: string }> = useAssetKpis
     ? [
         { id: 'recent', label: 'Latest' },
@@ -303,7 +366,7 @@ export const Dashboard: React.FC<IDashboardProps> = ({
     switch (latestTab) {
       case 'assigned':
         source = source.filter((risk) =>
-          risk.AssignedTo?.some((user) => user.Id === userId) || Boolean(risk.AM_AssignedTo)
+          isAssignedToUser(risk, { id: userId, email: userEmail, displayName: userDisplayName })
         );
         break;
       case 'available':
@@ -328,7 +391,7 @@ export const Dashboard: React.FC<IDashboardProps> = ({
     return source
       .sort((a, b) => (b.Modified || '').localeCompare(a.Modified || ''))
       .slice(0, 10);
-  }, [filteredRisks, latestTab, userId]);
+  }, [filteredRisks, latestTab, userId, userEmail, userDisplayName]);
 
   const handleHeatmapViewAll = (cell: HeatmapCell, variant: 'inherent' | 'residual'): void => {
     if (!onViewHeatmapRisks) {
@@ -357,7 +420,7 @@ export const Dashboard: React.FC<IDashboardProps> = ({
         }
       ]
     : [
-        { label: 'Open Risks', value: openCount, icon: <FolderOpenRegular className={styles.statIcon} /> },
+        { label: 'Open Items', value: openCount, icon: <FolderOpenRegular className={styles.statIcon} /> },
         {
           label: 'In Progress',
           value: inProgressCount,
@@ -374,7 +437,7 @@ export const Dashboard: React.FC<IDashboardProps> = ({
           icon: <WarningRegular className={styles.statIcon} />
         },
         {
-          label: 'Avg Risk Age (days)',
+          label: 'Avg Item Age (days)',
           value: avgAgeDays,
           icon: <CalendarLtrRegular className={styles.statIcon} />
         }
@@ -468,15 +531,13 @@ export const Dashboard: React.FC<IDashboardProps> = ({
       ) : null}
 
       {!useAssetKpis && onNavigateToAssetValueSummary ? (
-        <MessageBar intent="info" style={{ marginBottom: tokens.spacingVerticalL }}>
-          <MessageBarBody>
-            Residual rating matrices are on the{' '}
-            <Link as="button" onClick={onNavigateToAssetValueSummary}>
-              Asset Rating
-            </Link>{' '}
-            page (inherent and residual side by side).
-          </MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="info" style={{ marginBottom: tokens.spacingVerticalL }}>
+          Residual rating matrices are on the{' '}
+          <Link as="button" onClick={onNavigateToAssetValueSummary}>
+            Asset Rating
+          </Link>{' '}
+          page (inherent and residual side by side).
+        </AppMessageBar>
       ) : null}
 
       <div className={styles.bottomGrid}>
@@ -609,7 +670,19 @@ export const Dashboard: React.FC<IDashboardProps> = ({
                             {risk.AM_Category?.Title || risk.RiskCategory?.Title || '—'}
                           </TableCell>
                           <TableCell className={cardStyles.dataTableCell} style={getListColumnStyle('priority')}>
-                            {risk.AM_AssignedTo?.Title || risk.AssignedTo?.map((user) => user.Title).join(', ') || '—'}
+                            {risk.AM_AssignedTo ? (
+                              <UserCell
+                                name={risk.AM_AssignedTo.Title}
+                                email={risk.AM_AssignedTo.Email}
+                              />
+                            ) : risk.AssignedTo?.length ? (
+                              <UserCell
+                                name={risk.AssignedTo.map((user) => user.Title).join(', ')}
+                                email={risk.AssignedTo[0]?.Email}
+                              />
+                            ) : (
+                              '—'
+                            )}
                           </TableCell>
                           <TableCell style={getListColumnStyle('rating')}>{formatAssetCost(risk.AM_Cost)}</TableCell>
                         </>
@@ -689,8 +762,97 @@ export const Dashboard: React.FC<IDashboardProps> = ({
               <AssetPriorityChart data={priorityChartData} />
             </ChartSuspense>
           </DashboardChartCard>
-        ) : null}
+        ) : (
+          <DashboardChartCard
+            title="Assets by Type"
+            description="Inventory counts grouped by asset type"
+            icon={<BoxRegular />}
+            iconTone="orange"
+          >
+            <ChartSuspense>
+              <DashboardDonutChart
+                data={assetTypeChartData}
+                emptyMessage="No asset type data available"
+                centerLabel="Assets"
+                tooltipLabel="Assets"
+              />
+            </ChartSuspense>
+          </DashboardChartCard>
+        )}
       </div>
+
+      {useAssetKpis ? (
+        <div className={styles.analyticsGrid}>
+          <DashboardChartCard
+            title="Value by Location"
+            description="Share of total asset cost by location"
+            icon={<LocationRegular />}
+            iconTone="teal"
+          >
+            <ChartSuspense>
+              <DashboardDonutChart
+                data={locationValueChartData}
+                emptyMessage="No location value data available"
+                centerLabel="Total value"
+                valueFormatter={formatAssetCost}
+                tooltipLabel="Value"
+              />
+            </ChartSuspense>
+          </DashboardChartCard>
+
+          <DashboardChartCard
+            title="Warranty Expiring"
+            description="Assets with warranty ending in the next 90 days"
+            icon={<ShieldRegular />}
+            iconTone="orange"
+          >
+            <ChartSuspense>
+              <DashboardTrendChart
+                data={warrantyChartData}
+                emptyMessage="No warranties expiring in the next 90 days"
+                seriesLabel="Assets"
+                stroke="#f59e0b"
+                fill="rgba(245, 158, 11, 0.14)"
+                variant="area"
+              />
+            </ChartSuspense>
+          </DashboardChartCard>
+
+          <DashboardChartCard
+            title="Top Vendors"
+            description="Asset counts by vendor (top 8)"
+            icon={<BuildingRegular />}
+            iconTone="indigo"
+          >
+            <ChartSuspense>
+              <DashboardDonutChart
+                data={vendorChartData}
+                emptyMessage="No vendor data available"
+                centerLabel="Assets"
+                tooltipLabel="Assets"
+              />
+            </ChartSuspense>
+          </DashboardChartCard>
+
+          <DashboardChartCard
+            title="Purchase Activity"
+            description="Assets acquired per month (last 12 months)"
+            icon={<CalendarLtrRegular />}
+            iconTone="pink"
+          >
+            <ChartSuspense>
+              <DashboardTrendChart
+                data={purchaseTrendChartData}
+                emptyMessage="No purchase date data available"
+                seriesLabel="Purchases"
+                stroke="#6366f1"
+                fill="rgba(99, 102, 241, 0.1)"
+                variant="line"
+              />
+            </ChartSuspense>
+          </DashboardChartCard>
+        </div>
+      ) : null}
       </div>
 
       <DashboardPrintView

@@ -4,8 +4,6 @@ import {
   Button,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Option,
   Spinner,
   Switch,
@@ -34,6 +32,8 @@ import { serializeWorkflowSettings } from '../../lib/workflow-settings/storage';
 import { AssetService } from '../../services/AssetService';
 import { useWorkflowSettingsStyles } from './workflowSettingsStyles';
 import { useContentCardStyles } from '../Layout/ContentCard';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+
 import {
   DATA_TABLE_CLASS,
   getDataTableLayoutStyle,
@@ -41,7 +41,7 @@ import {
 } from '../../lib/list-view/columnWidths';
 
 const REPORT_TYPES: Array<{ value: ScheduledReportType; label: string }> = [
-  { value: 'risks', label: 'AM_Assets' },
+  { value: 'assets', label: 'AM_Assets' },
   { value: 'business', label: 'Business' },
   { value: 'projects', label: 'Projects' }
 ];
@@ -78,7 +78,7 @@ export const ScheduledReportsTab: React.FC<IScheduledReportsTabProps> = ({
   const reports = workflowSettings.scheduledReports || [];
   const [panelOpen, setPanelOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [reportType, setReportType] = React.useState<ScheduledReportType>('risks');
+  const [reportType, setReportType] = React.useState<ScheduledReportType>('assets');
   const [frequency, setFrequency] = React.useState<ScheduledReportFrequency>('weekly');
   const [isActive, setIsActive] = React.useState(true);
   const [recipientInput, setRecipientInput] = React.useState('');
@@ -88,7 +88,7 @@ export const ScheduledReportsTab: React.FC<IScheduledReportsTabProps> = ({
 
   const resetForm = (): void => {
     setEditingId(null);
-    setReportType('risks');
+    setReportType('assets');
     setFrequency('weekly');
     setIsActive(true);
     setRecipientInput('');
@@ -291,16 +291,14 @@ export const ScheduledReportsTab: React.FC<IScheduledReportsTabProps> = ({
       >
         <div className={styles.panelBody}>
           {saveError ? (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="error">{saveError}</AppMessageBar>
           ) : null}
           <Field label="Report type">
             <AppDropdown
               value={REPORT_TYPES.find((item) => item.value === reportType)?.label || 'AM_Assets'}
               selectedOptions={[reportType]}
               onOptionSelect={(_, data) =>
-                setReportType((data.optionValue as ScheduledReportType) || 'risks')
+                setReportType((data.optionValue as ScheduledReportType) || 'assets')
               }
             >
               {REPORT_TYPES.map((item) => (

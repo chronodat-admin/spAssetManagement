@@ -8,8 +8,6 @@ import {
   Button,
   Caption1,
   Field,
-  MessageBar,
-  MessageBarBody,
   Option,
   ProgressBar,
   Spinner,
@@ -48,6 +46,8 @@ import {
   summarizeAssessmentItems
 } from '../../utils/complianceAnalytics';
 import { ContentCard } from '../Layout/ContentCard';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+
 
 const useStyles = makeStyles({
   root: {
@@ -376,7 +376,7 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
   const handleAddLink = async (controlId: number): Promise<void> => {
     const draft = linkDrafts[controlId];
     if (!draft?.riskId) {
-      setError('Select a risk to link.');
+      setError('Select an asset to link.');
       return;
     }
     setLinkBusyControlId(controlId);
@@ -392,11 +392,11 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
         delete next[controlId];
         return next;
       });
-      setSuccess('Risk linked to control.');
+      setSuccess('Asset linked to control.');
       await loadLinks(assessment?.frameworkCode);
       onDataChanged?.();
     } catch (linkError) {
-      setError(linkError instanceof Error ? linkError.message : 'Failed to link risk.');
+      setError(linkError instanceof Error ? linkError.message : 'Failed to link asset.');
     } finally {
       setLinkBusyControlId(undefined);
     }
@@ -407,7 +407,7 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
     setError('');
     try {
       await complianceService.removeRiskControlLink(linkId);
-      setSuccess('Risk link removed.');
+      setSuccess('Asset link removed.');
       await loadLinks(assessment?.frameworkCode);
       onDataChanged?.();
     } catch (linkError) {
@@ -429,7 +429,7 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
     return (
       <div className={styles.linkSection}>
         <Text size={200} weight="semibold">
-          <LinkRegular /> Linked risks ({controlLinks.length})
+          <LinkRegular /> Linked assets ({controlLinks.length})
         </Text>
         {controlLinks.length > 0 ? (
           <div className={styles.linkList}>
@@ -448,7 +448,7 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
                   icon={<DismissRegular />}
                   disabled={removingLinkId === link.id}
                   onClick={() => void handleRemoveLink(link.id)}
-                  aria-label="Remove risk link"
+                  aria-label="Remove asset link"
                 >
                   {removingLinkId === link.id ? 'Removing...' : 'Remove'}
                 </Button>
@@ -456,12 +456,12 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
             ))}
           </div>
         ) : (
-          <Caption1>No risks linked to this control yet.</Caption1>
+          <Caption1>No assets linked to this control yet.</Caption1>
         )}
         <div className={styles.linkAddRow}>
-          <Field label="Risk" className={styles.linkPicker}>
+          <Field label="Asset" className={styles.linkPicker}>
             <AppDropdown
-              placeholder={availableRisks.length === 0 ? 'No risks available' : 'Select a risk'}
+              placeholder={availableRisks.length === 0 ? 'No assets available' : 'Select an asset'}
               disabled={availableRisks.length === 0}
               value={selectedRisk ? riskLabel(selectedRisk) : ''}
               selectedOptions={draft.riskId ? [String(draft.riskId)] : []}
@@ -509,7 +509,7 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
             disabled={!draft.riskId || linkBusyControlId === controlId}
             onClick={() => void handleAddLink(controlId)}
           >
-            {linkBusyControlId === controlId ? 'Linking...' : 'Link risk'}
+            {linkBusyControlId === controlId ? 'Linking...' : 'Link asset'}
           </Button>
         </div>
       </div>
@@ -594,9 +594,7 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
   if (!assessment) {
     return (
       <div className={styles.root}>
-        <MessageBar intent="error">
-          <MessageBarBody>{error || 'Assessment not found.'}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error || 'Assessment not found.'}</AppMessageBar>
         <Button appearance="subtle" icon={<ArrowLeftRegular />} onClick={onBack}>
           Back
         </Button>
@@ -627,14 +625,10 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
   return (
     <div className={styles.root}>
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
       )}
       {success && (
-        <MessageBar intent="success">
-          <MessageBarBody>{success}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="success">{success}</AppMessageBar>
       )}
 
       <div className={styles.headerCard}>
@@ -742,11 +736,11 @@ export const ComplianceAssessmentDetail: React.FC<IComplianceAssessmentDetailPro
             </div>
           </div>
           <div className={styles.kpiCard}>
-            <span className={styles.kpiLabel}>Risk coverage</span>
+            <span className={styles.kpiLabel}>Asset coverage</span>
             <span className={styles.kpiValue}>{coveragePercent}%</span>
             <ProgressBar value={coveragePercent / 100} />
             <Caption1>
-              {coveredControlCount} of {assessment.items.length} controls linked to a risk
+              {coveredControlCount} of {assessment.items.length} controls linked to an asset
               {links.length > 0 ? ` (${links.length} link${links.length === 1 ? '' : 's'})` : ''}
             </Caption1>
           </div>

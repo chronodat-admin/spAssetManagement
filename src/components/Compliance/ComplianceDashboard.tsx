@@ -2,8 +2,6 @@ import * as React from 'react';
 import {
   Badge,
   Card,
-  MessageBar,
-  MessageBarBody,
   ProgressBar,
   Spinner,
   Table,
@@ -44,7 +42,8 @@ import { EmptyState } from '../Layout/EmptyState';
 import { getDataTableLayoutStyle, getListColumnStyle, DATA_TABLE_CLASS } from '../../lib/list-view/columnWidths';
 import { useContentCardStyles } from '../Layout/ContentCard';
 import { ChartSuspense } from '../Charts/ChartSuspense';
-import { ComplianceDashboardPrintView } from './ComplianceDashboardPrintView';
+import { ComplianceDashboardPrintView } from './ComplianceDashboardPrintView';import { AppMessageBar } from '../Layout/AppMessageBar';
+
 
 const ComplianceAssessmentStatusChart = React.lazy(() =>
   import('./ComplianceAssessmentStatusChart').then((m) => ({
@@ -362,9 +361,7 @@ export const ComplianceDashboard: React.FC<IComplianceDashboardProps> = ({
     <div className={styles.root}>
       <div className="dashboard-screen">
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
       )}
 
       <div className={styles.statsGrid}>

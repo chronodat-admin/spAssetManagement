@@ -39,6 +39,8 @@ import { AccentBarButton } from './AccentBarButton';
 import { ThemeModeToggle } from './ThemeModeToggle';
 
 import { Sidebar, NAVIGATION_ITEMS } from './Sidebar';
+import type { IAppPermissions } from '../../utils/rbac';
+import type { IRolePermissionRow } from '../../lib/permissions/checkRolePermission';
 import { AppUserPill } from './AppUserPill';
 import { useAppearanceTheme } from '../../contexts/AppearanceThemeContext';
 import { isContentActionsLayoutEnabled } from '../../utils/contentActionsLayout';
@@ -74,7 +76,22 @@ const useStyles = makeStyles({
 
     position: 'relative',
 
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+
+    '& .fui-MessageBar': {
+      width: '100%',
+      minWidth: 0,
+      maxWidth: '100%',
+      boxSizing: 'border-box'
+    },
+
+    '& .fui-MessageBarBody': {
+      wordBreak: 'break-word',
+      overflowWrap: 'anywhere',
+      whiteSpace: 'pre-wrap',
+      minWidth: 0,
+      maxWidth: '100%'
+    }
 
   },
 
@@ -256,9 +273,7 @@ const useStyles = makeStyles({
 
     fontSize: '20px',
 
-    color: 'var(--asset-topnav-text)',
-
-  },
+    color: 'var(--asset-topnav-text)' },
 
   topAccentBarBrandName: {
 
@@ -610,6 +625,10 @@ export interface IAssetManagementShellProps {
 
   showSettings?: boolean;
 
+  permissions?: IAppPermissions;
+
+  permissionRows?: IRolePermissionRow[];
+
   /** When false, the sidebar hides all navigation and shows only a "Complete Setup" action. */
   setupComplete?: boolean;
 
@@ -657,6 +676,10 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
   headerPrimaryAction,
 
   showSettings = true,
+
+  permissions,
+
+  permissionRows,
 
   setupComplete = true,
 
@@ -874,6 +897,10 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
         onToggleCollapse={handleToggleSidebar}
 
         showSettings={showSettings}
+
+        permissions={permissions}
+
+        permissionRows={permissionRows}
 
         setupComplete={setupComplete}
 

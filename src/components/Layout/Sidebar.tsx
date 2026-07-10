@@ -6,6 +6,7 @@ import {
   ArrowSyncRegular,
   BoxRegular,
   BuildingRegular,
+  CameraRegular,
   DismissRegular,
   GridRegular,
   HistoryRegular,
@@ -17,12 +18,17 @@ import {
   ShoppingBagRegular,
   TableRegular,
   TagRegular,
+  TagMultipleRegular,
   ToolboxRegular,
   WrenchRegular
 } from '@fluentui/react-icons';
 
 import { AppPage } from '../../models/IAssetApp';
 import { DEFAULT_NAVIGATION_ARIA_LABEL } from '../../constants/spfxComponents';
+import { useTranslation } from '../../i18n/LocaleContext';
+import type { IAppPermissions } from '../../utils/rbac';
+import { canAccessPage } from '../../utils/rbac';
+import type { IRolePermissionRow } from '../../lib/permissions/checkRolePermission';
 
 
 
@@ -49,15 +55,23 @@ export const NAVIGATION_ITEMS: INavigationItem[] = [
   { id: 'retired', label: 'Retired', icon: <ToolboxRegular />, section: 'ASSETS' },
   { id: 'deletedAssets', label: 'Deleted Assets', icon: <HistoryRegular />, section: 'ASSETS' },
   { id: 'assignAsset', label: 'Assign Asset', icon: <PersonRegular />, section: 'OPERATIONS' },
+  { id: 'bulkAssign', label: 'Bulk Assign', icon: <PersonRegular />, section: 'OPERATIONS' },
   { id: 'returnAsset', label: 'Return Asset', icon: <ArrowSyncRegular />, section: 'OPERATIONS' },
+  { id: 'bulkReturn', label: 'Bulk Return', icon: <ArrowSyncRegular />, section: 'OPERATIONS' },
   { id: 'bookAsset', label: 'Book Asset', icon: <ShoppingBagRegular />, section: 'OPERATIONS' },
   { id: 'bookingDetails', label: 'Booking Details', icon: <TableRegular />, section: 'OPERATIONS' },
+  { id: 'requestAsset', label: 'Request Asset', icon: <ShoppingBagRegular />, section: 'OPERATIONS' },
+  { id: 'myRequests', label: 'My Requests', icon: <HistoryRegular />, section: 'OPERATIONS' },
+  { id: 'manageRequests', label: 'Manage Requests', icon: <TableRegular />, section: 'OPERATIONS' },
+  { id: 'scanAsset', label: 'Scan Asset', icon: <CameraRegular />, section: 'OPERATIONS' },
   { id: 'software', label: 'Software Licenses', icon: <TagRegular />, section: 'OPERATIONS' },
   { id: 'inventory', label: 'Inventory', icon: <ListRegular />, section: 'OPERATIONS' },
+  { id: 'maintenance', label: 'Maintenance', icon: <WrenchRegular />, section: 'OPERATIONS' },
   { id: 'reports', label: 'Reports', icon: <TableRegular />, section: 'ANALYSIS' },
   { id: 'depreciation', label: 'Depreciation', icon: <GridRegular />, section: 'ANALYSIS' },
   { id: 'auditLog', label: 'Audit Log', icon: <HistoryRegular />, section: 'ANALYSIS' },
   { id: 'categories', label: 'Categories', icon: <TagRegular />, section: 'LOOKUPS' },
+  { id: 'subCategories', label: 'Sub-Categories', icon: <TagMultipleRegular />, section: 'LOOKUPS' },
   { id: 'vendors', label: 'Vendors', icon: <BuildingRegular />, section: 'LOOKUPS' },
   { id: 'locations', label: 'Locations', icon: <LocationRegular />, section: 'LOOKUPS' },
   { id: 'projects', label: 'Projects', icon: <BuildingRegular />, section: 'LOOKUPS' },
@@ -310,6 +324,10 @@ export interface ISidebarProps {
 
   showSettings?: boolean;
 
+  permissions?: IAppPermissions;
+
+  permissionRows?: IRolePermissionRow[];
+
   /** When false, the full navigation is hidden and only a "Complete Setup" action is shown. */
   setupComplete?: boolean;
 
@@ -338,6 +356,10 @@ export const Sidebar: React.FC<ISidebarProps> = ({
 
   showSettings = true,
 
+  permissions,
+
+  permissionRows,
+
   setupComplete = true,
 
   onRunSetup
@@ -345,13 +367,19 @@ export const Sidebar: React.FC<ISidebarProps> = ({
 }) => {
 
   const styles = useStyles();
+  const { t } = useTranslation();
 
-
-
-  const navigationItems = React.useMemo(
-    () => (showSettings ? NAVIGATION_ITEMS : NAVIGATION_ITEMS.filter((item) => item.id !== 'settings')),
-    [showSettings]
-  );
+  const navigationItems = React.useMemo(() => {
+    let items = showSettings ? NAVIGATION_ITEMS : NAVIGATION_ITEMS.filter((item) => item.id !== 'settings');
+    if (permissions) {
+      items = items.filter((item) => canAccessPage(item.id, permissions, permissionRows));
+    }
+    return items.map((item) => ({
+      ...item,
+      label: t('nav', item.id, item.label),
+      section: item.section ? t('nav', `section${item.section}`, item.section) : item.section
+    }));
+  }, [permissions, permissionRows, showSettings, t]);
 
   const sections = navigationItems.reduce<Record<string, INavigationItem[]>>((acc, item) => {
 

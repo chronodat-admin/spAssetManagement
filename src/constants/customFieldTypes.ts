@@ -59,9 +59,9 @@ export const CUSTOM_FIELD_LOOKUP_LIST_OPTIONS: Array<{ value: string; label: str
   { value: 'SubCategories', label: 'Sub-Categories' },
   { value: 'lstBusiness', label: 'Business' },
   { value: 'Projects', label: 'Projects' },
-  { value: 'RiskProfile', label: 'Risk Profile Type' },
-  { value: 'RiskResponse', label: 'Risk Response' },
-  { value: 'RiskStrategy', label: 'Risk Strategy' },
+  { value: 'RiskProfile', label: 'Asset Type' },
+  { value: 'RiskResponse', label: 'Vendor' },
+  { value: 'RiskStrategy', label: 'Location' },
   { value: 'Likelihood', label: 'Likelihood' },
   { value: 'Consequence', label: 'Consequence' }
 ];

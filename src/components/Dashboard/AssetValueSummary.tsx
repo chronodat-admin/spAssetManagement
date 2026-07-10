@@ -105,7 +105,7 @@ export const AssetValueSummary: React.FC<IAssetRatingProps> = ({
 
       <Card className={styles.card}>
 
-        <CardHeader header={<Title3 as="h2">Inherent Risk Matrix</Title3>} />
+        <CardHeader header={<Title3 as="h2">Inherent Rating Matrix</Title3>} />
 
         <div className={styles.summary}>
 
@@ -135,7 +135,7 @@ export const AssetValueSummary: React.FC<IAssetRatingProps> = ({
 
       <Card className={styles.card}>
 
-        <CardHeader header={<Title3 as="h2">Residual Risk Matrix</Title3>} />
+        <CardHeader header={<Title3 as="h2">Residual Rating Matrix</Title3>} />
 
         <div className={styles.summary}>
 

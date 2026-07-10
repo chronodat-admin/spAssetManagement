@@ -5,16 +5,16 @@
     "title": "Asset Management",
     "iconPath": "app-icon.png",
     "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
-    "version": "1.0.0.3",
+    "version": "1.0.0.12",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
     "developer": {
-      "name": "Your Organization",
-      "websiteUrl": "https://www.example.com",
-      "privacyUrl": "https://www.example.com/privacy",
-      "termsOfUseUrl": "https://www.example.com/terms",
-      "mpnId": "Undefined-1.21.1"
+      "name": "Chronodat",
+      "websiteUrl": "https://www.chronodat.com/",
+      "privacyUrl": "https://www.chronodat.com/Privacy",
+      "termsOfUseUrl": "https://www.chronodat.com/terms-conditions",
+      "mpnId": "6481556"
     },
     "metadata": {
       "shortDescription": {
@@ -47,7 +47,7 @@
         "title": "Asset Management Feature",
         "description": "Deploys the Asset Management web part and form customizer for the AM_Assets list.",
         "id": "cbc74d6d-aa77-4c02-b177-05d8a3c5a702",
-        "version": "1.0.0.3",
+        "version": "1.0.0.12",
         "componentIds": [
           "4fa4ca04-c98a-4723-8671-f69956f65f26",
           "013cb786-7445-49dc-aebd-9c4e8706fd98"

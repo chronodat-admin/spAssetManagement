@@ -1,10 +1,9 @@
 ﻿import * as React from 'react';
 import {
   Button,
-  MessageBar,
-  MessageBarBody,
   Spinner
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons';
 import { ContentCard } from '../Layout/ContentCard';
 import { ContentToolbar } from '../Layout/ContentToolbar';
@@ -217,16 +216,12 @@ export const AppAdministratorsTab: React.FC<IAppAdministratorsTabProps> = ({
       >
         {error && !panelOpen && (
           <div style={{ padding: '12px 16px 0' }}>
-            <MessageBar intent="error">
-              <MessageBarBody>{error}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="error">{error}</AppMessageBar>
           </div>
         )}
         {success && (
           <div style={{ padding: '12px 16px 0' }}>
-            <MessageBar intent="success">
-              <MessageBarBody>{success}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="success">{success}</AppMessageBar>
           </div>
         )}
 
@@ -270,9 +265,9 @@ export const AppAdministratorsTab: React.FC<IAppAdministratorsTabProps> = ({
         }
       >
         {error && panelOpen && (
-          <MessageBar intent="error" style={{ marginBottom: 16 }}>
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
+          <AppMessageBar intent="error" style={{ marginBottom: 16 }}>
+            {error}
+          </AppMessageBar>
         )}
         <PeoplePickerField
           label="User"

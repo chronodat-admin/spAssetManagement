@@ -1,7 +1,10 @@
 ﻿import * as React from 'react';
 import {
+  AlertRegular,
   ArrowReplyRegular,
+  ArrowUploadRegular,
   CalendarClockRegular,
+  CloudSyncRegular,
   ColorRegular,
   DataHistogramRegular,
   DataTrendingRegular,
@@ -9,15 +12,18 @@ import {
   FlashRegular,
   FlowchartRegular,
   FormRegular,
-  ListRegular,
+  GlobeRegular,
   HistoryRegular,
+  ListRegular,
   MailRegular,
   NumberSymbolRegular,
   OrganizationRegular,
   PaymentRegular,
+  PeopleTeamRegular,
   PersonRegular,
   PlugConnectedRegular,
   SettingsRegular,
+  ShieldLockRegular,
   ShieldRegular,
   TagRegular,
   TextBulletListSquareRegular,
@@ -43,6 +49,12 @@ export type SettingsPageId =
   | 'scheduledReports'
   | 'auditLog'
   | 'appAdministrators'
+  | 'userRoles'
+  | 'rolePermissions'
+  | 'intuneSync'
+  | 'bulkImport'
+  | 'language'
+  | 'reminders'
   | 'lookupCategories'
   | 'lookupSubCategories'
   | 'lookupLikelihood'
@@ -126,10 +138,53 @@ export const SETTINGS_PAGES: ISettingsPageMeta[] = [
     section: 'general'
   },
   {
+    id: 'userRoles',
+    label: 'User Roles',
+    description: 'Assign Admin, Asset Manager, User, or Read Only roles for RBAC across the app.',
+    icon: PeopleTeamRegular,
+    section: 'general'
+  },
+  {
+    id: 'rolePermissions',
+    label: 'Role Permissions',
+    description:
+      'Control what each application role can see and do in the UI. SharePoint list permissions remain the security boundary for data access.',
+    icon: ShieldLockRegular,
+    section: 'general'
+  },
+  {
+    id: 'language',
+    label: 'Language',
+    description: 'Choose the display language for navigation and Tier 1 features.',
+    icon: GlobeRegular,
+    section: 'general'
+  },
+  {
+    id: 'intuneSync',
+    label: 'Intune Sync',
+    description: 'Import managed devices from Microsoft Intune into the asset register.',
+    icon: CloudSyncRegular,
+    section: 'general'
+  },
+  {
+    id: 'bulkImport',
+    label: 'Bulk Import',
+    description: 'Import assets from CSV into the register.',
+    icon: ArrowUploadRegular,
+    section: 'general'
+  },
+  {
+    id: 'reminders',
+    label: 'Reminders',
+    description: 'Run warranty, license, and return-date reminder checks and email digests.',
+    icon: AlertRegular,
+    section: 'preferences'
+  },
+  {
     id: 'dropdownOptions',
     label: 'Dropdown Options',
     description:
-      'Manage dropdown values used on asset forms. Status choices are configured under Asset Status.',
+      'Manage choice dropdown values on asset forms (for example depreciation method). Status choices live under Asset Status; asset type, category, and vendor values come from lookup lists.',
     icon: TextBulletListSquareRegular,
     section: 'preferences'
   },
@@ -137,7 +192,7 @@ export const SETTINGS_PAGES: ISettingsPageMeta[] = [
     id: 'numbering',
     label: 'Numbering',
     description:
-      'Configure auto-numbering formats for assets and projects. Sequence values increment on each create.',
+      'Configure auto-numbering formats for assets, vendors, and projects. Sequence values increment on each create.',
     icon: NumberSymbolRegular,
     section: 'preferences'
   },
@@ -261,6 +316,14 @@ export const SETTINGS_SELF_SAVE_PAGES: SettingsPageId[] = [
   'subscription',
   'auditLog',
   'appAdministrators',
+  'userRoles',
+  'rolePermissions',
+  'intuneSync',
+  'bulkImport',
+  'language',
+  'reminders',
+  'scheduledReports',
+  'workflowRules',
   'lookupCategories',
   'lookupSubCategories',
   'lookupLikelihood',

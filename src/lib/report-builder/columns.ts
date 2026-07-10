@@ -3,10 +3,10 @@ import type { FormTemplateField } from '../form-templates/types';
 import type { AssetFormTemplate } from '../form-templates/types';
 
 export const ASSET_REPORT_COLUMNS: IReportColumnDef[] = [
-  { key: 'RiskCode', label: 'Risk Code', type: 'string' },
+  { key: 'RiskCode', label: 'Asset ID', type: 'string' },
   { key: 'Title', label: 'Title', type: 'string' },
   { key: 'Status', label: 'Status', type: 'string' },
-  { key: 'RiskProfileType', label: 'Risk Profile Type', type: 'string' },
+  { key: 'RiskProfileType', label: 'Asset Type', type: 'string' },
   { key: 'Owner', label: 'Owner', type: 'string' },
   { key: 'AssignedTo', label: 'Assigned To', type: 'string' },
   { key: 'BusinessTitle', label: 'Business', type: 'string' },
@@ -32,7 +32,7 @@ export const ASSET_REPORT_COLUMNS: IReportColumnDef[] = [
   { key: 'ControlEffectiveness', label: 'Control Effectiveness', type: 'string' },
   { key: 'AM_Notes', label: 'Description', type: 'string' },
   { key: 'MitigationPlan', label: 'Mitigation Plan', type: 'string' },
-  { key: 'RiskComment', label: 'Risk Comment', type: 'string' },
+  { key: 'RiskComment', label: 'Notes', type: 'string' },
   { key: 'CreatedByName', label: 'Created By', type: 'string' },
   { key: 'CreatedAt', label: 'Created At', type: 'date' },
   { key: 'ModifiedAt', label: 'Modified At', type: 'date' }

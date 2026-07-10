@@ -51,4 +51,22 @@ describeE2e('Operations pages', () => {
     const emptyState = appRoot(page).getByText('No assignment or booking records yet.');
     await expect(assetColumn.or(emptyState)).toBeVisible();
   });
+
+  test('Software Licenses shows add controls and table columns', async () => {
+    const page = suite!.page;
+    await navigateSidebar(page, 'Software Licenses');
+    await expectPageHeading(page, 'Software Licenses');
+    await expect(appRoot(page).getByText('Product name', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByText('Total seats', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByRole('button', { name: 'Add license' })).toBeDisabled();
+  });
+
+  test('Inventory shows scan controls and table columns', async () => {
+    const page = suite!.page;
+    await navigateSidebar(page, 'Inventory');
+    await expectPageHeading(page, 'Inventory');
+    await expect(appRoot(page).getByText('Scan label', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByText('Asset found', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByRole('button', { name: 'Record scan' })).toBeDisabled();
+  });
 });

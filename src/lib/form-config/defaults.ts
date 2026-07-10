@@ -29,7 +29,7 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
         options: ['Available', 'Assigned', 'In Repair', 'Retired', 'Disposed']
       },
       RiskProfileType: {
-        label: 'Profile Type',
+        label: 'Asset Type',
         create: false,
         createRequired: false,
         edit: false,
@@ -69,7 +69,7 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
         view: true
       },
       RiskStrategy: {
-        label: 'Risk Strategy',
+        label: 'Location',
         create: true,
         createRequired: false,
         edit: true,
@@ -143,7 +143,7 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
         options: ['Good', 'Fair', 'Poor']
       },
       RiskResponse: {
-        label: 'Risk Response',
+        label: 'Vendor',
         create: true,
         createRequired: false,
         edit: true,
@@ -167,7 +167,7 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
         view: true
       },
       DateRiskIdentified: {
-        label: 'Date Risk Identified',
+        label: 'Purchase Date',
         create: true,
         createRequired: false,
         edit: true,
@@ -197,6 +197,23 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
         edit: false,
         editRequired: false,
         view: true
+      },
+      AM_ImageUrl: {
+        label: 'Image URL',
+        create: false,
+        createRequired: false,
+        edit: false,
+        editRequired: false,
+        view: false
+      },
+      AM_DepreciationMethod: {
+        label: 'Depreciation Method',
+        create: true,
+        createRequired: false,
+        edit: true,
+        editRequired: false,
+        view: true,
+        options: ['StraightLine', 'DecliningBalance']
       }
     },
     tabs: [

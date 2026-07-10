@@ -7,21 +7,16 @@ import {
   Input,
   makeStyles,
   mergeClasses,
-  MessageBar,
-  MessageBarBody,
   shorthands,
   Spinner,
   Switch,
-  Text,
   tokens
 } from '@fluentui/react-components';
 import { SaveRegular } from '@fluentui/react-icons';
 import {
   ArrowClockwiseRegular,
-  CheckmarkCircleRegular,
   PlayRegular,
-  SettingsRegular,
-  WarningRegular
+  SettingsRegular
 } from '@fluentui/react-icons';
 import { IAppSettings, IClearSeedDataResult, ILookupItem, IProvisioningStatus } from '../../models/IAssetApp';
 import { CATEGORIES_LIST_TITLE } from '../../models/IListDefinitions';
@@ -31,6 +26,7 @@ import { LookupListManager } from '../LookupLists/LookupListManager';
 import { SubCategoryListManager } from '../LookupLists/SubCategoryListManager';
 import { AssetService } from '../../services/AssetService';
 import { RightDetailPanel } from '../Layout/RightDetailPanel';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import { parseAppearanceSettings, serializeAppearanceSettings } from '../../lib/appearance-settings/storage';
 import type { IAppearanceSettings } from '../../models/IAppearanceSettings';
 import { syncSharePointLeftNavVisibility, syncSharePointPageBarVisibility, syncSharePointTopBarVisibility } from '../../utils/loadAssetManagementStyles';
@@ -53,6 +49,12 @@ import { ScheduledReportsTab } from './ScheduledReportsTab';
 import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 import { AuditLogTab } from './AuditLogTab';
 import { AppAdministratorsTab } from './AppAdministratorsTab';
+import { UserRolesTab } from './UserRolesTab';
+import { RolePermissionsTab } from './RolePermissionsTab';
+import { IntuneSyncTab } from './IntuneSyncTab';
+import { BulkImportTab } from './BulkImportTab';
+import { LanguageSettingsTab } from './LanguageSettingsTab';
+import { RemindersTab } from './RemindersTab';
 import { AppearanceSettingsTab } from './AppearanceSettingsTab';
 import {
   SettingsSidebar,
@@ -65,6 +67,13 @@ import { SampleDataSettingsSection } from './SampleDataSettingsSection';
 import { scrollAppContentToTop } from '../../utils/scrollAppContentToTop';
 import { APP_ADMINISTRATOR_REQUIRED_MESSAGE } from '../../utils/sitePermissions';
 import type { MailSendApprovalUiStatus } from '../../models/IMailSendApproval';
+import type { AadHttpClientFactory } from '@microsoft/sp-http';
+import type { IAsset } from '../../models/IAsset';
+import { RoleService } from '../../services/RoleService';
+import { ImportExportService } from '../../services/ImportExportService';
+import { IntuneSyncService } from '../../services/IntuneSyncService';
+import { AssignmentService } from '../../services/AssignmentService';
+import { SoftwareLicenseService } from '../../services/SoftwareLicenseService';
 import { resolveEmailDeliveryMode } from '../../lib/workflow-settings/emailIntegration';
 import { parseCustomFieldExtensions, parseFormSettings } from '../../lib/form-config/storage';
 import {
@@ -86,7 +95,11 @@ const useStyles = makeStyles({
   formBody: {
     padding: tokens.spacingHorizontalL,
     display: 'grid',
-    gap: tokens.spacingVerticalM
+    gap: tokens.spacingVerticalM,
+    minWidth: 0,
+    '& > *': {
+      minWidth: 0
+    }
   },
   footer: {
     display: 'flex',
@@ -177,11 +190,20 @@ export interface ISettingsProps {
   onSubscriptionTabOpened?: () => void;
   initialSettingsTab?: SettingsPageId;
   onClearSeedData?: () => Promise<IClearSeedDataResult>;
+  onRestoreSampleData?: () => Promise<number>;
   mailSendStatus?: MailSendApprovalUiStatus;
   mailSendAdminUrl?: string;
   onRefreshMailSendStatus?: () => void;
   refreshingMailSendStatus?: boolean;
   subscriptionApiConfigured?: boolean;
+  roleService?: RoleService;
+  importExportService?: ImportExportService;
+  intuneSyncService?: IntuneSyncService;
+  assignmentService?: AssignmentService;
+  softwareService?: SoftwareLicenseService;
+  aadHttpClientFactory?: AadHttpClientFactory;
+  assets?: IAsset[];
+  adminEmails?: string[];
 }
 
 export const Settings: React.FC<ISettingsProps> = ({
@@ -203,11 +225,20 @@ export const Settings: React.FC<ISettingsProps> = ({
   onSubscriptionTabOpened,
   initialSettingsTab,
   onClearSeedData,
+  onRestoreSampleData,
   mailSendStatus,
   mailSendAdminUrl,
   onRefreshMailSendStatus,
   refreshingMailSendStatus,
-  subscriptionApiConfigured = false
+  subscriptionApiConfigured = false,
+  roleService,
+  importExportService,
+  intuneSyncService,
+  assignmentService,
+  softwareService,
+  aadHttpClientFactory,
+  assets = [],
+  adminEmails = []
 }) => {
   const styles = useStyles();
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(initialSettingsTab ?? 'general');
@@ -304,9 +335,9 @@ export const Settings: React.FC<ISettingsProps> = ({
     setSaving(true);
     setMessage('');
 
-    const riskNumbering = workflowSettings.numbering.find((item) => item.entityType === 'risk');
-    const ticketPrefix = riskNumbering
-      ? buildLegacyTicketPrefix(riskNumbering)
+    const assetNumbering = workflowSettings.numbering.find((item) => item.entityType === 'asset');
+    const ticketPrefix = assetNumbering
+      ? buildLegacyTicketPrefix(assetNumbering)
       : settings.TicketIDPrefix || 'AM-';
 
     const validationError = validateAppSettings({
@@ -343,6 +374,7 @@ export const Settings: React.FC<ISettingsProps> = ({
         Reviewed: 'Yes'
       });
       await riskService.syncAssetStatusChoices(workflowSettings);
+      await riskService.syncAssetDropdownChoices(formSettings);
       setMessageIntent('success');
       setMessage('Settings saved successfully.');
       onSaved();
@@ -377,51 +409,38 @@ export const Settings: React.FC<ISettingsProps> = ({
 
   if (!isAppAdministrator) {
     return (
-      <MessageBar intent="warning" layout="multiline">
-        <MessageBarBody>{APP_ADMINISTRATOR_REQUIRED_MESSAGE}</MessageBarBody>
-      </MessageBar>
+      <AppMessageBar intent="warning">{APP_ADMINISTRATOR_REQUIRED_MESSAGE}</AppMessageBar>
     );
   }
 
   return (
     <div>
       {provisioningStatus && (
-        <div className={styles.setupRow}>
-          <div className={styles.setupSummary}>
-            {provisioningStatus.isComplete ? (
-              <>
-                <CheckmarkCircleRegular className={styles.setupReady} />
-                <Text>All {provisioningStatus.totalCount} SharePoint lists are ready.</Text>
-              </>
-            ) : (
-              <>
-                <WarningRegular className={styles.setupIncomplete} />
-                <Text>
-                  Setup incomplete — {provisioningStatus.missingCount} of {provisioningStatus.totalCount}{' '}
-                  lists need attention.
-                </Text>
-              </>
-            )}
-          </div>
-          <Button appearance="secondary" icon={<SettingsRegular />} onClick={handleOpenSetupStatus}>
-            View setup status
-          </Button>
-        </div>
+        <AppMessageBar
+          intent={provisioningStatus.isComplete ? 'success' : 'warning'}
+          style={{ marginBottom: tokens.spacingVerticalL }}
+          actions={
+            <Button appearance="secondary" icon={<SettingsRegular />} onClick={handleOpenSetupStatus}>
+              View setup status
+            </Button>
+          }
+        >
+          {provisioningStatus.isComplete
+            ? 'All required SharePoint lists are ready.'
+            : 'Setup incomplete — some lists still need attention.'}
+        </AppMessageBar>
       )}
 
       {!settings && setupIncomplete && (
-        <MessageBar intent="info" style={{ marginTop: tokens.spacingVerticalL }}>
-          <MessageBarBody>
-            Application settings will be available after setup creates the <strong>AppSettings</strong>{' '}
-            list.
-          </MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="info" style={{ marginTop: tokens.spacingVerticalL }}>
+          Application settings will be available after setup creates the <strong>AppSettings</strong> list.
+        </AppMessageBar>
       )}
 
       {!settings && !setupIncomplete && (
-        <MessageBar intent="warning" style={{ marginTop: tokens.spacingVerticalL }}>
-          <MessageBarBody>App settings not found. Run setup to create lists.</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="warning" style={{ marginTop: tokens.spacingVerticalL }}>
+          App settings not found. Run setup to create lists.
+        </AppMessageBar>
       )}
 
       {settings && (
@@ -439,22 +458,24 @@ export const Settings: React.FC<ISettingsProps> = ({
           <Card className={mergeClasses(styles.card, styles.settingsContent)}>
           <form onSubmit={(e) => void handleSave(e)}>
             <div className={styles.formBody}>
-              {message && (
-                <MessageBar intent={messageIntent}>
-                  <MessageBarBody>{message}</MessageBarBody>
-                </MessageBar>
-              )}
+              {message && <AppMessageBar intent={messageIntent}>{message}</AppMessageBar>}
 
               {settings.Reviewed !== 'Yes' && (
-                <MessageBar intent="info">
-                  <MessageBarBody>Review and save your settings to mark setup as reviewed.</MessageBarBody>
-                </MessageBar>
+                <AppMessageBar intent="info">
+                  Review and save your settings to mark setup as reviewed.
+                </AppMessageBar>
               )}
 
               {!isSettingsLookupPage(activeTab) &&
                 activeTab !== 'auditLog' &&
                 activeTab !== 'subscription' &&
                 activeTab !== 'appAdministrators' &&
+                activeTab !== 'userRoles' &&
+                activeTab !== 'rolePermissions' &&
+                activeTab !== 'intuneSync' &&
+                activeTab !== 'bulkImport' &&
+                activeTab !== 'language' &&
+                activeTab !== 'reminders' &&
                 (() => {
                 const pageMeta = SETTINGS_PAGE_BY_ID[activeTab];
                 return pageMeta ? (
@@ -493,6 +514,7 @@ export const Settings: React.FC<ISettingsProps> = ({
                     <SampleDataSettingsSection
                       isSiteOwner={isSiteOwner}
                       onClearSeedData={onClearSeedData}
+                      onRestoreSampleData={onRestoreSampleData}
                       onCleared={() => {
                         onLookupDataChanged?.();
                         onRefreshSetupStatus?.();
@@ -658,6 +680,70 @@ export const Settings: React.FC<ISettingsProps> = ({
                 />
               )}
 
+              {activeTab === 'userRoles' && roleService && (
+                <UserRolesTab
+                  roleService={roleService}
+                  assetService={riskService}
+                  pageTitle={SETTINGS_PAGE_BY_ID.userRoles.label}
+                  pageDescription={SETTINGS_PAGE_BY_ID.userRoles.description}
+                  pageIcon={SETTINGS_PAGE_BY_ID.userRoles.icon}
+                />
+              )}
+
+              {activeTab === 'rolePermissions' && roleService && (
+                <RolePermissionsTab
+                  roleService={roleService}
+                  pageTitle={SETTINGS_PAGE_BY_ID.rolePermissions.label}
+                  pageDescription={SETTINGS_PAGE_BY_ID.rolePermissions.description}
+                  pageIcon={SETTINGS_PAGE_BY_ID.rolePermissions.icon}
+                />
+              )}
+
+              {activeTab === 'language' && (
+                <LanguageSettingsTab
+                  pageTitle={SETTINGS_PAGE_BY_ID.language.label}
+                  pageDescription={SETTINGS_PAGE_BY_ID.language.description}
+                  pageIcon={SETTINGS_PAGE_BY_ID.language.icon}
+                />
+              )}
+
+              {activeTab === 'intuneSync' && intuneSyncService && aadHttpClientFactory && (
+                <IntuneSyncTab
+                  aadHttpClientFactory={aadHttpClientFactory}
+                  intuneSyncService={intuneSyncService}
+                  pageTitle={SETTINGS_PAGE_BY_ID.intuneSync.label}
+                  pageDescription={SETTINGS_PAGE_BY_ID.intuneSync.description}
+                  pageIcon={SETTINGS_PAGE_BY_ID.intuneSync.icon}
+                />
+              )}
+
+              {activeTab === 'bulkImport' && importExportService && (
+                <BulkImportTab
+                  importExportService={importExportService}
+                  pageTitle={SETTINGS_PAGE_BY_ID.bulkImport.label}
+                  pageDescription={SETTINGS_PAGE_BY_ID.bulkImport.description}
+                  pageIcon={SETTINGS_PAGE_BY_ID.bulkImport.icon}
+                  onImported={onLookupDataChanged}
+                />
+              )}
+
+              {activeTab === 'reminders' &&
+                aadHttpClientFactory &&
+                assignmentService &&
+                softwareService && (
+                  <RemindersTab
+                    aadHttpClientFactory={aadHttpClientFactory}
+                    assets={assets}
+                    assignmentService={assignmentService}
+                    softwareService={softwareService}
+                    workflowSettings={workflowSettings}
+                    adminEmails={adminEmails}
+                    pageTitle={SETTINGS_PAGE_BY_ID.reminders.label}
+                    pageDescription={SETTINGS_PAGE_BY_ID.reminders.description}
+                    pageIcon={SETTINGS_PAGE_BY_ID.reminders.icon}
+                  />
+                )}
+
               {activeTab === 'lookupCategories' && (
                 <LookupListManager
                   listTitle={CATEGORIES_LIST_TITLE}
@@ -716,7 +802,7 @@ export const Settings: React.FC<ISettingsProps> = ({
               {activeTab === 'lookupRiskProfile' && (
                 <LookupListManager
                   listTitle="RiskProfile"
-                  displayTitle="Risk Profile Types"
+                  displayTitle="Asset Types"
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
@@ -729,7 +815,7 @@ export const Settings: React.FC<ISettingsProps> = ({
               {activeTab === 'lookupRiskResponse' && (
                 <LookupListManager
                   listTitle="RiskResponse"
-                  displayTitle="Risk Response Strategies"
+                  displayTitle="Vendors"
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
@@ -742,7 +828,7 @@ export const Settings: React.FC<ISettingsProps> = ({
               {activeTab === 'lookupRiskStrategy' && (
                 <LookupListManager
                   listTitle="RiskStrategy"
-                  displayTitle="Risk Strategies"
+                  displayTitle="Locations"
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
@@ -778,7 +864,7 @@ export const Settings: React.FC<ISettingsProps> = ({
           subtitle={
             provisioningStatus.isComplete
               ? 'All lists are ready'
-              : `${provisioningStatus.missingCount} list${provisioningStatus.missingCount === 1 ? '' : 's'} need setup`
+              : 'Some lists need setup'
           }
           onClose={handleCloseSetupStatus}
           footer={

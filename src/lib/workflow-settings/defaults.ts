@@ -87,8 +87,8 @@ export const DEFAULT_CUSTOM_PRIORITIES: IAssetCustomPriority[] = [
 
 export const DEFAULT_NUMBERING: INumberingConfig[] = [
   {
-    entityType: 'risk',
-    prefix: 'RISK',
+    entityType: 'asset',
+    prefix: 'AST',
     separator: '-',
     dateFormat: 'YYYY',
     padLength: 4,
@@ -98,8 +98,8 @@ export const DEFAULT_NUMBERING: INumberingConfig[] = [
     sequenceCounters: {}
   },
   {
-    entityType: 'business',
-    prefix: 'BIZ',
+    entityType: 'vendor',
+    prefix: 'VND',
     separator: '-',
     dateFormat: 'YYYY',
     padLength: 4,
@@ -122,10 +122,10 @@ export const DEFAULT_NUMBERING: INumberingConfig[] = [
 ];
 
 const ASSET_LINK_FOOTER_PLAIN =
-  '\n\nTo view the risk details:\n{LinkTitle}\n{AssetUrl}';
+  '\n\nTo view the asset details:\n{LinkTitle}\n{AssetUrl}';
 
 const ASSET_LINK_FOOTER_HTML =
-  '<p>To view the risk details:<br/><a href="{AssetUrl}">{LinkTitle}</a></p>';
+  '<p>To view the asset details:<br/><a href="{AssetUrl}">{LinkTitle}</a></p>';
 
 const ASSET_CREATED_BODY_PLAIN = `Asset {AM_AssetId} has been created
 
@@ -134,7 +134,7 @@ Created By: {CreatedBy}
 Summary: {AM_Notes}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_ASSIGNED_BODY_PLAIN = `Asset {AM_AssetId} has been assigned to you
 
@@ -143,7 +143,7 @@ Assigned To: {AssignedTo}
 Created By: {CreatedBy}
 
 Status: {AM_Status}
-Category: {RiskCategory}
+Category: {Category}
 Due Date: {DueDate}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_UPDATED_BODY_PLAIN = `Asset {AM_AssetId} has been updated
@@ -153,7 +153,7 @@ Updated By: {ModifiedByName}
 Summary: {AM_Notes}
 
 Status: {AM_Status}
-Category: {RiskCategory}
+Category: {Category}
 Priority: {Priority}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_CLOSED_BODY_PLAIN = `Asset {AM_AssetId} has been closed
@@ -162,7 +162,7 @@ Asset name: {Title}
 Closed By: {ModifiedByName}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_INCOMPLETE_BODY_PLAIN = `Asset {AM_AssetId} requires attention
 
@@ -170,7 +170,7 @@ Asset name: {Title}
 Assigned To: {AssignedTo}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_ON_HOLD_BODY_PLAIN = `Asset {AM_AssetId} is on hold
 
@@ -178,7 +178,7 @@ Asset name: {Title}
 Assigned To: {AssignedTo}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_COMMENT_BODY_PLAIN = `New comment on asset {AM_AssetId}
 
@@ -186,7 +186,7 @@ Asset name: {Title}
 Comment By: {ModifiedByName}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_OVERDUE_BODY_PLAIN = `Asset {AM_AssetId} is OVERDUE
 
@@ -195,7 +195,7 @@ Assigned To: {AssignedTo}
 Due Date: {DueDate}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_PRIORITY_BODY_PLAIN = `Asset {AM_AssetId} priority has changed
 
@@ -203,47 +203,47 @@ Asset name: {Title}
 Priority: {Priority}
 
 Status: {AM_Status}
-Category: {RiskCategory}${ASSET_LINK_FOOTER_PLAIN}`;
+Category: {Category}${ASSET_LINK_FOOTER_PLAIN}`;
 
 const ASSET_CREATED_BODY_HTML = `<p><strong>Asset {AM_AssetId} has been created</strong></p>
 <p>Asset name: {Title}<br/>Created By: {CreatedBy}<br/>Summary: {AM_Notes}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_ASSIGNED_BODY_HTML = `<p><strong>Asset {AM_AssetId} has been assigned to you</strong></p>
 <p>Asset name: {Title}<br/>Assigned To: {AssignedTo}<br/>Created By: {CreatedBy}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}<br/>Due Date: {DueDate}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}<br/>Due Date: {DueDate}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_UPDATED_BODY_HTML = `<p><strong>Asset {AM_AssetId} has been updated</strong></p>
 <p>Asset name: {Title}<br/>Updated By: {ModifiedByName}<br/>Summary: {AM_Notes}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}<br/>Priority: {Priority}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}<br/>Priority: {Priority}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_CLOSED_BODY_HTML = `<p><strong>Asset {AM_AssetId} has been closed</strong></p>
 <p>Asset name: {Title}<br/>Closed By: {ModifiedByName}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_IN_PROGRESS_BODY_HTML = `<p><strong>Asset {AM_AssetId} is now In Progress</strong></p>
 <p>Asset name: {Title}<br/>Updated By: {ModifiedByName}<br/>Summary: {AM_Notes}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}<br/>Priority: {Priority}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}<br/>Priority: {Priority}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_INCOMPLETE_BODY_HTML = `<p><strong>Asset {AM_AssetId} requires attention</strong></p>
 <p>Asset name: {Title}<br/>Assigned To: {AssignedTo}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_ON_HOLD_BODY_HTML = `<p><strong>Asset {AM_AssetId} is on hold</strong></p>
 <p>Asset name: {Title}<br/>Assigned To: {AssignedTo}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_OVERDUE_BODY_HTML = `<p><strong>Asset {AM_AssetId} is OVERDUE</strong></p>
 <p>Asset name: {Title}<br/>Assigned To: {AssignedTo}<br/>Due Date: {DueDate}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_COMMENT_BODY_HTML = `<p><strong>New comment on Asset {AM_AssetId}</strong></p>
 <p>Asset name: {Title}<br/>Comment By: {ModifiedByName}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 const ASSET_PRIORITY_BODY_HTML = `<p><strong>Asset {AM_AssetId} priority has changed</strong></p>
 <p>Asset name: {Title}<br/>Priority: {Priority}</p>
-<p>Status: {AM_Status}<br/>Category: {RiskCategory}</p>${ASSET_LINK_FOOTER_HTML}`;
+<p>Status: {AM_Status}<br/>Category: {Category}</p>${ASSET_LINK_FOOTER_HTML}`;
 
 export const NOTIFICATION_TEMPLATE_VARIABLES = [
   'AM_AssetId',
@@ -292,7 +292,7 @@ Updated By: {ModifiedByName}
 Summary: {AM_Notes}
 
 Status: {AM_Status}
-Category: {RiskCategory}
+Category: {Category}
 Priority: {Priority}${ASSET_LINK_FOOTER_PLAIN}`,
     recipients: ['creator', 'assignee']
   },
@@ -344,110 +344,110 @@ export const DEFAULT_EMAIL_TEMPLATES: IEmailTemplate[] = [
   {
     id: 'email-risk-created',
     name: 'Asset created',
-    slug: 'risk_created',
+    slug: 'asset_created',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} has been created',
     bodyHtml: ASSET_CREATED_BODY_HTML,
-    description: 'Sent when a new risk is created',
-    entityType: 'risk',
+    description: 'Sent when a new asset is created',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-updated',
     name: 'Asset updated',
-    slug: 'risk_updated',
+    slug: 'asset_updated',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} has been updated',
     bodyHtml: ASSET_UPDATED_BODY_HTML,
-    description: 'Sent when risk details change',
-    entityType: 'risk',
+    description: 'Sent when asset details change',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-assigned',
     name: 'Asset assigned',
-    slug: 'risk_assigned',
+    slug: 'asset_assigned',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} has been assigned to you',
     bodyHtml: ASSET_ASSIGNED_BODY_HTML,
-    description: 'Sent when a risk owner is assigned',
-    entityType: 'risk',
+    description: 'Sent when an asset is assigned',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-in-progress',
     name: 'Asset in progress',
-    slug: 'risk_in_progress',
+    slug: 'asset_in_progress',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} is now In Progress',
     bodyHtml: ASSET_IN_PROGRESS_BODY_HTML,
-    description: 'Sent when a risk moves to in progress',
-    entityType: 'risk',
+    description: 'Sent when an asset moves to in progress',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-incomplete',
     name: 'Asset incomplete',
-    slug: 'risk_incomplete',
+    slug: 'asset_incomplete',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} requires attention',
     bodyHtml: ASSET_INCOMPLETE_BODY_HTML,
-    description: 'Sent when a risk is marked incomplete',
-    entityType: 'risk',
+    description: 'Sent when an asset is marked incomplete',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-on-hold',
     name: 'Asset on hold',
-    slug: 'risk_on_hold',
+    slug: 'asset_on_hold',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} is on hold',
     bodyHtml: ASSET_ON_HOLD_BODY_HTML,
-    description: 'Sent when a risk is placed on hold',
-    entityType: 'risk',
+    description: 'Sent when an asset is placed on hold',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-overdue',
     name: 'Asset overdue',
-    slug: 'risk_overdue',
+    slug: 'asset_overdue',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} is OVERDUE',
     bodyHtml: ASSET_OVERDUE_BODY_HTML,
-    description: 'Sent when a risk passes its due date',
-    entityType: 'risk',
+    description: 'Sent when an asset passes its due date',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-resolved',
     name: 'Asset closed',
-    slug: 'risk_resolved',
+    slug: 'asset_closed',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} has been closed',
     bodyHtml: ASSET_CLOSED_BODY_HTML,
-    description: 'Sent when a risk is closed or resolved',
-    entityType: 'risk',
+    description: 'Sent when an asset is closed or resolved',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-comment',
     name: 'Asset comment',
-    slug: 'risk_comment',
+    slug: 'asset_comment',
     subject: DEFAULT_APP_TITLE + ' - New comment on Asset {AM_AssetId}',
     bodyHtml: ASSET_COMMENT_BODY_HTML,
-    description: 'Sent when a comment is added to a risk',
-    entityType: 'risk',
+    description: 'Sent when a comment is added to an asset',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   },
   {
     id: 'email-risk-priority',
     name: 'Priority changed',
-    slug: 'risk_priority_changed',
+    slug: 'asset_priority_changed',
     subject: DEFAULT_APP_TITLE + ' - Asset {AM_AssetId} priority has changed',
     bodyHtml: ASSET_PRIORITY_BODY_HTML,
-    description: 'Sent when likelihood or impact changes the risk priority',
-    entityType: 'risk',
+    description: 'Sent when asset priority changes',
+    entityType: 'asset',
     variables: ASSET_TEMPLATE_VARIABLES,
     isActive: true
   }
@@ -456,27 +456,27 @@ export const DEFAULT_EMAIL_TEMPLATES: IEmailTemplate[] = [
 export const DEFAULT_WORKFLOW_RULES: IWorkflowRule[] = [
   {
     id: 'rule-escalate-overdue',
-    name: 'Auto-escalate overdue high-impact risks',
-    triggerEvent: 'risk_overdue',
+    name: 'Auto-escalate overdue high-impact assets',
+    triggerEvent: 'asset_overdue',
     conditions: [{ field: 'consequence', operator: '>=', value: '4' }],
     actions: [
       { type: 'set_field', target: 'priority', message: 'critical' },
-      { type: 'notify', target: 'owner', message: 'Risk is overdue with high impact' }
+      { type: 'notify', target: 'owner', message: 'Asset is overdue with high impact' }
     ],
     isActive: false
   },
   {
     id: 'rule-status-change',
     name: 'Notify owner on status change',
-    triggerEvent: 'risk_status_changed',
+    triggerEvent: 'asset_status_changed',
     conditions: [],
-    actions: [{ type: 'notify', target: 'owner', message: 'Risk status changed to {Status}' }],
+    actions: [{ type: 'notify', target: 'owner', message: 'Asset status changed to {Status}' }],
     isActive: false
   },
   {
     id: 'rule-assignment',
     name: 'Notify assignee on assignment',
-    triggerEvent: 'risk_assigned',
+    triggerEvent: 'asset_assigned',
     conditions: [],
     actions: [{ type: 'notify', target: 'assignee', message: 'You have been assigned: {Title}' }],
     isActive: false

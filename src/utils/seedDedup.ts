@@ -1,8 +1,23 @@
 const BUSINESS_LIST_TITLE = 'lstBusiness';
-const PROJECTS_LIST_TITLE = 'Projects';
-const SUB_CATEGORIES_LIST_TITLE = 'SubCategories';
+const LEGACY_PROJECTS_LIST_TITLE = 'Projects';
+const PROJECTS_LIST_TITLE = 'AM_Projects';
+const LEGACY_SUB_CATEGORIES_LIST_TITLE = 'SubCategories';
+const SUB_CATEGORIES_LIST_TITLE = 'AM_SubCategories';
+const ASSETS_LIST_TITLE = 'AM_Assets';
 
 export type SeedRow = Record<string, string | number | boolean>;
+
+function isProjectsList(listTitle: string): boolean {
+  return listTitle === PROJECTS_LIST_TITLE || listTitle === LEGACY_PROJECTS_LIST_TITLE;
+}
+
+function isSubCategoriesList(listTitle: string): boolean {
+  return listTitle === SUB_CATEGORIES_LIST_TITLE || listTitle === LEGACY_SUB_CATEGORIES_LIST_TITLE;
+}
+
+function projectCode(row: SeedRow): string {
+  return String(row.AM_Code || row.Code || '').trim();
+}
 
 export function getSeedRowKey(listTitle: string, row: SeedRow): string {
   const title = String(row.Title || '').trim();
@@ -12,8 +27,8 @@ export function getSeedRowKey(listTitle: string, row: SeedRow): string {
 
   const normalizedTitle = title.toLowerCase();
 
-  if (listTitle === PROJECTS_LIST_TITLE) {
-    const code = String(row.Code || '').trim();
+  if (isProjectsList(listTitle)) {
+    const code = projectCode(row);
     if (code) {
       return `code:${code.toLowerCase()}`;
     }
@@ -28,8 +43,16 @@ export function getSeedRowKey(listTitle: string, row: SeedRow): string {
     return normalizedTitle;
   }
 
-  if (listTitle === SUB_CATEGORIES_LIST_TITLE) {
+  if (isSubCategoriesList(listTitle)) {
     return `${String(row.ParentCategoryTitle || '').trim().toLowerCase()}::${normalizedTitle}`;
+  }
+
+  if (listTitle === ASSETS_LIST_TITLE) {
+    const assetId = String(row.AM_AssetId || row.AM_SerialNumber || '').trim();
+    if (assetId) {
+      return `asset:${assetId.toLowerCase()}`;
+    }
+    return normalizedTitle;
   }
 
   const rating = String(row.Rating || '').trim();
@@ -52,8 +75,8 @@ export function collectSeedKeyVariants(listTitle: string, row: SeedRow): string[
     keys.add(`title:${title}`);
   }
 
-  if (listTitle === PROJECTS_LIST_TITLE) {
-    const code = String(row.Code || '').trim();
+  if (isProjectsList(listTitle)) {
+    const code = projectCode(row);
     if (code) {
       keys.add(`code:${code.toLowerCase()}`);
     }
@@ -70,10 +93,17 @@ export function collectSeedKeyVariants(listTitle: string, row: SeedRow): string[
     }
   }
 
-  if (listTitle === SUB_CATEGORIES_LIST_TITLE) {
+  if (isSubCategoriesList(listTitle)) {
     const parentTitle = String(row.ParentCategoryTitle || '').trim().toLowerCase();
     if (parentTitle && title) {
       keys.add(`${parentTitle}::${title}`);
+    }
+  }
+
+  if (listTitle === ASSETS_LIST_TITLE) {
+    const serial = String(row.AM_SerialNumber || '').trim().toLowerCase();
+    if (serial) {
+      keys.add(`asset:${serial}`);
     }
   }
 
@@ -96,8 +126,10 @@ export function indexExistingSeedKeys(
       Title: String(item.Title || '')
     };
 
-    if (listTitle === PROJECTS_LIST_TITLE) {
-      if (item.Code) {
+    if (isProjectsList(listTitle)) {
+      if (item.AM_Code) {
+        row.AM_Code = String(item.AM_Code);
+      } else if (item.Code) {
         row.Code = String(item.Code);
       }
       const business = item.Business as { Title?: string } | undefined;
@@ -110,12 +142,21 @@ export function indexExistingSeedKeys(
       row.BusinessCode = String(item.BusinessCode);
     }
 
-    if (listTitle === SUB_CATEGORIES_LIST_TITLE) {
+    if (isSubCategoriesList(listTitle)) {
       const parent = (item.AM_ParentCategory ?? item.ParentCategory) as
         | { Title?: string }
         | undefined;
       if (parent?.Title) {
         row.ParentCategoryTitle = parent.Title;
+      }
+    }
+
+    if (listTitle === ASSETS_LIST_TITLE) {
+      if (item.AM_AssetId) {
+        row.AM_AssetId = String(item.AM_AssetId);
+      }
+      if (item.AM_SerialNumber) {
+        row.AM_SerialNumber = String(item.AM_SerialNumber);
       }
     }
 
@@ -172,8 +213,10 @@ export function buildSeedRowFromListItem(
     Title: String(item.Title || '')
   };
 
-  if (listTitle === PROJECTS_LIST_TITLE) {
-    if (item.Code) {
+  if (isProjectsList(listTitle)) {
+    if (item.AM_Code) {
+      row.AM_Code = String(item.AM_Code);
+    } else if (item.Code) {
       row.Code = String(item.Code);
     }
     const business = item.Business as { Title?: string } | undefined;
@@ -186,12 +229,21 @@ export function buildSeedRowFromListItem(
     row.BusinessCode = String(item.BusinessCode);
   }
 
-  if (listTitle === SUB_CATEGORIES_LIST_TITLE) {
+  if (isSubCategoriesList(listTitle)) {
     const parent = (item.AM_ParentCategory ?? item.ParentCategory) as
       | { Title?: string }
       | undefined;
     if (parent?.Title) {
       row.ParentCategoryTitle = parent.Title;
+    }
+  }
+
+  if (listTitle === ASSETS_LIST_TITLE) {
+    if (item.AM_AssetId) {
+      row.AM_AssetId = String(item.AM_AssetId);
+    }
+    if (item.AM_SerialNumber) {
+      row.AM_SerialNumber = String(item.AM_SerialNumber);
     }
   }
 
@@ -232,19 +284,24 @@ export function buildSeedExistenceFilters(
 
   const safeTitle = title.replace(/'/g, "''");
 
-  if (listTitle === PROJECTS_LIST_TITLE) {
-    const code = String(row.Code || '').trim();
+  if (isProjectsList(listTitle)) {
+    const code = projectCode(row);
     if (code) {
-      filters.push(`Code eq '${code.replace(/'/g, "''")}'`);
+      const safeCode = code.replace(/'/g, "''");
+      if (listTitle === PROJECTS_LIST_TITLE) {
+        filters.push(`AM_Code eq '${safeCode}'`);
+      } else {
+        filters.push(`Code eq '${safeCode}'`);
+      }
     }
-    if (context?.businessId) {
+    if (context?.businessId && listTitle === LEGACY_PROJECTS_LIST_TITLE) {
       filters.push(`Title eq '${safeTitle}' and BusinessId eq ${context.businessId}`);
     }
     filters.push(`Title eq '${safeTitle}'`);
     return filters;
   }
 
-  if (listTitle === SUB_CATEGORIES_LIST_TITLE && context?.parentCategoryId) {
+  if (isSubCategoriesList(listTitle) && context?.parentCategoryId) {
     filters.push(`Title eq '${safeTitle}' and AM_ParentCategoryId eq ${context.parentCategoryId}`);
     filters.push(`Title eq '${safeTitle}'`);
     return filters;
@@ -254,6 +311,17 @@ export function buildSeedExistenceFilters(
     const businessCode = String(row.BusinessCode || '').trim();
     if (businessCode) {
       filters.push(`BusinessCode eq '${businessCode.replace(/'/g, "''")}'`);
+    }
+  }
+
+  if (listTitle === ASSETS_LIST_TITLE) {
+    const serial = String(row.AM_SerialNumber || '').trim();
+    if (serial) {
+      filters.push(`AM_SerialNumber eq '${serial.replace(/'/g, "''")}'`);
+    }
+    const assetId = String(row.AM_AssetId || '').trim();
+    if (assetId) {
+      filters.push(`AM_AssetId eq '${assetId.replace(/'/g, "''")}'`);
     }
   }
 

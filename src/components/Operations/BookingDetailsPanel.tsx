@@ -1,8 +1,6 @@
 import * as React from 'react';
 import {
   Button,
-  MessageBar,
-  MessageBarBody,
   Spinner,
   Table,
   TableBody,
@@ -12,11 +10,16 @@ import {
   TableRow,
   Text
 } from '@fluentui/react-components';
-import { DismissRegular } from '@fluentui/react-icons';
+import { CalendarRegular, DismissRegular } from '@fluentui/react-icons';
 import { ContentCard } from '../Layout/ContentCard';
+import { EmptyState } from '../Layout/EmptyState';
+import { UserCell } from '../PeoplePicker/UserAvatar';
 import { IAssignment } from '../../models/IAssetApp';
 import { AssignmentService } from '../../services/AssignmentService';
 import { DATA_TABLE_CLASS } from '../../lib/list-view/columnWidths';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { PageNotifications } from '../Layout/PageNotifications';
+
 
 export interface IBookingDetailsPanelProps {
   assignmentService: AssignmentService;
@@ -29,6 +32,7 @@ function formatDate(value?: string): string {
 }
 
 export const BookingDetailsPanel: React.FC<IBookingDetailsPanelProps> = ({ assignmentService }) => {
+  const { t } = useTranslation();
   const [rows, setRows] = React.useState<IAssignment[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -65,17 +69,22 @@ export const BookingDetailsPanel: React.FC<IBookingDetailsPanelProps> = ({ assig
 
   return (
     <ContentCard flushBody>
-      {error ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
-      ) : null}
+      <PageNotifications error={error || undefined} />
       {loading ? (
         <Spinner label="Loading assignments..." />
       ) : rows.length === 0 ? (
-        <MessageBar intent="info">
-          <MessageBarBody>No assignment or booking records yet.</MessageBarBody>
-        </MessageBar>
+        <EmptyState
+          bordered
+          inset
+          fullWidth
+          icon={<CalendarRegular />}
+          title={t('bookings', 'emptyTitle', 'No bookings yet')}
+          description={t(
+            'bookings',
+            'emptyDescription',
+            'When assets are assigned or booked, their history will appear here.'
+          )}
+        />
       ) : (
         <div className={DATA_TABLE_CLASS}>
           <Table>
@@ -95,7 +104,12 @@ export const BookingDetailsPanel: React.FC<IBookingDetailsPanelProps> = ({ assig
                 <TableRow key={row.Id}>
                   <TableCell>{row.AM_Action || '—'}</TableCell>
                   <TableCell>{row.AM_Asset?.Title || '—'}</TableCell>
-                  <TableCell>{row.AM_AssignedTo?.Title || '—'}</TableCell>
+                  <TableCell>
+                    <UserCell
+                      name={row.AM_AssignedTo?.Title}
+                      email={row.AM_AssignedTo?.Email}
+                    />
+                  </TableCell>
                   <TableCell>{formatDate(row.AM_AssignmentDate)}</TableCell>
                   <TableCell>{formatDate(row.AM_ExpectedReturnDate)}</TableCell>
                   <TableCell>

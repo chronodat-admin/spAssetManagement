@@ -1,7 +1,7 @@
 ﻿import {
   PROJECTS_LIST_TITLE,
   SUB_CATEGORIES_LIST_TITLE
-} from '../models/IListDefinitions';
+} from '../models/IListDefinitions.js';
 
 export interface ILookupReferenceDefinition {
   listTitle: string;

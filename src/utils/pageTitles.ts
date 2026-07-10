@@ -1,4 +1,4 @@
-﻿import { AppPage } from '../models/IAssetApp';
+﻿import type { AppPage } from '../models/IAssetApp';
 
 export const PAGE_SUBTITLES: Partial<Record<AppPage, string>> = {
   dashboard: 'Overview of assets, assignments, and value across your organization.',
@@ -10,18 +10,26 @@ export const PAGE_SUBTITLES: Partial<Record<AppPage, string>> = {
   deletedAssets: 'Soft-deleted assets in the recycle bin.',
   assignAsset: 'Assign an available asset to a user.',
   returnAsset: 'Return an assigned asset to available stock.',
+  bulkAssign: 'Assign multiple assets to users in one operation.',
+  bulkReturn: 'Return multiple assigned assets at once.',
   bookAsset: 'Reserve an asset for a future period.',
   bookingDetails: 'View and manage asset bookings.',
   software: 'Software license pool and seat assignments.',
   inventory: 'Physical inventory scan results.',
+  maintenance: 'Schedule and track preventive and corrective maintenance.',
+  requestAsset: 'Submit a request for hardware or equipment.',
+  myRequests: 'Track the status of your asset requests.',
+  manageRequests: 'Review, approve, and fulfill asset requests.',
+  scanAsset: 'Scan barcodes or QR codes to find and update assets.',
   reports: 'Preset asset and assignment reports.',
   depreciation: 'Depreciation schedules and book values.',
   auditLog: 'Append-only audit trail for all mutations.',
-  categories: 'Asset categories and sub-categories.',
+  categories: 'Manage asset categories.',
+  subCategories: 'Manage sub-categories linked to parent asset categories.',
   vendors: 'Vendors and suppliers.',
   locations: 'Physical locations.',
   projects: 'Projects linked to assets.',
-  settings: 'Configure branding, dashboard, notifications, and lookups.'
+  settings: 'Configure branding, dashboard, notifications, roles, and integrations.'
 };
 
 export function getPageSubtitle(page: AppPage, override?: string): string | undefined {
@@ -38,14 +46,22 @@ export const PAGE_TITLES: Record<AppPage, string> = {
   deletedAssets: 'Deleted Assets',
   assignAsset: 'Assign Asset',
   returnAsset: 'Return Asset',
+  bulkAssign: 'Bulk Assign',
+  bulkReturn: 'Bulk Return',
   bookAsset: 'Book Asset',
   bookingDetails: 'Booking Details',
   software: 'Software Licenses',
   inventory: 'Inventory',
+  maintenance: 'Maintenance',
+  requestAsset: 'Request Asset',
+  myRequests: 'My Requests',
+  manageRequests: 'Manage Requests',
+  scanAsset: 'Scan Asset',
   reports: 'Reports',
   depreciation: 'Depreciation',
   auditLog: 'Audit Log',
   categories: 'Categories',
+  subCategories: 'Sub-Categories',
   vendors: 'Vendors',
   locations: 'Locations',
   projects: 'Projects',

@@ -8,6 +8,8 @@ import {
   mergeEmailTemplatesWithRefresh,
   mergeNotificationWorkflowsWithRefresh
 } from './templateRefresh.js';
+import { migrateLegacyWorkflowSlugs } from './migrateLegacySlugs.js';
+import { migrateLegacyNumbering } from './numberingMigration.js';
 
 function mergeNotificationWorkflows(
   parsed?: Partial<IWorkflowSettings>['notificationWorkflows']
@@ -20,33 +22,33 @@ function mergeEmailTemplates(parsed?: IWorkflowSettings['emailTemplates']): IWor
 }
 
 function mergeWorkflowSettings(parsed: Partial<IWorkflowSettings>): IWorkflowSettings {
+  const migrated = migrateLegacyWorkflowSlugs(parsed);
   const defaults = cloneDefaultWorkflowSettings();
   return {
     customStatuses:
-      parsed.customStatuses && parsed.customStatuses.length > 0
-        ? parsed.customStatuses
+      migrated.customStatuses && migrated.customStatuses.length > 0
+        ? migrated.customStatuses
         : defaults.customStatuses,
     customPriorities:
-      parsed.customPriorities && parsed.customPriorities.length > 0
-        ? parsed.customPriorities
+      migrated.customPriorities && migrated.customPriorities.length > 0
+        ? migrated.customPriorities
         : defaults.customPriorities,
-    numbering:
-      parsed.numbering && parsed.numbering.length > 0 ? parsed.numbering : defaults.numbering,
-    tags: parsed.tags || [],
-    notificationWorkflows: mergeNotificationWorkflows(parsed.notificationWorkflows),
+    numbering: migrateLegacyNumbering(migrated.numbering),
+    tags: migrated.tags || [],
+    notificationWorkflows: mergeNotificationWorkflows(migrated.notificationWorkflows),
     workflowRules:
-      parsed.workflowRules && parsed.workflowRules.length > 0
-        ? parsed.workflowRules
+      migrated.workflowRules && migrated.workflowRules.length > 0
+        ? migrated.workflowRules
         : defaults.workflowRules,
-    emailTemplates: mergeEmailTemplates(parsed.emailTemplates),
-    scheduledReports: parsed.scheduledReports || [],
+    emailTemplates: mergeEmailTemplates(migrated.emailTemplates),
+    scheduledReports: migrated.scheduledReports || [],
     emailDeliveryMode:
-      parsed.emailDeliveryMode ??
-      (parsed.graphEmailNotificationsEnabled === false
+      migrated.emailDeliveryMode ??
+      (migrated.graphEmailNotificationsEnabled === false
         ? 'powerAutomate'
         : defaults.emailDeliveryMode ?? 'chronodatApi'),
-    graphEmailNotificationsEnabled: parsed.graphEmailNotificationsEnabled,
-    notificationMailbox: parsed.notificationMailbox ?? defaults.notificationMailbox ?? ''
+    graphEmailNotificationsEnabled: migrated.graphEmailNotificationsEnabled,
+    notificationMailbox: migrated.notificationMailbox ?? defaults.notificationMailbox ?? ''
   };
 }
 

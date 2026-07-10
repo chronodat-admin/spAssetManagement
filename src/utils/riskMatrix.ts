@@ -1,12 +1,12 @@
 import type { IAsset } from '../models/IAsset';
 import type { IWorkflowSettings } from '../models/IWorkflowSettings';
-import { classifyRiskStatus } from '../lib/workflow-settings/utils';
+import { classifyRiskStatus } from '../lib/workflow-settings/utils.js';
 import {
   calculateMatrixPriority,
   getMatrixIndices,
-  MatrixPriority,
   parseChoiceScore
-} from './priorityCalculator';
+} from './priorityCalculator.js';
+import type { MatrixPriority } from './priorityCalculator.js';
 
 /** Minimal shape for dashboard heatmap analytics. */
 export type IRiskMatrixItem = IAsset;

@@ -138,7 +138,7 @@ describe('email template resolution', () => {
 
   it('falls back to workflow subject/body when template slug is inactive', () => {
     const templates = DEFAULT_EMAIL_TEMPLATES.map((item) =>
-      item.slug === 'risk_created' ? { ...item, isActive: false } : item
+      item.slug === 'asset_created' ? { ...item, isActive: false } : item
     );
 
     const content = resolveEmailTemplateContent(
@@ -401,7 +401,7 @@ describe('email template refresh', () => {
     assert.equal(refreshedWorkflows.open.body, DEFAULT_NOTIFICATION_WORKFLOWS.open.body);
 
     const legacyTemplates = DEFAULT_EMAIL_TEMPLATES.map((item) =>
-      item.slug === 'risk_created'
+      item.slug === 'asset_created'
         ? {
             ...item,
             bodyHtml: '<p>A new risk <strong>{RiskID}</strong> - {Title} has been created.</p>'
@@ -409,12 +409,12 @@ describe('email template refresh', () => {
         : item
     );
     const refreshedTemplates = mergeEmailTemplatesWithRefresh(legacyTemplates);
-    const created = refreshedTemplates.find((item) => item.slug === 'risk_created');
+    const created = refreshedTemplates.find((item) => item.slug === 'asset_created');
     assert.match(created.bodyHtml, /{CreatedBy}/);
     assert.match(created.bodyHtml, /{LinkTitle}/);
 
     const customTemplates = DEFAULT_EMAIL_TEMPLATES.map((item) =>
-      item.slug === 'risk_created'
+      item.slug === 'asset_created'
         ? {
             ...item,
             bodyHtml:
@@ -423,14 +423,14 @@ describe('email template refresh', () => {
         : item
     );
     const preservedTemplates = mergeEmailTemplatesWithRefresh(customTemplates);
-    const custom = preservedTemplates.find((item) => item.slug === 'risk_created');
+    const custom = preservedTemplates.find((item) => item.slug === 'asset_created');
     assert.match(custom.bodyHtml, /Custom notice for \{RiskID\}/);
   });
 
   it('includes dedicated templates for in progress, incomplete, and on hold', () => {
     const slugs = DEFAULT_EMAIL_TEMPLATES.map((item) => item.slug);
-    assert.ok(slugs.includes('risk_in_progress'));
-    assert.ok(slugs.includes('risk_incomplete'));
-    assert.ok(slugs.includes('risk_on_hold'));
+    assert.ok(slugs.includes('asset_in_progress'));
+    assert.ok(slugs.includes('asset_incomplete'));
+    assert.ok(slugs.includes('asset_on_hold'));
   });
 });

@@ -1,17 +1,17 @@
 ﻿import { CONSEQUENCE_CHOICES, LIKELIHOOD_CHOICES } from '../constants/assetChoices.js';
 import type { IAsset, ILookupItem } from '../models/IAsset';
 import type { IWorkflowSettings } from '../models/IWorkflowSettings';
-import { classifyRiskStatus, getStatusColor } from '../lib/workflow-settings/utils';
-import { getMatrixPriority, parseChoiceScore } from './priorityCalculator';
-import { getNumericRiskRating, isActiveRisk } from './riskMatrix';
-import { calculateRiskRating, type RiskRatingResult } from './riskRatingCalculator';
+import { classifyRiskStatus, getStatusColor } from '../lib/workflow-settings/utils.js';
+import { getMatrixPriority, parseChoiceScore } from './priorityCalculator.js';
+import { getNumericRiskRating, isActiveRisk } from './riskMatrix.js';
+import { calculateRiskRating, type RiskRatingResult } from './riskRatingCalculator.js';
 import {
   countByStatus,
   getAssetDashboardStats,
   getTotalAssetValue,
   resolveAssetStatusTitle,
   type IAssetDashboardStats
-} from './assetDashboardStats';
+} from './assetDashboardStats.js';
 
 export {
   countByStatus,
@@ -287,10 +287,13 @@ export function getRiskNumericRating(
 export function getLocationValueChartData(assets: IAsset[]): { location: string; value: number }[] {
   const totals = new Map<string, number>();
   assets.forEach((asset) => {
+    if (asset.AM_IsDeleted) return;
     const location = asset.AM_Location?.Title || 'Unassigned';
     totals.set(location, (totals.get(location) || 0) + (asset.AM_Cost || 0));
   });
-  return Array.from(totals.entries()).map(([location, value]) => ({ location, value }));
+  return Array.from(totals.entries())
+    .map(([location, value]) => ({ location, value }))
+    .sort((a, b) => b.value - a.value || a.location.localeCompare(b.location));
 }
 
 export function getWarrantyExpiringChartData(assets: IAsset[]): { bucket: string; count: number }[] {
@@ -302,6 +305,7 @@ export function getWarrantyExpiringChartData(assets: IAsset[]): { bucket: string
     { bucket: '61–90 days', count: 0 }
   ];
   assets.forEach((asset) => {
+    if (asset.AM_IsDeleted) return;
     if (!asset.AM_WarrantyExpiry) return;
     const expiry = new Date(asset.AM_WarrantyExpiry).getTime();
     const days = Math.floor((expiry - now) / day);
@@ -311,4 +315,55 @@ export function getWarrantyExpiringChartData(assets: IAsset[]): { bucket: string
     else buckets[2].count += 1;
   });
   return buckets;
+}
+
+export function getAssetTypeChartData(assets: IAsset[]): { type: string; count: number }[] {
+  const counts = new Map<string, number>();
+  assets.forEach((asset) => {
+    if (asset.AM_IsDeleted) return;
+    const type = asset.AM_AssetType?.Title || 'Unassigned';
+    counts.set(type, (counts.get(type) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+}
+
+export function getVendorChartData(assets: IAsset[]): { vendor: string; count: number }[] {
+  const counts = new Map<string, number>();
+  assets.forEach((asset) => {
+    if (asset.AM_IsDeleted) return;
+    const vendor = asset.AM_Vendor?.Title || 'Unassigned';
+    counts.set(vendor, (counts.get(vendor) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .map(([vendor, count]) => ({ vendor, count }))
+    .sort((a, b) => b.count - a.count || a.vendor.localeCompare(b.vendor))
+    .slice(0, 8);
+}
+
+/** Assets purchased per month for the trailing 12 months (including current month). */
+export function getPurchaseTrendChartData(assets: IAsset[]): { month: string; count: number }[] {
+  const now = new Date();
+  const buckets: { month: string; count: number; sortKey: number }[] = [];
+
+  for (let offset = 11; offset >= 0; offset--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    const month = date.toLocaleString(undefined, { month: 'short', year: '2-digit' });
+    buckets.push({ month, count: 0, sortKey: date.getTime() });
+  }
+
+  assets.forEach((asset) => {
+    if (asset.AM_IsDeleted || !asset.AM_PurchaseDate) return;
+    const purchase = new Date(asset.AM_PurchaseDate);
+    if (Number.isNaN(purchase.getTime())) return;
+
+    const monthStart = new Date(purchase.getFullYear(), purchase.getMonth(), 1).getTime();
+    const bucket = buckets.find((entry) => entry.sortKey === monthStart);
+    if (bucket) {
+      bucket.count += 1;
+    }
+  });
+
+  return buckets.map(({ month, count }) => ({ month, count }));
 }

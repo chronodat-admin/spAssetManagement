@@ -1,18 +1,9 @@
 ﻿import * as React from 'react';
-import {
-  Button,
-  MessageBar,
-  MessageBarActions,
-  MessageBarBody,
-  MessageBarTitle,
-  makeStyles,
-  tokens
-} from '@fluentui/react-components';
-import { PlayRegular, SettingsRegular } from '@fluentui/react-icons';
+import { makeStyles, tokens } from '@fluentui/react-components';
 import { IProvisioningStatus } from '../../models/IAssetApp';
-import { getProvisioningListDisplayLabel } from '../../utils/provisioningListLabels';
-import { SITE_OWNER_REQUIRED_MESSAGE } from '../../utils/sitePermissions';
-import { DedicatedSubsiteWarning } from './DedicatedSubsiteWarning';
+import { SetupContextNotifications } from './SetupContextNotifications';
+
+export { SetupContextNotifications };
 
 const useStyles = makeStyles({
   stack: {
@@ -51,35 +42,14 @@ export const SetupPromptBanner: React.FC<ISetupPromptBannerProps> = ({
 
   return (
     <div className={styles.stack}>
-      <DedicatedSubsiteWarning isTeamsHost={isTeamsHost} />
-      <MessageBar intent="warning" layout="multiline">
-        <MessageBarBody>
-          <MessageBarTitle>Setup required</MessageBarTitle>
-          {status.missingCount} list{status.missingCount === 1 ? '' : 's'} still need setup (
-          {status.missingLists.map(getProvisioningListDisplayLabel).join(', ')}). Complete onboarding to create or repair lists and seed
-          default data.
-          {!isSiteOwner && !isAppAdministrator ? (
-            <>
-              {' '}
-              {ownerAccessMessage || SITE_OWNER_REQUIRED_MESSAGE}
-            </>
-          ) : null}
-        </MessageBarBody>
-        {isSiteOwner || isAppAdministrator ? (
-          <MessageBarActions>
-            {isSiteOwner ? (
-              <Button appearance="primary" size="small" icon={<PlayRegular />} onClick={onCompleteSetup}>
-                Complete Setup
-              </Button>
-            ) : null}
-            {isAppAdministrator ? (
-              <Button appearance="secondary" size="small" icon={<SettingsRegular />} onClick={onOpenSettings}>
-                View in Settings
-              </Button>
-            ) : null}
-          </MessageBarActions>
-        ) : null}
-      </MessageBar>
+      <SetupContextNotifications
+        isTeamsHost={isTeamsHost}
+        isSiteOwner={isSiteOwner}
+        isAppAdministrator={isAppAdministrator}
+        ownerAccessMessage={ownerAccessMessage}
+        onCompleteSetup={onCompleteSetup}
+        onOpenSettings={onOpenSettings}
+      />
     </div>
   );
 };

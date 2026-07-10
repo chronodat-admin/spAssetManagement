@@ -3,8 +3,6 @@ import {
   Badge,
   Button,
   Caption1,
-  MessageBar,
-  MessageBarBody,
   Spinner,
   Text,
   makeStyles,
@@ -15,7 +13,8 @@ import { ArrowLeftRegular, BookOpenRegular } from '@fluentui/react-icons';
 import { IComplianceControl, IComplianceFramework } from '../../models/ICompliance';
 import { ComplianceService } from '../../services/ComplianceService';
 import { groupControlsByCategory } from '../../utils/complianceAnalytics';
-import { ContentCard } from '../Layout/ContentCard';
+import { ContentCard } from '../Layout/ContentCard';import { AppMessageBar } from '../Layout/AppMessageBar';
+
 
 const useStyles = makeStyles({
   root: {
@@ -115,9 +114,7 @@ export const ComplianceFrameworkDetail: React.FC<IComplianceFrameworkDetailProps
   if (!framework) {
     return (
       <div className={styles.root}>
-        <MessageBar intent="error">
-          <MessageBarBody>{error || 'Framework not found.'}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error || 'Framework not found.'}</AppMessageBar>
         <Button appearance="subtle" icon={<ArrowLeftRegular />} onClick={onBack}>
           Back to Compliance
         </Button>
@@ -130,9 +127,7 @@ export const ComplianceFrameworkDetail: React.FC<IComplianceFrameworkDetailProps
   return (
     <div className={styles.root}>
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
       )}
 
       <Button appearance="subtle" icon={<ArrowLeftRegular />} onClick={onBack}>

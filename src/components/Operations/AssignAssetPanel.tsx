@@ -2,13 +2,13 @@ import * as React from 'react';
 import {
   Button,
   Field,
-  MessageBar,
-  MessageBarBody,
-  Textarea,
-  tokens
+  Text,
+  Textarea
 } from '@fluentui/react-components';
-import { SaveRegular } from '@fluentui/react-icons';
+import { PersonAddRegular, SaveRegular } from '@fluentui/react-icons';
 import { ContentCard } from '../Layout/ContentCard';
+import { EmptyState } from '../Layout/EmptyState';
+import { useFormStyles } from '../Forms/formStyles';
 import { AppDropdown } from '../Dropdown/AppDropdown';
 import { Option } from '@fluentui/react-components';
 import { PeoplePickerField } from '../PeoplePicker/PeoplePickerField';
@@ -16,6 +16,10 @@ import { IAsset } from '../../models/IAssetApp';
 import { IPersonPickerItem } from '../../models/IPersonPickerItem';
 import { AssetService } from '../../services/AssetService';
 import { AssignmentService } from '../../services/AssignmentService';
+import { buildAssetSelectOption } from '../../utils/assetSelectOptions';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { PageNotifications } from '../Layout/PageNotifications';
+
 
 export interface IAssignAssetPanelProps {
   assets: IAsset[];
@@ -38,6 +42,8 @@ export const AssignAssetPanel: React.FC<IAssignAssetPanelProps> = ({
   assignmentService,
   onComplete
 }) => {
+  const styles = useFormStyles();
+  const { t } = useTranslation();
   const availableAssets = React.useMemo(() => assets.filter(isAvailableAsset), [assets]);
   const [assetId, setAssetId] = React.useState('');
   const [assignees, setAssignees] = React.useState<IPersonPickerItem[]>([]);
@@ -79,28 +85,40 @@ export const AssignAssetPanel: React.FC<IAssignAssetPanelProps> = ({
 
   return (
     <ContentCard>
-      {error ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
-      ) : null}
+      <PageNotifications error={error || undefined} />
 
       {availableAssets.length === 0 ? (
-        <MessageBar intent="info">
-          <MessageBarBody>No available assets to assign. Add assets or mark items as Available first.</MessageBarBody>
-        </MessageBar>
+        <EmptyState
+          bordered
+          icon={<PersonAddRegular />}
+          title={t('operationsEmpty', 'noAvailableAssetsTitle', 'No available assets')}
+          description={t(
+            'operationsEmpty',
+            'noAvailableAssetsDescription',
+            'Add assets to the register or mark items as Available before assigning.'
+          )}
+        />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM, maxWidth: 560 }}>
+        <div className={styles.form}>
+          <div className={styles.intro}>
+            <Text>Assign an available asset to a person. The asset status changes to Assigned.</Text>
+          </div>
+
           <Field label="Asset" required>
             <AppDropdown
+              searchable
+              searchPlaceholder="Search assets…"
               selectedOptions={assetId ? [assetId] : []}
               onOptionSelect={(_, data) => setAssetId(data.optionValue || '')}
             >
-              {availableAssets.map((asset) => (
-                <Option key={asset.Id} value={String(asset.Id)} text={`${asset.AM_AssetId || asset.Id} — ${asset.Title}`}>
-                  {asset.AM_AssetId || asset.Id} — {asset.Title}
-                </Option>
-              ))}
+              {availableAssets.map((asset) => {
+                const option = buildAssetSelectOption(asset);
+                return (
+                  <Option key={asset.Id} value={option.value} text={option.searchText}>
+                    {option.label}
+                  </Option>
+                );
+              })}
             </AppDropdown>
           </Field>
 
@@ -115,10 +133,10 @@ export const AssignAssetPanel: React.FC<IAssignAssetPanelProps> = ({
           />
 
           <Field label="Notes">
-            <Textarea value={notes} onChange={(_, data) => setNotes(data.value)} rows={3} />
+            <Textarea value={notes} onChange={(_, data) => setNotes(data.value)} rows={3} resize="vertical" />
           </Field>
 
-          <div>
+          <div className={styles.actions}>
             <Button
               appearance="primary"
               icon={<SaveRegular />}

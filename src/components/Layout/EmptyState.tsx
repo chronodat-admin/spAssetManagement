@@ -41,6 +41,13 @@ const useStyles = makeStyles({
   },
   action: {
     marginTop: tokens.spacingVerticalM
+  },
+  fullWidth: {
+    width: '100%',
+    boxSizing: 'border-box'
+  },
+  inset: {
+    padding: `${tokens.spacingVerticalL} ${tokens.spacingHorizontalL}`
   }
 });
 
@@ -50,6 +57,10 @@ export interface IEmptyStateProps {
   description?: string;
   action?: React.ReactNode;
   bordered?: boolean;
+  /** Adds horizontal padding for flush ContentCard bodies. */
+  inset?: boolean;
+  /** Stretch to full card width (recommended with inset). */
+  fullWidth?: boolean;
   className?: string;
 }
 
@@ -59,11 +70,21 @@ export const EmptyState: React.FC<IEmptyStateProps> = ({
   description,
   action,
   bordered,
+  inset,
+  fullWidth,
   className
 }) => {
   const styles = useStyles();
   return (
-    <div className={mergeClasses(styles.root, bordered && styles.bordered, className)}>
+    <div
+      className={mergeClasses(
+        styles.root,
+        bordered && styles.bordered,
+        inset && styles.inset,
+        fullWidth && styles.fullWidth,
+        className
+      )}
+    >
       <span className={styles.iconWrap} aria-hidden>
         {icon}
       </span>

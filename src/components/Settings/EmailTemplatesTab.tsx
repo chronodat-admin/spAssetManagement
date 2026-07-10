@@ -4,8 +4,6 @@ import {
   Button,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Option,
   Spinner,
   Switch,
@@ -27,10 +25,18 @@ import type { IAppSettings } from '../../models/IAssetApp';
 import { createTagId } from '../../lib/workflow-settings/utils';
 import { getDefaultEmailTemplateBySlug } from '../../lib/workflow-settings/templateRefresh';
 import { serializeWorkflowSettings } from '../../lib/workflow-settings/storage';
+import {
+  ASSET_EMAIL_TEMPLATE_SLUGS,
+  EMAIL_TEMPLATE_SLUG_LABELS,
+  normalizeEmailTemplateSlug,
+  normalizeEmailEntityType
+} from '../../lib/workflow-settings/slugs';
 import { isScheduleDependentEmailTemplateSlug } from '../../constants/scheduleDependentFeatures';
 import { AssetService } from '../../services/AssetService';
 import { useWorkflowSettingsStyles } from './workflowSettingsStyles';
 import { useContentCardStyles } from '../Layout/ContentCard';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+
 import {
   DATA_TABLE_CLASS,
   getDataTableLayoutStyle,
@@ -39,22 +45,12 @@ import {
 
 const ENTITY_TYPES = [
   { value: 'all', label: 'All' },
-  { value: 'risk', label: 'Risk' },
+  { value: 'asset', label: 'Asset' },
   { value: 'business', label: 'Business' },
   { value: 'project', label: 'Project' }
 ];
 
-const TEMPLATE_SLUGS = [
-  'risk_created',
-  'risk_updated',
-  'risk_assigned',
-  'risk_in_progress',
-  'risk_incomplete',
-  'risk_on_hold',
-  'risk_resolved',
-  'risk_comment',
-  'risk_priority_changed'
-];
+const TEMPLATE_SLUGS = [...ASSET_EMAIL_TEMPLATE_SLUGS];
 
 const AVAILABLE_VARIABLES = [
   'AM_AssetId',
@@ -96,11 +92,11 @@ export const EmailTemplatesTab: React.FC<IEmailTemplatesTabProps> = ({
   const [panelOpen, setPanelOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [name, setName] = React.useState('');
-  const [slug, setSlug] = React.useState('risk_created');
+  const [slug, setSlug] = React.useState('asset_created');
   const [subject, setSubject] = React.useState('');
   const [bodyHtml, setBodyHtml] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const [entityType, setEntityType] = React.useState<IEmailTemplate['entityType']>('risk');
+  const [entityType, setEntityType] = React.useState<IEmailTemplate['entityType']>('asset');
   const [isActive, setIsActive] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [saveError, setSaveError] = React.useState('');
@@ -123,10 +119,10 @@ export const EmailTemplatesTab: React.FC<IEmailTemplatesTabProps> = ({
 
   const resetForm = (): void => {
     setEditingId(null);
-    setSlug('risk_created');
-    setEntityType('risk');
+    setSlug('asset_created');
+    setEntityType('asset');
     setIsActive(true);
-    applyDefaultTemplateFields('risk_created', { fillName: true });
+    applyDefaultTemplateFields('asset_created', { fillName: true });
   };
 
   const openCreate = (): void => {
@@ -260,10 +256,14 @@ export const EmailTemplatesTab: React.FC<IEmailTemplatesTabProps> = ({
                     {template.name}
                   </TableCell>
                   <TableCell className={cardStyles.dataTableCell} style={getListColumnStyle('slug')}>
-                    {template.slug}
+                    {EMAIL_TEMPLATE_SLUG_LABELS[
+                      normalizeEmailTemplateSlug(template.slug) as keyof typeof EMAIL_TEMPLATE_SLUG_LABELS
+                    ] || template.slug}
                   </TableCell>
                   <TableCell className={cardStyles.dataTableCell} style={getListColumnStyle('entity')}>
-                    {template.entityType}
+                    {ENTITY_TYPES.find(
+                      (item) => item.value === normalizeEmailEntityType(template.entityType)
+                    )?.label || template.entityType}
                   </TableCell>
                   <TableCell style={getListColumnStyle('status')}>
                     <Badge appearance={template.isActive ? 'filled' : 'outline'}>
@@ -318,9 +318,7 @@ export const EmailTemplatesTab: React.FC<IEmailTemplatesTabProps> = ({
       >
         <div className={styles.panelBody}>
           {saveError ? (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="error">{saveError}</AppMessageBar>
           ) : null}
           <Field label="Template name" required>
             <Input value={name} onChange={(_, data) => setName(data.value)} />
@@ -330,7 +328,7 @@ export const EmailTemplatesTab: React.FC<IEmailTemplatesTabProps> = ({
               value={slug}
               selectedOptions={[slug]}
               onOptionSelect={(_, data) => {
-                const nextSlug = String(data.optionValue || 'risk_created');
+                const nextSlug = String(data.optionValue || 'asset_created');
                 setSlug(nextSlug);
                 if (!editingId) {
                   applyDefaultTemplateFields(nextSlug, { fillName: true });
@@ -339,17 +337,17 @@ export const EmailTemplatesTab: React.FC<IEmailTemplatesTabProps> = ({
             >
               {TEMPLATE_SLUGS.map((item) => (
                 <Option key={item} value={item}>
-                  {item}
+                  {EMAIL_TEMPLATE_SLUG_LABELS[item]}
                 </Option>
               ))}
             </AppDropdown>
           </Field>
           <Field label="Entity type">
             <AppDropdown
-              value={ENTITY_TYPES.find((item) => item.value === entityType)?.label || 'Risk'}
+              value={ENTITY_TYPES.find((item) => item.value === entityType)?.label || 'Asset'}
               selectedOptions={[entityType]}
               onOptionSelect={(_, data) =>
-                setEntityType((data.optionValue as IEmailTemplate['entityType']) || 'risk')
+                setEntityType((data.optionValue as IEmailTemplate['entityType']) || 'asset')
               }
             >
               {ENTITY_TYPES.map((item) => (

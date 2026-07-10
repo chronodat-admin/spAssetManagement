@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
   "manifestVersion": "1.17",
-  "version": "1.0.3",
+  "version": "1.0.12",
   "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
   "name": {
     "short": "Asset Management",
@@ -12,16 +12,16 @@
     "full": "Asset Management provides a SharePoint-backed asset register, assignments, inventory, and reporting experience across Microsoft 365."
   },
   "developer": {
-    "name": "Your Organization",
-    "websiteUrl": "https://www.example.com",
-    "privacyUrl": "https://www.example.com/privacy",
-    "termsOfUseUrl": "https://www.example.com/terms"
+    "name": "Chronodat",
+    "websiteUrl": "https://www.chronodat.com/",
+    "privacyUrl": "https://www.chronodat.com/Privacy",
+    "termsOfUseUrl": "https://www.chronodat.com/terms-conditions"
   },
   "icons": {
     "color": "color.png",
     "outline": "outline.png"
   },
-  "accentColor": "#2563eb",
+  "accentColor": "#f1dd00",
   "staticTabs": [
     {
       "entityId": "assetManagement",

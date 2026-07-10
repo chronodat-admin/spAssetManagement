@@ -3,8 +3,6 @@ import {
   Badge,
   Button,
   Card,
-  MessageBar,
-  MessageBarBody,
   Spinner,
   Text,
   Title3,
@@ -12,6 +10,7 @@ import {
   shorthands,
   tokens
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import {
   ArrowSyncRegular,
   OpenRegular,
@@ -154,12 +153,10 @@ export const SubscriptionSettingsTab: React.FC = () => {
           description="Manage your 14-day free trial and yearly subscription."
           icon={PaymentRegular}
         />
-        <MessageBar intent="info">
-          <MessageBarBody>
-            Subscription checking is not configured for this web part. Ask your administrator to
-            set the <strong>Subscription API URL</strong> in the web part properties.
-          </MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="info">
+          Subscription checking is not configured for this web part. Ask your administrator to set the{' '}
+          <strong>Subscription API URL</strong> in the web part properties.
+        </AppMessageBar>
       </div>
     );
   }
@@ -173,15 +170,11 @@ export const SubscriptionSettingsTab: React.FC = () => {
       />
 
       {actionError ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{actionError}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{actionError}</AppMessageBar>
       ) : null}
 
       {error ? (
-        <MessageBar intent="warning">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="warning">{error}</AppMessageBar>
       ) : null}
 
       <Card className={styles.card}>
@@ -274,8 +267,8 @@ export const SubscriptionSettingsTab: React.FC = () => {
         <Title3 as="h3">Yearly subscription</Title3>
         <Text>
           One subscription covers all users on this SharePoint site. After the{' '}
-          {status?.trialDaysTotal ?? 14}-day free trial, subscribe to continue using risk and
-          compliance features without interruption.
+          {status?.trialDaysTotal ?? 14}-day free trial, subscribe to continue using asset management
+          features without interruption.
         </Text>
         <ul className={styles.featureList}>
           <li>14-day free trial starts automatically on first use</li>
@@ -284,12 +277,10 @@ export const SubscriptionSettingsTab: React.FC = () => {
           <li>Manage payment methods and invoices from the billing portal</li>
         </ul>
         {status?.status === 'trialing' ? (
-          <MessageBar intent="info">
-            <MessageBarBody>
-              {status.trialDaysRemaining} day{status.trialDaysRemaining === 1 ? '' : 's'} left —
-              subscribe anytime before the trial ends.
-            </MessageBarBody>
-          </MessageBar>
+          <AppMessageBar intent="info">
+            {status.trialDaysRemaining} day{status.trialDaysRemaining === 1 ? '' : 's'} left — subscribe
+            anytime before the trial ends.
+          </AppMessageBar>
         ) : null}
       </Card>
     </div>

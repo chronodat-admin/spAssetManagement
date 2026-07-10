@@ -1,9 +1,10 @@
 ﻿import * as React from 'react';
 import { DisplayMode } from '@microsoft/sp-core-library';
-import { MessageBar, MessageBarBody, Text, Title3 } from '@fluentui/react-components';
+import { Link, Text, Title3 } from '@fluentui/react-components';
+import { AppMessageBar } from '../../../components/Layout/AppMessageBar';
 import { AppPage, IProvisioningStep, IProvisioningStatus } from '../../../models/IAssetApp';
 import { IAppSettings, IAsset, ILookupItem } from '../../../models/IAsset';
-import { ASSETS_LIST_TITLE, CATEGORIES_LIST_TITLE } from '../../../models/IListDefinitions';
+import { ASSETS_LIST_TITLE, CATEGORIES_LIST_TITLE, ASSET_TYPES_LIST_TITLE, VENDORS_LIST_TITLE, LOCATIONS_LIST_TITLE } from '../../../models/IListDefinitions';
 import { AssetManagementShell } from '../../../components/Layout/AssetManagementShell';
 import { AppLoadingSkeleton } from '../../../components/Layout/AppLoadingSkeleton';
 import { ContentCard } from '../../../components/Layout/ContentCard';
@@ -24,6 +25,13 @@ import { BookingDetailsPanel } from '../../../components/Operations/BookingDetai
 import { DepreciationPage } from '../../../components/Operations/DepreciationPage';
 import { SoftwareLicensesPage } from '../../../components/Operations/SoftwareLicensesPage';
 import { InventoryPage } from '../../../components/Operations/InventoryPage';
+import { MaintenancePage } from '../../../components/Operations/MaintenancePage';
+import { RequestAssetPage } from '../../../components/Operations/RequestAssetPage';
+import { MyRequestsPage } from '../../../components/Operations/MyRequestsPage';
+import { ManageRequestsPage } from '../../../components/Operations/ManageRequestsPage';
+import { BulkAssignPanel } from '../../../components/Operations/BulkAssignPanel';
+import { BulkReturnPanel } from '../../../components/Operations/BulkReturnPanel';
+import { BarcodeScannerPage } from '../../../components/Operations/BarcodeScannerPage';
 import { AuditLogPage } from '../../../components/Operations/AuditLogPage';
 import { LookupPageRouter } from '../../../components/LookupLists/LookupPageRouter';
 import { Settings } from '../../../components/Settings/Settings';
@@ -37,6 +45,14 @@ import { SoftwareLicenseService } from '../../../services/SoftwareLicenseService
 import { InventoryService } from '../../../services/InventoryService';
 import { ListProvisioningService } from '../../../services/ListProvisioningService';
 import { ReportBuilderService } from '../../../services/ReportBuilderService';
+import { MaintenanceService } from '../../../services/MaintenanceService';
+import { AssetRequestService } from '../../../services/AssetRequestService';
+import { ImportExportService } from '../../../services/ImportExportService';
+import { IntuneSyncService } from '../../../services/IntuneSyncService';
+import { RoleService } from '../../../services/RoleService';
+import { LocaleProvider } from '../../../i18n/LocaleContext';
+import { useAppRoles } from '../../../hooks/useAppRoles';
+import { canAccessPage } from '../../../utils/rbac';
 import { removeAppLoadingState } from '../../../utils/loadAssetManagementStyles';
 import { resolveAppDisplayName, SUBSCRIPTION_PRODUCT_SLUG } from '../../../constants/spfxComponents';
 import {
@@ -56,6 +72,7 @@ import { useListPermissions } from '../../../hooks/useListPermissions';
 import { useMailSendApproval } from '../../../hooks/useMailSendApproval';
 import { scrollAppContentToTop } from '../../../utils/scrollAppContentToTop';
 import { setUserPhotoBaseUrl } from '../../../utils/userPhoto';
+import { isAssignedToUser } from '../../../utils/assignmentUtils';
 import {
   getAadTenantId,
   getSpfxSiteUrl,
@@ -90,6 +107,9 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   const [assets, setAssets] = React.useState<IAsset[]>([]);
   const [settings, setSettings] = React.useState<IAppSettings | undefined>();
   const [categories, setCategories] = React.useState<ILookupItem[]>([]);
+  const [assetTypes, setAssetTypes] = React.useState<ILookupItem[]>([]);
+  const [vendors, setVendors] = React.useState<ILookupItem[]>([]);
+  const [locations, setLocations] = React.useState<ILookupItem[]>([]);
   const [projects, setProjects] = React.useState<ILookupItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -151,6 +171,33 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     [context.spHttpClient, webUrl]
   );
 
+  const maintenanceService = React.useMemo(
+    () => new MaintenanceService(context.spHttpClient, webUrl),
+    [context.spHttpClient, webUrl]
+  );
+
+  const requestService = React.useMemo(
+    () => new AssetRequestService(context.spHttpClient, webUrl),
+    [context.spHttpClient, webUrl]
+  );
+
+  const importExportService = React.useMemo(
+    () => new ImportExportService(context.spHttpClient, webUrl),
+    [context.spHttpClient, webUrl]
+  );
+
+  const intuneSyncService = React.useMemo(
+    () => new IntuneSyncService(context.spHttpClient, webUrl),
+    [context.spHttpClient, webUrl]
+  );
+
+  const roleService = React.useMemo(
+    () => new RoleService(context.spHttpClient, webUrl),
+    [context.spHttpClient, webUrl]
+  );
+
+  const currentUserId = context.pageContext.legacyPageContext.userId as number | undefined;
+
   const provisioningScope = React.useMemo<IProvisioningScope>(
     () => ({
       tenantId: context.pageContext.aadInfo?.tenantId?.toString() || 'local',
@@ -162,6 +209,18 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
 
   const setupComplete =
     Boolean(provisioningStatus?.isComplete) || hasCompletedProvisioning(provisioningScope);
+
+  const { permissions, isAppAdministrator, permissionRows } = useAppRoles(
+    roleService,
+    currentUserId,
+    setupComplete
+  );
+
+  const adminEmails = React.useMemo(
+    () =>
+      [context.pageContext.user.email].filter((email): email is string => Boolean(email)),
+    [context.pageContext.user.email]
+  );
 
   const { permissions: assetPermissions } = useListPermissions(
     assetService,
@@ -204,15 +263,22 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     setLoading(true);
     setError('');
     try {
-      const [nextSettings, nextCategories, nextProjects, nextAssets] = await Promise.all([
+      const [nextSettings, nextCategories, nextProjects, nextAssetTypes, nextVendors, nextLocations, nextAssets] =
+        await Promise.all([
         assetService.getAppSettings().catch(() => undefined),
         assetService.getLookupItems(CATEGORIES_LIST_TITLE).catch(() => [] as ILookupItem[]),
         assetService.getProjectItems().catch(() => [] as ILookupItem[]),
+        assetService.getLookupItems(ASSET_TYPES_LIST_TITLE).catch(() => [] as ILookupItem[]),
+        assetService.getLookupItems(VENDORS_LIST_TITLE).catch(() => [] as ILookupItem[]),
+        assetService.getLookupItems(LOCATIONS_LIST_TITLE).catch(() => [] as ILookupItem[]),
         assetService.getAssets().catch(() => [] as IAsset[])
       ]);
       setSettings(nextSettings);
       setCategories(nextCategories);
       setProjects(nextProjects);
+      setAssetTypes(nextAssetTypes);
+      setVendors(nextVendors);
+      setLocations(nextLocations);
       setAssets(nextAssets);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -237,7 +303,17 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     setCurrentPage(page);
   }, []);
 
-  const handleRunSetup = React.useCallback(async (): Promise<void> => {
+  const setupNotificationProps = React.useMemo(
+    () => ({
+      isSiteOwner: permissions.canAccessSettings,
+      isAppAdministrator,
+      onCompleteSetup: () => setShowSetupWizard(true),
+      onOpenSettings: () => handleNavigate('settings')
+    }),
+    [permissions.canAccessSettings, isAppAdministrator, handleNavigate]
+  );
+
+  const handleRunSetup = React.useCallback(async (options?: { includeSampleData?: boolean }): Promise<void> => {
     setShowSetupWizard(true);
     setIsProvisioning(true);
     setProvisioningError('');
@@ -245,7 +321,9 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     try {
       const steps = createInitialSteps();
       setProvisioningSteps(steps);
-      const result = await provisioningService.provisionAll(setProvisioningSteps, steps);
+      const result = await provisioningService.provisionAll(setProvisioningSteps, steps, {
+        includeSampleData: options?.includeSampleData !== false
+      });
       if (!result.success) {
         setProvisioningError(result.error || 'Setup failed. Review the steps above and try again.');
         await refreshProvisioningStatus();
@@ -263,10 +341,14 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   }, [provisioningService, provisioningScope, refreshProvisioningStatus, loadData]);
 
   const handleCreateAsset = React.useCallback((): void => {
+    if (!provisioningStatus?.isComplete) {
+      setShowSetupWizard(true);
+      return;
+    }
     setEditingAsset(undefined);
     setFormMode('create');
     setShowForm(true);
-  }, []);
+  }, [provisioningStatus?.isComplete]);
 
   const handleViewAsset = React.useCallback((asset: IAsset): void => {
     setEditingAsset(asset);
@@ -283,10 +365,12 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   const filteredAssets = React.useMemo(() => {
     switch (currentPage) {
       case 'assignedToMe':
-        return assets.filter(
-          (a) =>
-            a.AM_AssignedTo?.Email === context.pageContext.user.email ||
-            a.AM_AssignedTo?.Title === context.pageContext.user.displayName
+        return assets.filter((a) =>
+          isAssignedToUser(a, {
+            id: currentUserId,
+            email: context.pageContext.user.email,
+            displayName: context.pageContext.user.displayName
+          })
         );
       case 'available':
         return assets.filter((a) => {
@@ -311,14 +395,14 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
       default:
         return assets.filter((a) => !a.AM_IsDeleted);
     }
-  }, [assets, currentPage, context.pageContext.user]);
+  }, [assets, currentPage, context.pageContext.user, currentUserId]);
 
   if (displayMode === DisplayMode.Edit) {
     return <EditModePlaceholder isTeamsHost={isTeamsHost} />;
   }
 
   if (!bootstrapped || subscription.loading) {
-    return <AppLoadingSkeleton />;
+    return <AppLoadingSkeleton fullPage />;
   }
 
   const subscriptionBlocked =
@@ -330,7 +414,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     currentPage !== 'settings'
   ) {
     return (
-      <AppearanceThemeProvider webUrl={webUrl} isTeamsHost={isTeamsHost}>
+      <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
         <SubscriptionConnectivityError
           onOpenSubscriptionSettings={() => setCurrentPage('settings')}
         />
@@ -340,7 +424,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
 
   if (subscriptionBlocked && !subscription.connectivityError && currentPage !== 'settings') {
     return (
-      <AppearanceThemeProvider webUrl={webUrl} isTeamsHost={isTeamsHost}>
+      <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
         <SubscriptionPaywall onOpenSubscriptionSettings={() => setCurrentPage('settings')} />
       </AppearanceThemeProvider>
     );
@@ -348,7 +432,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
 
   if (!setupComplete && !showSetupWizard) {
     return (
-      <AppearanceThemeProvider webUrl={webUrl} isTeamsHost={isTeamsHost}>
+      <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
         <ProvisioningOnboarding
           steps={provisioningSteps}
           isRunning={isProvisioning}
@@ -358,7 +442,8 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
           mailSendAdminUrl={mailSendAdminUrl}
           onRefreshMailSendStatus={refreshMailSendStatus}
           refreshingMailSendStatus={refreshingMailSendStatus}
-          onStart={() => void handleRunSetup()}
+          onStart={(options) => void handleRunSetup(options)}
+          {...setupNotificationProps}
         />
       </AppearanceThemeProvider>
     );
@@ -378,11 +463,47 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
       return <AppLoadingSkeleton />;
     }
 
+    if (!canAccessPage(currentPage, permissions, permissionRows)) {
+      return (
+        <AppMessageBar intent="warning">
+          You do not have permission to view this page.
+        </AppMessageBar>
+      );
+    }
+
     if (error) {
       return (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
+      );
+    }
+
+    if (!provisioningStatus?.isComplete && currentPage === 'dashboard') {
+      return (
+        <>
+          {!showSetupWizard && provisioningStatus ? (
+            <SetupPromptBanner
+              status={provisioningStatus}
+              isSiteOwner={permissions.canAccessSettings}
+              isAppAdministrator={isAppAdministrator}
+              isTeamsHost={isTeamsHost}
+              onCompleteSetup={() => setShowSetupWizard(true)}
+              onOpenSettings={() => handleNavigate('settings')}
+            />
+          ) : null}
+          <AppMessageBar intent="info">
+            Setup is not complete. Select <strong>Complete Setup</strong> in the sidebar or go to{' '}
+            <Link
+              href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                handleNavigate('settings');
+              }}
+            >
+              Settings
+            </Link>{' '}
+            to finish creating and repairing SharePoint lists.
+          </AppMessageBar>
+        </>
       );
     }
 
@@ -397,6 +518,9 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
             consequenceItems={[]}
             settings={settings}
             filters={portfolioFilters}
+            userId={currentUserId}
+            userEmail={context.pageContext.user.email}
+            userDisplayName={context.pageContext.user.displayName}
             onEditRisk={handleEditAsset}
           />
         );
@@ -434,11 +558,62 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         return <SoftwareLicensesPage softwareService={softwareService} />;
       case 'inventory':
         return <InventoryPage inventoryService={inventoryService} />;
+      case 'maintenance':
+        return (
+          <MaintenancePage
+            maintenanceService={maintenanceService}
+            assetService={assetService}
+            assets={assets}
+          />
+        );
+      case 'requestAsset':
+        return currentUserId ? (
+          <RequestAssetPage
+            requestService={requestService}
+            categories={categories}
+            currentUserId={currentUserId}
+            onComplete={() => void loadData()}
+          />
+        ) : null;
+      case 'myRequests':
+        return currentUserId ? (
+          <MyRequestsPage requestService={requestService} currentUserId={currentUserId} />
+        ) : null;
+      case 'manageRequests':
+        return currentUserId ? (
+          <ManageRequestsPage
+            requestService={requestService}
+            assignmentService={assignmentService}
+            assets={assets}
+            reviewerUserId={currentUserId}
+            onChanged={() => void loadData()}
+          />
+        ) : null;
+      case 'bulkAssign':
+        return (
+          <BulkAssignPanel
+            assets={assets}
+            assetService={assetService}
+            assignmentService={assignmentService}
+            onComplete={() => void loadData()}
+          />
+        );
+      case 'bulkReturn':
+        return (
+          <BulkReturnPanel
+            assets={assets}
+            assignmentService={assignmentService}
+            onComplete={() => void loadData()}
+          />
+        );
+      case 'scanAsset':
+        return <BarcodeScannerPage assets={assets} onViewAsset={handleViewAsset} />;
       case 'depreciation':
         return <DepreciationPage depreciationService={depreciationService} />;
       case 'auditLog':
         return <AuditLogPage assetService={assetService} />;
       case 'categories':
+      case 'subCategories':
       case 'vendors':
       case 'locations':
       case 'projects':
@@ -457,14 +632,21 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
             settings={settings}
             provisioningStatus={provisioningStatus}
             riskService={assetService}
-            isAppAdministrator
-            isSiteOwner
+            isAppAdministrator={isAppAdministrator}
+            isSiteOwner={permissions.canAccessSettings}
             categories={categories}
+            assets={assets}
+            adminEmails={adminEmails}
+            roleService={roleService}
+            importExportService={importExportService}
+            intuneSyncService={intuneSyncService}
+            assignmentService={assignmentService}
+            softwareService={softwareService}
+            aadHttpClientFactory={context.aadHttpClientFactory}
             onSaved={() => void loadData()}
-            onRunSetup={() => {
-              setShowSetupWizard(true);
-              void handleRunSetup();
-            }}
+            onRunSetup={() => setShowSetupWizard(true)}
+            onClearSeedData={() => provisioningService.clearSeedData()}
+            onRestoreSampleData={() => provisioningService.restoreSampleData()}
             onRefreshSetupStatus={() => void refreshProvisioningStatus()}
             mailSendStatus={mailSendStatus}
             mailSendAdminUrl={mailSendAdminUrl}
@@ -485,8 +667,9 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
               riskService={assetService}
               onView={handleViewAsset}
               onEdit={handleEditAsset}
-              canEdit={assetPermissions.canEdit}
-              canDelete={assetPermissions.canDelete}
+              canEdit={assetPermissions.canEdit && permissions.canManageAssets}
+              canDelete={assetPermissions.canDelete && permissions.canDeleteAssets}
+              canRunBulkOps={permissions.canRunBulkOps}
               onRefresh={() => void loadData()}
             />
           );
@@ -494,26 +677,15 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         return (
           <ContentCard>
             <Title3>{pageTitle}</Title3>
-            <Text>{pageSubtitle || `${appName} — this view will be expanded in upcoming tasks.`}</Text>
+            <Text>{pageSubtitle || `${appName} could not find a matching view for this page.`}</Text>
           </ContentCard>
         );
     }
   };
 
   return (
-    <AppearanceThemeProvider webUrl={webUrl} isTeamsHost={isTeamsHost}>
-      <SubscriptionTrialBanner />
-      {!setupComplete && provisioningStatus ? (
-        <>
-          <SetupPromptBanner
-            status={provisioningStatus}
-            isSiteOwner
-            onCompleteSetup={() => setShowSetupWizard(true)}
-            onOpenSettings={() => handleNavigate('settings')}
-          />
-          <MailSendPromptBanner status={mailSendStatus} adminUrl={mailSendAdminUrl} />
-        </>
-      ) : null}
+    <LocaleProvider siteUrl={webUrl}>
+    <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
       {showSetupWizard && (
         <ProvisioningOnboarding
           steps={provisioningSteps}
@@ -525,8 +697,9 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
           mailSendAdminUrl={mailSendAdminUrl}
           onRefreshMailSendStatus={refreshMailSendStatus}
           refreshingMailSendStatus={refreshingMailSendStatus}
-          onStart={() => void handleRunSetup()}
+          onStart={(options) => void handleRunSetup(options)}
           onClose={() => setShowSetupWizard(false)}
+          {...setupNotificationProps}
         />
       )}
       <AssetManagementShell
@@ -536,8 +709,12 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         appName={appName}
         onNavigate={handleNavigate}
         onCreateAsset={handleCreateAsset}
-        createAssetDisabled={subscriptionBlocked || !assetPermissions.canAdd}
-        setupComplete={setupComplete}
+        createAssetDisabled={subscriptionBlocked || !assetPermissions.canAdd || !permissions.canManageAssets}
+        setupComplete={provisioningStatus ? provisioningStatus.isComplete : setupComplete}
+        onRunSetup={() => setShowSetupWizard(true)}
+        showSettings={permissions.canAccessSettings}
+        permissions={permissions}
+        permissionRows={permissionRows}
         isTeamsHost={isTeamsHost}
         currentUser={{
           displayName: context.pageContext.user.displayName,
@@ -545,6 +722,13 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
           loginName: context.pageContext.user.loginName
         }}
       >
+        <SubscriptionTrialBanner
+          isAppAdministrator={isAppAdministrator}
+          onOpenSubscriptionSettings={() => handleNavigate('settings')}
+        />
+        {provisioningStatus?.isComplete ? (
+          <MailSendPromptBanner status={mailSendStatus} adminUrl={mailSendAdminUrl} />
+        ) : null}
         {renderPageContent()}
       </AssetManagementShell>
       <AssetFormPanel
@@ -557,9 +741,9 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         subCategories={[]}
         businesses={categories}
         projects={projects}
-        profiles={[]}
-        responses={[]}
-        strategies={[]}
+        profiles={assetTypes}
+        responses={vendors}
+        strategies={locations}
         onSave={() => {
           setShowForm(false);
           void loadData();
@@ -568,5 +752,6 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         onEdit={() => setFormMode('edit')}
       />
     </AppearanceThemeProvider>
+    </LocaleProvider>
   );
 };

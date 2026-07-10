@@ -183,7 +183,7 @@ export const DashboardPrintView: React.FC<IDashboardPrintViewProps> = ({
 
       <div className={`${layoutStyles.matrixRow} dashboard-print-keep`}>
         <div className={`${styles.section} dashboard-print-section`}>
-          <div className={styles.sectionTitle}>Risk Matrix</div>
+          <div className={styles.sectionTitle}>Priority Matrix</div>
           <div className={layoutStyles.heatmapGrid}>
             <div />
             {MATRIX_CONSEQUENCE_LABELS.map((label) => (
@@ -242,11 +242,11 @@ export const DashboardPrintView: React.FC<IDashboardPrintViewProps> = ({
       </div>
 
       <div className={`${styles.section} dashboard-print-section`} style={{ marginBottom: '12px' }}>
-        <div className={styles.sectionTitle}>Risks ({recentRisks.length})</div>
+        <div className={styles.sectionTitle}>Assets ({recentRisks.length})</div>
         <table className={`${styles.table} dashboard-print-table`}>
           <thead>
             <tr>
-              <th className={styles.tableHeaderCell}>Risk ID</th>
+              <th className={styles.tableHeaderCell}>Asset ID</th>
               <th className={styles.tableHeaderCell}>Title</th>
               <th className={styles.tableHeaderCell}>Priority</th>
               <th className={styles.tableHeaderCell}>Status</th>
@@ -281,7 +281,7 @@ export const DashboardPrintView: React.FC<IDashboardPrintViewProps> = ({
         </div>
 
         <div className={`${styles.section} dashboard-print-section`}>
-          <div className={styles.sectionTitle}>Risk Status by Business</div>
+          <div className={styles.sectionTitle}>Status by Business</div>
           <table className={styles.table}>
             <thead>
               <tr>

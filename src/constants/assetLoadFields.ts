@@ -3,7 +3,6 @@ export const ASSET_SCALAR_LOAD_FIELDS = [
   'AM_AssetId',
   'AM_SerialNumber',
   'AM_Barcode',
-  'AM_Status',
   'AM_AssignedDate',
   'AM_Cost',
   'AM_PurchaseDate',
@@ -30,6 +29,7 @@ export const ASSET_SCALAR_LOAD_FIELDS = [
 ] as const;
 
 export const ASSET_LOOKUP_LOAD_FIELDS = [
+  'AM_Status',
   'AM_Category',
   'AM_SubCategory',
   'AM_AssetType',

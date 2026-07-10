@@ -1,8 +1,6 @@
 import * as React from 'react';
 import {
   Button,
-  MessageBar,
-  MessageBarBody,
   Spinner
 } from '@fluentui/react-components';
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons';
@@ -27,6 +25,8 @@ import { useListPermissions } from '../../hooks/useListPermissions';
 import { useBulkSelection } from '../../hooks/useBulkSelection';
 import { useLookupDeleteConfirm } from '../../hooks/useLookupDeleteConfirm';
 import type { ListPanelMode } from '../../utils/listPermissions';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+
 
 type PanelMode = ListPanelMode;
 
@@ -325,16 +325,12 @@ export const BusinessListManager: React.FC<IBusinessListManagerProps> = ({
       >
         {error && !panelOpen && (
           <div style={{ padding: '12px 16px 0' }}>
-            <MessageBar intent="error">
-              <MessageBarBody>{error}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="error">{error}</AppMessageBar>
           </div>
         )}
         {success && (
           <div style={{ padding: '12px 16px 0' }}>
-            <MessageBar intent="success">
-              <MessageBarBody>{success}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="success">{success}</AppMessageBar>
           </div>
         )}
 
@@ -376,7 +372,7 @@ export const BusinessListManager: React.FC<IBusinessListManagerProps> = ({
         }
         subtitle={
           panelMode === 'create'
-            ? 'Create a new business with risk context and management details.'
+            ? 'Create a new business with organizational context and management details.'
             : editingItem?.Title
         }
         riskService={riskService}

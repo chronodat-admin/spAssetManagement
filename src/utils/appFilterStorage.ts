@@ -1,4 +1,4 @@
-﻿import { IDashboardFilters } from './dashboardAnalytics';
+﻿import type { IDashboardFilters } from './dashboardAnalytics';
 
 const STORAGE_PREFIX = 'asset-mgmt-portfolio-filters-v1';
 

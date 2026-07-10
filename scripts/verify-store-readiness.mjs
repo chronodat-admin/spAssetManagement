@@ -29,11 +29,21 @@ function isPlaceholderUrl(value) {
   }
   const lower = value.toLowerCase();
   return (
+    lower.includes('example.com') ||
+    lower.includes('yourcompany') ||
     lower.includes('your-product') ||
     lower.includes('privacy.microsoft.com') ||
     lower.includes('servicesagreement') ||
     lower.includes('microsoft.com/microsoft-365')
   );
+}
+
+function isPlaceholderEmail(value) {
+  if (!value || typeof value !== 'string') {
+    return true;
+  }
+  const lower = value.toLowerCase();
+  return lower.includes('example.com') || lower.includes('yourcompany') || !lower.includes('@');
 }
 
 function isPlaceholderMpn(value) {
@@ -55,6 +65,9 @@ if (!exists('config/publisher.json')) {
     } else if (field !== 'name' && isPlaceholderUrl(publisher[field])) {
       errors.push(`config/publisher.json → ${field} still uses a placeholder URL.`);
     }
+  }
+  if (isPlaceholderEmail(publisher.supportEmail)) {
+    errors.push('config/publisher.json → supportEmail is empty or still uses a placeholder email.');
   }
   if (isPlaceholderMpn(publisher.mpnId)) {
     warnings.push('config/publisher.json → mpnId is not set (required before Partner Center upload).');
@@ -87,8 +100,11 @@ if (screenshotPaths.length > 0) {
   );
 }
 
-if (!exists('sharepoint/assets/asset-management-icon-96.png')) {
-  errors.push('Missing sharepoint/assets/asset-management-icon-96.png — run npm run assets:sppkg.');
+const iconPath = packageSolution.solution.iconPath;
+if (!iconPath) {
+  errors.push('package-solution.json solution.iconPath is empty.');
+} else if (!exists(path.join('sharepoint', iconPath))) {
+  errors.push(`Missing sharepoint/${iconPath} — run npm run assets:sppkg.`);
 }
 
 if (exists('assets/store/listing/screenshots')) {

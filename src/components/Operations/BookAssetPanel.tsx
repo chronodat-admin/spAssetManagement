@@ -3,13 +3,13 @@ import {
   Button,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
-  Textarea,
-  tokens
+  Text,
+  Textarea
 } from '@fluentui/react-components';
-import { SaveRegular } from '@fluentui/react-icons';
+import { SaveRegular, CalendarRegular } from '@fluentui/react-icons';
 import { ContentCard } from '../Layout/ContentCard';
+import { EmptyState } from '../Layout/EmptyState';
+import { useFormStyles } from '../Forms/formStyles';
 import { AppDropdown } from '../Dropdown/AppDropdown';
 import { Option } from '@fluentui/react-components';
 import { PeoplePickerField } from '../PeoplePicker/PeoplePickerField';
@@ -18,6 +18,10 @@ import { IPersonPickerItem } from '../../models/IPersonPickerItem';
 import { AssetService } from '../../services/AssetService';
 import { AssignmentService } from '../../services/AssignmentService';
 import { isBookableAsset } from '../../utils/assignmentUtils';
+import { buildAssetSelectOption } from '../../utils/assetSelectOptions';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { PageNotifications } from '../Layout/PageNotifications';
+
 
 export interface IBookAssetPanelProps {
   assets: IAsset[];
@@ -32,6 +36,8 @@ export const BookAssetPanel: React.FC<IBookAssetPanelProps> = ({
   assignmentService,
   onComplete
 }) => {
+  const styles = useFormStyles();
+  const { t } = useTranslation();
   const bookableAssets = React.useMemo(() => assets.filter(isBookableAsset), [assets]);
   const [assetId, setAssetId] = React.useState('');
   const [assignees, setAssignees] = React.useState<IPersonPickerItem[]>([]);
@@ -76,28 +82,40 @@ export const BookAssetPanel: React.FC<IBookAssetPanelProps> = ({
 
   return (
     <ContentCard>
-      {error ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
-      ) : null}
+      <PageNotifications error={error || undefined} />
 
       {bookableAssets.length === 0 ? (
-        <MessageBar intent="info">
-          <MessageBarBody>No assets available to book.</MessageBarBody>
-        </MessageBar>
+        <EmptyState
+          bordered
+          icon={<CalendarRegular />}
+          title={t('operationsEmpty', 'noBookableAssetsTitle', 'No bookable assets')}
+          description={t(
+            'operationsEmpty',
+            'noBookableAssetsDescription',
+            'Available assets can be booked from the asset register.'
+          )}
+        />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM, maxWidth: 560 }}>
+        <div className={styles.form}>
+          <div className={styles.intro}>
+            <Text>Reserve an asset for a person with an optional expected return date.</Text>
+          </div>
+
           <Field label="Asset" required>
             <AppDropdown
+              searchable
+              searchPlaceholder="Search assets…"
               selectedOptions={assetId ? [assetId] : []}
               onOptionSelect={(_, data) => setAssetId(data.optionValue || '')}
             >
-              {bookableAssets.map((asset) => (
-                <Option key={asset.Id} value={String(asset.Id)} text={`${asset.AM_AssetId || asset.Id} — ${asset.Title}`}>
-                  {asset.AM_AssetId || asset.Id} — {asset.Title}
-                </Option>
-              ))}
+              {bookableAssets.map((asset) => {
+                const option = buildAssetSelectOption(asset);
+                return (
+                  <Option key={asset.Id} value={option.value} text={option.searchText}>
+                    {option.label}
+                  </Option>
+                );
+              })}
             </AppDropdown>
           </Field>
 
@@ -111,19 +129,21 @@ export const BookAssetPanel: React.FC<IBookAssetPanelProps> = ({
             onResolve={(key) => assetService.resolvePerson(key)}
           />
 
-          <Field label="Expected return date">
-            <Input
-              type="date"
-              value={expectedReturnDate}
-              onChange={(_, data) => setExpectedReturnDate(data.value)}
-            />
-          </Field>
+          <div className={styles.grid}>
+            <Field label="Expected return date">
+              <Input
+                type="date"
+                value={expectedReturnDate}
+                onChange={(_, data) => setExpectedReturnDate(data.value)}
+              />
+            </Field>
+          </div>
 
           <Field label="Notes">
-            <Textarea value={notes} onChange={(_, data) => setNotes(data.value)} rows={3} />
+            <Textarea value={notes} onChange={(_, data) => setNotes(data.value)} rows={3} resize="vertical" />
           </Field>
 
-          <div>
+          <div className={styles.actions}>
             <Button
               appearance="primary"
               icon={<SaveRegular />}

@@ -28,6 +28,14 @@ import {
 
   SUB_CATEGORIES_LIST_TITLE,
 
+  ASSET_TYPES_LIST_TITLE,
+
+  ASSET_STATUSES_LIST_TITLE,
+
+  VENDORS_LIST_TITLE,
+
+  LOCATIONS_LIST_TITLE,
+
   ASSET_MANAGEMENT_LISTS,
 
   APP_MANAGED_LIST_TITLES,
@@ -42,6 +50,8 @@ import {
 
   INVENTORY_LIST_TITLE,
 
+  ASSET_REQUESTS_LIST_TITLE,
+
   ADMINISTRATORS_LIST_TITLE,
 
   LICENSES_LIST_TITLE,
@@ -50,12 +60,13 @@ import {
 
 } from '../models/IListDefinitions';
 
-import { SharePointFieldValue, toUserMultiFieldValue } from '../utils/sharePointFieldPayload';
+import { SharePointFieldValue } from '../utils/sharePointFieldPayload';
 
 import { IProvisioningListStatus, IProvisioningStatus, IProvisioningStep } from '../models/IAsset';
 
 import { SharePointRestService } from './SharePointRestService';
 import { SETUP_FULL_CONTROL_REQUIRED_MESSAGE } from '../utils/sitePermissions';
+import { getListProgressLabel, PROVISIONING_PROGRESS } from '../utils/provisioningProgressLabels';
 import { AssetService } from './AssetService';
 import {
   buildSeedExistenceFilters,
@@ -73,6 +84,12 @@ import {
   SAMPLE_DATA_SEEDED_VALUE
 } from '../utils/sampleDataSeed';
 import { DEFAULT_FORM_TEMPLATES } from '../lib/form-templates/defaults';
+import {
+  ASSET_SEED_IMAGE_FILE_NAME,
+  buildSeedAssetImageBuffer,
+  resolveAssetImageSeedKey
+} from '../constants/assetSeedImageData';
+import { resolveAssetImageUrl } from '../utils/assetImage';
 import {
   COMPLIANCE_ASSESSMENT_SEED_DATA,
   COMPLIANCE_BUILT_IN_FRAMEWORKS
@@ -92,6 +109,32 @@ export interface IProvisioningResult {
 
 }
 
+export interface IProvisionAllOptions {
+  /** When false, only lookup/reference rows are seeded — no sample assets or licenses. Defaults to true. */
+  includeSampleData?: boolean;
+}
+
+const SAMPLE_CONTENT_LIST_TITLES = new Set<string>([
+  ASSETS_LIST_TITLE,
+  SOFTWARE_LICENSES_LIST_TITLE
+]);
+
+/** Maps seed/API lookup Id keys to SharePoint column internal names on AM_Assets. */
+const ASSET_SEED_LOOKUP_FIELD_MAP: Array<{
+  payloadKey: string;
+  internalName: string;
+  displayName: string;
+}> = [
+  { payloadKey: 'AM_CategoryId', internalName: 'AM_Category', displayName: 'Category' },
+  { payloadKey: 'AM_SubCategoryId', internalName: 'AM_SubCategory', displayName: 'Sub-Category' },
+  { payloadKey: 'AM_AssetTypeId', internalName: 'AM_AssetType', displayName: 'Asset Type' },
+  { payloadKey: 'AM_StatusId', internalName: 'AM_Status', displayName: 'Status' },
+  { payloadKey: 'AM_VendorId', internalName: 'AM_Vendor', displayName: 'Vendor' },
+  { payloadKey: 'AM_LocationId', internalName: 'AM_Location', displayName: 'Location' },
+  { payloadKey: 'AM_ProjectId', internalName: 'AM_Project', displayName: 'Project' },
+  { payloadKey: 'AM_AssignedToId', internalName: 'AM_AssignedTo', displayName: 'Assigned To' }
+];
+
 
 
 const SETTINGS_LISTS = [ADMINISTRATORS_LIST_TITLE, LICENSES_LIST_TITLE, SETTINGS_LIST_TITLE];
@@ -102,38 +145,29 @@ const OPERATIONS_LISTS = [
   ASSIGNMENTS_LIST_TITLE,
   SOFTWARE_LICENSES_LIST_TITLE,
   MAINTENANCE_LIST_TITLE,
-  INVENTORY_LIST_TITLE
+  INVENTORY_LIST_TITLE,
+  ASSET_REQUESTS_LIST_TITLE
 ];
+
+/** Lists where optional columns must still be provisioned (seed/CRUD depend on the full schema). */
+const FULL_SCHEMA_LIST_TITLES = new Set<string>([ASSETS_LIST_TITLE, ...OPERATIONS_LISTS]);
 
 const SEED_HELPER_FIELD_KEYS = new Set([
   'ParentCategoryTitle',
   'BusinessTitle',
-  'RiskCategoryTitle',
-  'RiskSubCategoryTitle',
+  'CategoryTitle',
+  'SubCategoryTitle',
+  'AssetTypeTitle',
+  'StatusTitle',
+  'VendorTitle',
+  'LocationTitle',
   'ProjectTitle',
+  'RiskCategoryTitle',
   'RiskProfileTypeTitle',
   'RiskResponseTitle',
   'RiskStrategyTitle',
   'AssignToCurrentUser'
 ]);
-
-/** Resolve REL:-7d / REL:+3d tokens to ISO date-only strings for seed rows. */
-function resolveSeedDateValue(value: string | number | boolean | undefined): string | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  const text = String(value).trim();
-  const relative = /^REL:([+-])(\d+)d$/i.exec(text);
-  if (!relative) {
-    return text;
-  }
-  const sign = relative[1] === '-' ? -1 : 1;
-  const days = Number.parseInt(relative[2], 10);
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + sign * days);
-  return date.toISOString().split('T')[0];
-}
 
 function isTruthySeedFlag(value: string | number | boolean | undefined): boolean {
   if (typeof value === 'boolean') {
@@ -208,9 +242,7 @@ export class ListProvisioningService {
         if (fast || !def || def.fields.length === 0) {
           ready = true;
         } else {
-          const fieldNames = def.fields
-            .filter((field) => !field.optional)
-            .map((field) => field.internalName);
+          const fieldNames = this.getSchemaCheckFieldNames(def);
           const missing = await this.rest.listMissingFields(listId, fieldNames);
           ready = missing.length === 0;
         }
@@ -222,9 +254,7 @@ export class ListProvisioningService {
           if (fast || !def || def.fields.length === 0) {
             ready = true;
           } else {
-            const fieldNames = def.fields
-              .filter((field) => !field.optional)
-              .map((field) => field.internalName);
+            const fieldNames = this.getSchemaCheckFieldNames(def);
             const missing = await this.rest.listMissingFields(legacy.Id, fieldNames);
             ready = missing.length === 0;
           }
@@ -257,13 +287,15 @@ export class ListProvisioningService {
 
     onStepUpdate: (steps: IProvisioningStep[]) => void,
 
-    steps: IProvisioningStep[]
+    steps: IProvisioningStep[],
+
+    options?: IProvisionAllOptions
 
   ): Promise<IProvisioningResult> {
 
     try {
 
-      this.updateStep(steps, 'check', 'running', onStepUpdate, 'Checking site permissions...');
+      this.updateStep(steps, 'check', 'running', onStepUpdate, PROVISIONING_PROGRESS.checkingAccess);
 
       await this.refreshExistingLists();
 
@@ -301,7 +333,7 @@ export class ListProvisioningService {
 
       for (const def of lookupLists) {
 
-        this.updateStep(steps, 'lookup', 'running', onStepUpdate, def.title);
+        this.updateStep(steps, 'lookup', 'running', onStepUpdate, getListProgressLabel(def.title));
 
         if (def.title === SUB_CATEGORIES_LIST_TITLE) {
           await this.resolveLookupListId(CATEGORIES_LIST_TITLE);
@@ -335,7 +367,14 @@ export class ListProvisioningService {
 
       await this.restDelay(1000);
 
-
+      const formTemplatesDef = ASSET_MANAGEMENT_LISTS.find(
+        (list) => list.title === FORM_TEMPLATES_LIST_TITLE
+      );
+      if (formTemplatesDef) {
+        this.updateStep(steps, 'settings', 'running', onStepUpdate, getListProgressLabel(formTemplatesDef.title));
+        await this.ensureList(formTemplatesDef);
+        await this.yieldToUi();
+      }
 
       this.updateStep(steps, 'settings', 'running', onStepUpdate);
 
@@ -345,7 +384,7 @@ export class ListProvisioningService {
 
         if (def) {
 
-          this.updateStep(steps, 'settings', 'running', onStepUpdate, def.title);
+          this.updateStep(steps, 'settings', 'running', onStepUpdate, getListProgressLabel(def.title));
 
           try {
             await this.ensureList(def);
@@ -369,7 +408,7 @@ export class ListProvisioningService {
       // The asset register must exist before the operations lists, which carry required
       // Lookup columns pointing at AM_Assets. Creating it here (not in the lookup phase)
       // guarantees the dependency order and lets field provisioning resolve the lookup target.
-      this.updateStep(steps, 'assets', 'running', onStepUpdate, ASSETS_LIST_TITLE);
+      this.updateStep(steps, 'assets', 'running', onStepUpdate, getListProgressLabel(ASSETS_LIST_TITLE));
 
       const assetsDef = ASSET_MANAGEMENT_LISTS.find((list) => list.title === ASSETS_LIST_TITLE);
 
@@ -401,7 +440,7 @@ export class ListProvisioningService {
 
         if (def) {
 
-          this.updateStep(steps, 'operations', 'running', onStepUpdate, def.title);
+          this.updateStep(steps, 'operations', 'running', onStepUpdate, getListProgressLabel(def.title));
 
           try {
             await this.ensureList(def);
@@ -420,16 +459,25 @@ export class ListProvisioningService {
 
       await this.yieldToUi();
 
-      this.updateStep(steps, 'seed', 'running', onStepUpdate, 'Lookup data');
+      this.updateStep(steps, 'seed', 'running', onStepUpdate, PROVISIONING_PROGRESS.seedingLookups);
 
       await this.ensureBusinessListReady();
 
-      if (await this.isAutomaticSampleSeedLocked()) {
-        this.updateStep(steps, 'seed', 'done', onStepUpdate, 'Sample data already seeded');
-      } else {
-        await this.seedAllLists(onStepUpdate, steps);
+      const includeSampleData = options?.includeSampleData !== false;
+      const sampleAlreadySeeded = await this.isAutomaticSampleSeedLocked();
+
+      await this.seedLookupDefaults(onStepUpdate, steps);
+
+      if (includeSampleData && !sampleAlreadySeeded) {
+        this.updateStep(steps, 'seed', 'running', onStepUpdate, PROVISIONING_PROGRESS.seedingSamples);
+        await this.seedSampleContent(onStepUpdate, steps);
         await this.markSampleDataSeeded();
         this.updateStep(steps, 'seed', 'done', onStepUpdate);
+      } else if (sampleAlreadySeeded) {
+        this.updateStep(steps, 'seed', 'done', onStepUpdate, PROVISIONING_PROGRESS.samplesAlreadyPresent);
+      } else {
+        await this.markSampleDataSkipped();
+        this.updateStep(steps, 'seed', 'done', onStepUpdate, PROVISIONING_PROGRESS.samplesSkipped);
       }
 
       await this.yieldToUi();
@@ -540,7 +588,8 @@ export class ListProvisioningService {
     def: IListDefinition,
     listTitle: string,
     listId: string,
-    repairDepth = 0
+    repairDepth = 0,
+    listPreExisted = false
   ): Promise<void> {
     const MAX_REPAIR_DEPTH = 2;
 
@@ -558,15 +607,23 @@ export class ListProvisioningService {
       const requiredFieldNames = fieldDefinitions
         .filter((field) => !field.optional)
         .map((field) => field.internalName);
-      const missingBeforeRepair = await this.rest.listMissingFields(listId, requiredFieldNames);
+      const schemaRepairFieldNames = FULL_SCHEMA_LIST_TITLES.has(def.title)
+        ? fieldDefinitions.map((field) => field.internalName)
+        : requiredFieldNames;
+      const missingBeforeRepair = await this.rest.listMissingFields(listId, schemaRepairFieldNames);
 
-      // Only recycle when the list has a partial/broken schema (some fields exist, others do not).
+      // Only recycle when the list has a partial/broken schema (some fields exist, others do not),
+      // or when a pre-existing empty list has no custom columns yet (common after failed upgrades).
       // A brand-new empty list legitimately has every custom field "missing" until ensureAllFields runs.
       const hasPartialSchema =
         missingBeforeRepair.length > 0 &&
-        missingBeforeRepair.length < requiredFieldNames.length;
+        missingBeforeRepair.length < schemaRepairFieldNames.length;
+      const hasEmptyLegacySchema =
+        listPreExisted &&
+        missingBeforeRepair.length === schemaRepairFieldNames.length &&
+        schemaRepairFieldNames.length > 0;
 
-      if (hasPartialSchema && repairDepth < MAX_REPAIR_DEPTH) {
+      if ((hasPartialSchema || hasEmptyLegacySchema) && repairDepth < MAX_REPAIR_DEPTH) {
         const listInfo = await this.rest.getListByTitle(listTitle);
         if (listInfo && listInfo.ItemCount === 0) {
           await this.rest.recycleList(listId);
@@ -575,7 +632,7 @@ export class ListProvisioningService {
           this.rest.clearMissingListTitle(listTitle);
           const newListId = await this.resolveListId(def.title, def.description);
           await this.yieldToUi();
-          await this.ensureListFieldsOnList(def, def.title, newListId, repairDepth + 1);
+          await this.ensureListFieldsOnList(def, def.title, newListId, repairDepth + 1, false);
           return;
         }
       }
@@ -583,6 +640,9 @@ export class ListProvisioningService {
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
           await this.rest.ensureAllFields(listId, fieldDefinitions, listTitle);
+          if (FULL_SCHEMA_LIST_TITLES.has(def.title)) {
+            await this.ensureListSchemaVerified(listId, fieldDefinitions, listTitle);
+          }
           break;
         } catch (error) {
           const message = error instanceof Error ? error.message : '';
@@ -606,7 +666,7 @@ export class ListProvisioningService {
           this.rest.clearMissingListTitle(listTitle);
           const newListId = await this.resolveListId(def.title, def.description);
           await this.yieldToUi();
-          await this.ensureListFieldsOnList(def, def.title, newListId, repairDepth + 1);
+          await this.ensureListFieldsOnList(def, def.title, newListId, repairDepth + 1, false);
           return;
         }
       }
@@ -621,11 +681,108 @@ export class ListProvisioningService {
     }
   }
 
+  private getSchemaCheckFieldNames(def: IListDefinition): string[] {
+    if (FULL_SCHEMA_LIST_TITLES.has(def.title)) {
+      return def.fields.map((field) => field.internalName);
+    }
+
+    return def.fields.filter((field) => !field.optional).map((field) => field.internalName);
+  }
+
+  /** Re-provision and verify all columns on lists where optional fields are still required in practice. */
+  private async ensureListSchemaVerified(
+    listId: string,
+    fieldDefinitions: Array<{
+      internalName: string;
+      displayName: string;
+      type: string;
+      required?: boolean;
+      choices?: string[];
+      lookupListId?: string;
+      lookupField?: string;
+      format?: string;
+      hidden?: boolean;
+      defaultValue?: string;
+      richText?: boolean;
+      appendOnly?: boolean;
+      optional?: boolean;
+      userSelectionMode?: 'PeopleOnly' | 'PeopleAndGroups';
+    }>,
+    listTitle: string
+  ): Promise<void> {
+    const assetFieldNames = fieldDefinitions.map((field) => field.internalName);
+    let missingFields = await this.rest.listMissingFields(listId, assetFieldNames);
+
+    if (missingFields.length > 0) {
+      for (const internalName of missingFields) {
+        const field = fieldDefinitions.find((item) => item.internalName === internalName);
+        if (field) {
+          await this.rest.ensureField(listId, field);
+        }
+      }
+    }
+
+    missingFields = await this.rest.listMissingFields(listId, assetFieldNames);
+    if (missingFields.length > 0) {
+      await this.rest.waitForFields(listId, missingFields, {
+        attempts: 40,
+        delayMs: 500,
+        listTitle
+      });
+    }
+  }
+
   private async ensureList(def: IListDefinition): Promise<void> {
+    const existing = await this.rest.getListByTitle(def.title);
+    const listPreExisted = Boolean(existing);
     const listId = await this.resolveListId(def.title, def.description);
     this.rest.clearMissingListTitle(def.title);
     await this.yieldToUi();
-    await this.ensureListFieldsOnList(def, def.title, listId);
+    await this.ensureListFieldsOnList(def, def.title, listId, 0, listPreExisted);
+  }
+
+  /** Re-provision AM_Assets columns before sample seeding (repairs empty legacy/broken lists). */
+  private async ensureAssetsListReadyForSeed(def: IListDefinition): Promise<string> {
+    const fieldDefinitions = await this.buildFieldDefinitions(def);
+    const schemaFieldNames = fieldDefinitions.map((field) => field.internalName);
+
+    const repairEmptyAssetsList = async (): Promise<string> => {
+      const existing = await this.rest.getListByTitle(def.title);
+      if (!existing || (existing.ItemCount ?? 0) > 0) {
+        return this.listIds[def.title];
+      }
+
+      await this.rest.recycleList(existing.Id);
+      delete this.listIds[def.title];
+      this.rest.clearMissingListTitle(def.title);
+      const newListId = await this.resolveListId(def.title, def.description);
+      await this.ensureListFieldsOnList(def, def.title, newListId, 0, false);
+      return newListId;
+    };
+
+    await this.ensureList(def);
+    let listId = this.listIds[def.title];
+    let missing = await this.rest.listMissingFields(listId, schemaFieldNames);
+
+    if (missing.length > 0) {
+      await this.ensureListSchemaVerified(listId, fieldDefinitions, def.title);
+      missing = await this.rest.listMissingFields(listId, schemaFieldNames);
+    }
+
+    if (missing.length > 0) {
+      listId = await repairEmptyAssetsList();
+      missing = await this.rest.listMissingFields(listId, schemaFieldNames);
+    }
+
+    if (missing.length > 0) {
+      await this.rest.waitForFields(listId, missing, {
+        attempts: 40,
+        delayMs: 500,
+        listTitle: def.title
+      });
+    }
+
+    return listId;
   }
 
 
@@ -679,7 +836,11 @@ export class ListProvisioningService {
 
 
 
-  private async seedAllLists(
+  private isLookupSeedList(def: IListDefinition): boolean {
+    return Boolean(def.seedData?.length) && !SAMPLE_CONTENT_LIST_TITLES.has(def.title);
+  }
+
+  private async seedLookupDefaults(
 
     onStepUpdate: (steps: IProvisioningStep[]) => void,
 
@@ -689,16 +850,41 @@ export class ListProvisioningService {
 
     await this.enqueueExclusiveSeed(async () => {
       for (const def of ASSET_MANAGEMENT_LISTS) {
-
-        if (!def.seedData || def.seedData.length === 0) {
-
+        if (!this.isLookupSeedList(def)) {
           continue;
-
         }
 
-        this.updateStep(steps, 'seed', 'running', onStepUpdate, def.title);
+        this.updateStep(steps, 'seed', 'running', onStepUpdate, getListProgressLabel(def.title));
         await this.seedListData(def, onStepUpdate, steps);
+      }
 
+      const categories = await this.rest.getAllItems<{ Id: number; Title: string }>(
+        CATEGORIES_LIST_TITLE,
+        'Id,Title'
+      );
+      if (categories.length > 0) {
+        await this.getAssetService().seedDefaultFormTemplates(categories);
+      }
+    });
+
+  }
+
+  private async seedSampleContent(
+
+    onStepUpdate: (steps: IProvisioningStep[]) => void,
+
+    steps: IProvisioningStep[]
+
+  ): Promise<void> {
+
+    await this.enqueueExclusiveSeed(async () => {
+      for (const def of ASSET_MANAGEMENT_LISTS) {
+        if (!SAMPLE_CONTENT_LIST_TITLES.has(def.title) || !def.seedData?.length) {
+          continue;
+        }
+
+        this.updateStep(steps, 'seed', 'running', onStepUpdate, getListProgressLabel(def.title));
+        await this.seedListData(def, onStepUpdate, steps);
       }
     });
 
@@ -722,7 +908,7 @@ export class ListProvisioningService {
     await this.refreshExistingListsCached();
     let added = 0;
     for (const def of ASSET_MANAGEMENT_LISTS) {
-      if (!def.seedData?.length) {
+      if (!SAMPLE_CONTENT_LIST_TITLES.has(def.title) || !def.seedData?.length) {
         continue;
       }
       added += await this.seedListData(def);
@@ -749,15 +935,10 @@ export class ListProvisioningService {
     return false;
   }
 
-  /** Sites provisioned before SampleDataSeeded existed already have sample rows — lock without re-seeding. */
+  /** Sites provisioned before SampleDataSeeded existed already have sample assets — lock without re-seeding. */
   private async siteHasLegacySampleContent(): Promise<boolean> {
-    const projects = await this.rest.getListByTitle(PROJECTS_LIST_TITLE);
-    if ((projects?.ItemCount ?? 0) > 0) {
-      return true;
-    }
-
-    const risks = await this.rest.getListByTitle('AM_Assets');
-    return (risks?.ItemCount ?? 0) > 0;
+    const assets = await this.rest.getListByTitle(ASSETS_LIST_TITLE);
+    return (assets?.ItemCount ?? 0) > 0;
   }
 
   private async markSampleDataSeeded(): Promise<void> {
@@ -769,6 +950,18 @@ export class ListProvisioningService {
     await this.ensureListFieldsReady('AppSettings');
     await this.getAssetService().updateAppSettings(settings.Id, {
       SampleDataSeeded: SAMPLE_DATA_SEEDED_VALUE
+    });
+  }
+
+  private async markSampleDataSkipped(): Promise<void> {
+    const settings = await this.getAssetService().getAppSettings();
+    if (!settings?.Id || isSampleDataSeeded(settings)) {
+      return;
+    }
+
+    await this.ensureListFieldsReady('AppSettings');
+    await this.getAssetService().updateAppSettings(settings.Id, {
+      SampleDataSeeded: 'No'
     });
   }
 
@@ -792,8 +985,12 @@ export class ListProvisioningService {
       return 0;
     }
 
-    if (dedupedDef.title === 'AM_Assets') {
-      return this.seedRisks(dedupedDef, onStepUpdate, steps);
+    if (dedupedDef.title === SOFTWARE_LICENSES_LIST_TITLE) {
+      return this.seedSoftwareLicenses(dedupedDef);
+    }
+
+    if (dedupedDef.title === ASSETS_LIST_TITLE) {
+      return this.seedAssets(dedupedDef, onStepUpdate, steps);
     }
 
     return this.seedSimpleList(dedupedDef);
@@ -819,8 +1016,7 @@ export class ListProvisioningService {
       if (def.title === PROJECTS_LIST_TITLE) {
         const items = await this.rest.getAllItems<Record<string, unknown>>(
           operationalListTitle,
-          'Title,Code,Business/Id,Business/Title',
-          'Business'
+          'Title,AM_Code'
         );
         return indexExistingSeedKeys(PROJECTS_LIST_TITLE, items);
       }
@@ -842,12 +1038,12 @@ export class ListProvisioningService {
         return indexExistingSeedKeys(SUB_CATEGORIES_LIST_TITLE, items);
       }
 
-      if (def.title === 'AM_Assets') {
+      if (def.title === ASSETS_LIST_TITLE) {
         const items = await this.rest.getAllItems<Record<string, unknown>>(
           operationalListTitle,
-          'Title,AM_AssetId'
+          'Title,AM_AssetId,AM_SerialNumber'
         );
-        return indexExistingSeedKeys('AM_Assets', items);
+        return indexExistingSeedKeys(ASSETS_LIST_TITLE, items);
       }
 
       const hasRating = def.fields.some((field) => field.internalName === 'Rating');
@@ -1020,11 +1216,7 @@ export class ListProvisioningService {
 
 
 
-  private async seedRisks(
-    def: IListDefinition,
-    onStepUpdate?: (steps: IProvisioningStep[]) => void,
-    steps?: IProvisioningStep[]
-  ): Promise<number> {
+  private async seedSoftwareLicenses(def: IListDefinition): Promise<number> {
     const list = await this.rest.getListByTitle(def.title);
     if (!list) {
       return 0;
@@ -1034,41 +1226,136 @@ export class ListProvisioningService {
     const listId = this.listIds[def.title];
     await this.rest.waitForFields(
       listId,
-      [
-        'RiskCategory',
-        'RiskSubCategory',
-        'riskBusiness',
-        'RiskProject',
-        'RiskProfileType',
-        'RiskResponse',
-        'RiskStrategy',
-        'Likelihood',
-        'Consequence',
-        'AM_Status'
-      ],
+      ['AM_ProductName', 'AM_Vendor', 'AM_TotalSeats', 'AM_UsedSeats', 'AM_AvailableSeats'],
       { attempts: 24, delayMs: 400, listTitle: def.title }
     );
 
-    const businessListTitle = await this.ensureBusinessListReady();
+    const vendors = await this.rest.getAllItems<{ Id: number; Title: string }>(
+      VENDORS_LIST_TITLE,
+      'Id,Title'
+    );
+    const vendorIds: Record<string, number> = {};
+    vendors.forEach((vendor) => {
+      vendorIds[vendor.Title] = vendor.Id;
+    });
+
+    let added = 0;
+    const keyIndex = await this.loadExistingSeedKeyIndex(def.title, def);
+
+    for (const row of def.seedData || []) {
+      const title = String(row.Title || '');
+      if (!title || isSeedRowIndexed(keyIndex, def.title, row)) {
+        continue;
+      }
+
+      if (await this.isSeedRowAlreadyInList(def.title, def.title, row)) {
+        markSeedRowIndexed(keyIndex, def.title, row);
+        continue;
+      }
+
+      const payload: Record<string, SharePointFieldValue> = {
+        Title: title,
+        AM_ProductName: String(row.AM_ProductName || title)
+      };
+
+      const vendorTitle = String(row.VendorTitle || '');
+      if (vendorTitle && vendorIds[vendorTitle]) {
+        payload.AM_VendorId = vendorIds[vendorTitle];
+      }
+      if (row.AM_TotalSeats !== undefined) {
+        payload.AM_TotalSeats = Number(row.AM_TotalSeats);
+      }
+      if (row.AM_UsedSeats !== undefined) {
+        payload.AM_UsedSeats = Number(row.AM_UsedSeats);
+      }
+      if (row.AM_AvailableSeats !== undefined) {
+        payload.AM_AvailableSeats = Number(row.AM_AvailableSeats);
+      }
+      if (row.AM_ExpiryDate) {
+        payload.AM_ExpiryDate = String(row.AM_ExpiryDate);
+      }
+      if (row.AM_Cost !== undefined) {
+        payload.AM_Cost = Number(row.AM_Cost);
+      }
+      if (row.AM_IsActive !== undefined) {
+        payload.AM_IsActive = Boolean(row.AM_IsActive);
+      }
+
+      await this.rest.addListItemResolved(def.title, listId, payload, def.fields);
+      markSeedRowIndexed(keyIndex, def.title, row);
+      added += 1;
+      await this.yieldToUi();
+    }
+
+    return added;
+  }
+
+  private async seedAssets(
+    def: IListDefinition,
+    onStepUpdate?: (steps: IProvisioningStep[]) => void,
+    steps?: IProvisioningStep[]
+  ): Promise<number> {
+    const list = await this.rest.getListByTitle(def.title);
+    if (!list) {
+      return 0;
+    }
+
+    const listId = await this.ensureAssetsListReadyForSeed(def);
+    const assetSeedFieldMap = [
+      ...def.fields.map((field) => ({
+        payloadKey: field.internalName,
+        internalName: field.internalName,
+        displayName: field.displayName
+      })),
+      ...ASSET_SEED_LOOKUP_FIELD_MAP
+    ];
+
+    await this.rest.waitForFields(
+      listId,
+      [
+        'AM_Category',
+        'AM_SubCategory',
+        'AM_AssetType',
+        'AM_Status',
+        'AM_Vendor',
+        'AM_Location',
+        'AM_Project',
+        'AM_AssignedTo',
+        'AM_AssignedDate',
+        'AM_SerialNumber',
+        'AM_Barcode',
+        'AM_Cost',
+        'AM_PurchaseDate',
+        'AM_WarrantyExpiry',
+        'AM_Manufacturer',
+        'AM_OS',
+        'AM_CPU',
+        'AM_TotalMemory',
+        'AM_Storage',
+        'AM_IMEI',
+        'AM_Notes',
+        'AM_AssetId',
+        'AM_ImageUrl'
+      ],
+      { attempts: 40, delayMs: 500, listTitle: def.title }
+    );
+
     const [
       categories,
       subCategories,
-      businesses,
-      projects,
-      profiles,
-      responses,
-      strategies
+      assetTypes,
+      statuses,
+      vendors,
+      locations,
+      projects
     ] = await Promise.all([
-      this.rest.getAllItems<{ Id: number; Title: string }>('Categories', 'Id,Title'),
-      this.rest.getAllItems<{ Id: number; Title: string }>(
-        SUB_CATEGORIES_LIST_TITLE,
-        'Id,Title'
-      ),
-      this.rest.getAllItems<{ Id: number; Title: string }>(businessListTitle, 'Id,Title'),
-      this.rest.getAllItems<{ Id: number; Title: string }>(PROJECTS_LIST_TITLE, 'Id,Title'),
-      this.rest.getAllItems<{ Id: number; Title: string }>('RiskProfile', 'Id,Title'),
-      this.rest.getAllItems<{ Id: number; Title: string }>('RiskResponse', 'Id,Title'),
-      this.rest.getAllItems<{ Id: number; Title: string }>('RiskStrategy', 'Id,Title')
+      this.rest.getAllItems<{ Id: number; Title: string }>(CATEGORIES_LIST_TITLE, 'Id,Title'),
+      this.rest.getAllItems<{ Id: number; Title: string }>(SUB_CATEGORIES_LIST_TITLE, 'Id,Title'),
+      this.rest.getAllItems<{ Id: number; Title: string }>(ASSET_TYPES_LIST_TITLE, 'Id,Title'),
+      this.rest.getAllItems<{ Id: number; Title: string }>(ASSET_STATUSES_LIST_TITLE, 'Id,Title'),
+      this.rest.getAllItems<{ Id: number; Title: string }>(VENDORS_LIST_TITLE, 'Id,Title'),
+      this.rest.getAllItems<{ Id: number; Title: string }>(LOCATIONS_LIST_TITLE, 'Id,Title'),
+      this.rest.getAllItems<{ Id: number; Title: string }>(PROJECTS_LIST_TITLE, 'Id,Title')
     ]);
 
     const toMap = (items: Array<{ Id: number; Title: string }>): Record<string, number> => {
@@ -1081,11 +1368,11 @@ export class ListProvisioningService {
 
     const categoryIds = toMap(categories);
     const subCategoryIds = toMap(subCategories);
-    const businessIds = toMap(businesses);
+    const assetTypeIds = toMap(assetTypes);
+    const statusIds = toMap(statuses);
+    const vendorIds = toMap(vendors);
+    const locationIds = toMap(locations);
     const projectIds = toMap(projects);
-    const profileIds = toMap(profiles);
-    const responseIds = toMap(responses);
-    const strategyIds = toMap(strategies);
 
     let seededCount = 0;
     let currentUserId: number | undefined;
@@ -1103,7 +1390,7 @@ export class ListProvisioningService {
     const createdItemIds: number[] = [];
     let processedRows = 0;
 
-    const reportRiskSeedProgress = (): void => {
+    const reportAssetSeedProgress = (): void => {
       if (!onStepUpdate || !steps || totalRows === 0) {
         return;
       }
@@ -1113,18 +1400,18 @@ export class ListProvisioningService {
         'seed',
         'running',
         onStepUpdate,
-        `Risks (${Math.min(processedRows, totalRows)}/${totalRows})`
+        PROVISIONING_PROGRESS.sampleAssetsProgress(processedRows, totalRows)
       );
     };
 
-    reportRiskSeedProgress();
+    reportAssetSeedProgress();
 
     for (const row of seedRows) {
       processedRows += 1;
       const title = String(row.Title || '');
       if (!title || isSeedRowIndexed(keyIndex, def.title, row)) {
         if (processedRows === 1 || processedRows === totalRows || processedRows % 2 === 0) {
-          reportRiskSeedProgress();
+          reportAssetSeedProgress();
         }
         continue;
       }
@@ -1135,83 +1422,100 @@ export class ListProvisioningService {
       ) {
         markSeedRowIndexed(keyIndex, def.title, row);
         if (processedRows === 1 || processedRows === totalRows || processedRows % 2 === 0) {
-          reportRiskSeedProgress();
+          reportAssetSeedProgress();
         }
         continue;
       }
 
-      const categoryId = categoryIds[String(row.RiskCategoryTitle || '')];
-      const businessId = businessIds[String(row.BusinessTitle || '')];
-      const profileId = profileIds[String(row.RiskProfileTypeTitle || '')];
-
-      if (!categoryId || !businessId || !profileId) {
+      const categoryTitle = String(row.CategoryTitle || '');
+      const categoryId = categoryIds[categoryTitle];
+      if (!categoryId) {
         if (processedRows === 1 || processedRows === totalRows || processedRows % 2 === 0) {
-          reportRiskSeedProgress();
+          reportAssetSeedProgress();
         }
         continue;
       }
 
       const payload: Record<string, SharePointFieldValue> = {
-        Title: String(row.Title),
-        AM_Status: String(row.AM_Status || 'Open'),
-        RiskCategoryId: categoryId,
-        riskBusinessId: businessId,
-        RiskProfileTypeId: profileId,
-        Likelihood: String(row.Likelihood || '(3) Possible'),
-        Consequence: String(row.Consequence || '(3) Moderate')
+        Title: title,
+        AM_AssetId: `SEED-${processedRows}`,
+        AM_CategoryId: categoryId
       };
 
-      const subCategoryTitle = String(row.RiskSubCategoryTitle || '');
+      const subCategoryTitle = String(row.SubCategoryTitle || '');
       if (subCategoryTitle && subCategoryIds[subCategoryTitle]) {
-        payload.RiskSubCategoryId = subCategoryIds[subCategoryTitle];
+        payload.AM_SubCategoryId = subCategoryIds[subCategoryTitle];
+      }
+
+      const assetTypeTitle = String(row.AssetTypeTitle || '');
+      if (assetTypeTitle && assetTypeIds[assetTypeTitle]) {
+        payload.AM_AssetTypeId = assetTypeIds[assetTypeTitle];
+      }
+
+      const statusTitle = String(row.StatusTitle || 'Available');
+      if (statusIds[statusTitle]) {
+        payload.AM_StatusId = statusIds[statusTitle];
+      }
+
+      const vendorTitle = String(row.VendorTitle || '');
+      if (vendorTitle && vendorIds[vendorTitle]) {
+        payload.AM_VendorId = vendorIds[vendorTitle];
+      }
+
+      const locationTitle = String(row.LocationTitle || '');
+      if (locationTitle && locationIds[locationTitle]) {
+        payload.AM_LocationId = locationIds[locationTitle];
       }
 
       const projectTitle = String(row.ProjectTitle || '');
       if (projectTitle && projectIds[projectTitle]) {
-        payload.RiskProjectId = projectIds[projectTitle];
-        payload.ProjectName = projectTitle;
+        payload.AM_ProjectId = projectIds[projectTitle];
       }
 
-      const responseTitle = String(row.RiskResponseTitle || '');
-      if (responseTitle && responseIds[responseTitle]) {
-        payload.RiskResponseId = responseIds[responseTitle];
-      }
+      const scalarFields = [
+        'AM_SerialNumber',
+        'AM_Barcode',
+        'AM_Cost',
+        'AM_PurchaseDate',
+        'AM_WarrantyExpiry',
+        'AM_Manufacturer',
+        'AM_OS',
+        'AM_CPU',
+        'AM_TotalMemory',
+        'AM_Storage',
+        'AM_IMEI',
+        'AM_Notes'
+      ] as const;
 
-      const strategyTitle = String(row.RiskStrategyTitle || '');
-      if (strategyTitle && strategyIds[strategyTitle]) {
-        payload.RiskStrategyId = strategyIds[strategyTitle];
-      }
-
-      if (row.PotentialLikelihood) {
-        payload.PotentialLikelihood = String(row.PotentialLikelihood);
-      }
-      if (row.PotentialConsequence) {
-        payload.PotentialConsequence = String(row.PotentialConsequence);
-      }
-      if (row.potentialcost) {
-        payload.potentialcost = String(row.potentialcost);
-      }
-      if (row.Assesstheeffectivenessofcontrols) {
-        payload.Assesstheeffectivenessofcontrols = String(row.Assesstheeffectivenessofcontrols);
-      }
-      const dateIdentified = resolveSeedDateValue(row.DateRiskIdentified);
-      if (dateIdentified) {
-        payload.DateRiskIdentified = dateIdentified;
-      }
-      const dueDate = resolveSeedDateValue(row.RiskDueDate);
-      if (dueDate) {
-        payload.RiskDueDate = dueDate;
-      }
+      scalarFields.forEach((fieldName) => {
+        const value = row[fieldName];
+        if (value !== undefined && value !== null && value !== '') {
+          payload[fieldName] =
+            fieldName === 'AM_Cost' ? Number(value) : String(value);
+        }
+      });
 
       if (isTruthySeedFlag(row.AssignToCurrentUser) && currentUserId) {
-        payload.AssignedToId = toUserMultiFieldValue([currentUserId]);
+        payload.AM_AssignedToId = currentUserId;
+        payload.AM_AssignedDate = new Date().toISOString().split('T')[0];
+        if (statusIds.Assigned) {
+          payload.AM_StatusId = statusIds.Assigned;
+        }
       }
 
-      const itemId = await this.rest.addListItemResolved(def.title, listId, payload, def.fields);
+      const itemId = await this.rest.addListItemResolved(
+        def.title,
+        listId,
+        payload,
+        def.fields,
+        5,
+        assetSeedFieldMap
+      );
+      await this.seedAssetImage(def.title, itemId, row);
       createdItemIds.push(itemId);
       markSeedRowIndexed(keyIndex, def.title, row);
       seededCount += 1;
-      reportRiskSeedProgress();
+      reportAssetSeedProgress();
       await this.yieldToUi();
     }
 
@@ -1220,10 +1524,10 @@ export class ListProvisioningService {
     }
 
     if ((def.seedData?.length || 0) > 0 && seededCount === 0) {
-      const allAlreadyPresent = await this.areRiskSeedRowsPresent(def.title, def.seedData || []);
+      const allAlreadyPresent = await this.areAssetSeedRowsPresent(def.title, def.seedData || []);
       if (!allAlreadyPresent) {
         throw new Error(
-          'Failed to seed sample assets: lookup values for categories, business units, or profile types were not found.'
+          'Failed to seed sample assets: lookup values for categories, types, or statuses were not found.'
         );
       }
     }
@@ -1231,7 +1535,43 @@ export class ListProvisioningService {
     return seededCount;
   }
 
-  private async areRiskSeedRowsPresent(
+  private async seedAssetImage(
+    listTitle: string,
+    itemId: number,
+    row: Record<string, string | number | boolean>
+  ): Promise<void> {
+    try {
+      const list = await this.rest.getListByTitle(listTitle);
+      if (!list) {
+        return;
+      }
+
+      await this.rest.ensureListAttachmentsEnabled(list.Id);
+      const imageKey = resolveAssetImageSeedKey(row);
+      const content = buildSeedAssetImageBuffer(imageKey);
+      await this.rest.addItemAttachment(listTitle, itemId, ASSET_SEED_IMAGE_FILE_NAME, content);
+
+      const attachments = await this.rest.getItemAttachments(listTitle, itemId);
+      const uploaded = attachments.find(
+        (attachment) => attachment.FileName === ASSET_SEED_IMAGE_FILE_NAME
+      );
+      if (!uploaded) {
+        return;
+      }
+
+      const imageUrl = resolveAssetImageUrl(
+        `${new URL(this.webUrl).origin}${uploaded.ServerRelativeUrl}`,
+        new URL(this.webUrl).origin
+      );
+      if (imageUrl) {
+        await this.rest.updateItem(listTitle, itemId, { AM_ImageUrl: imageUrl });
+      }
+    } catch {
+      /* Image seeding is best-effort and must not block asset provisioning. */
+    }
+  }
+
+  private async areAssetSeedRowsPresent(
     listTitle: string,
     seedData: Array<Record<string, string | number | boolean>>
   ): Promise<boolean> {
@@ -1241,7 +1581,7 @@ export class ListProvisioningService {
         return false;
       }
 
-      if (!(await this.isSeedRowAlreadyInList('AM_Assets', listTitle, row))) {
+      if (!(await this.isSeedRowAlreadyInList(ASSETS_LIST_TITLE, listTitle, row))) {
         return false;
       }
     }
@@ -1799,8 +2139,7 @@ export class ListProvisioningService {
       if (def.title === PROJECTS_LIST_TITLE) {
         return this.rest.getAllItems<Record<string, unknown>>(
           operationalListTitle,
-          'Id,Title,Code,Business/Id,Business/Title',
-          'Business'
+          'Id,Title,AM_Code'
         );
       }
 

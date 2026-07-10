@@ -1,5 +1,6 @@
 import { Option, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import * as React from 'react';
+import { SearchableSelect } from './SearchableSelect';
 
 export interface AppDropdownProps {
   placeholder?: string;
@@ -7,6 +8,9 @@ export interface AppDropdownProps {
   selectedOptions?: string[];
   disabled?: boolean;
   className?: string;
+  /** When true, renders a searchable inline panel instead of a native select. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
   onOptionSelect?: (
     event: React.SyntheticEvent,
     data: { optionValue?: string; optionText?: string }
@@ -93,7 +97,7 @@ function parseOptions(children: React.ReactNode): ParsedOption[] {
  * SPFx-safe select control. Uses a native `<select>` (not Fluent Dropdown/Combobox portals)
  * so choices work inside SharePoint, modal dialogs, and slide-out panels.
  */
-export const AppDropdown: React.FC<AppDropdownProps> = ({
+const NativeAppSelect: React.FC<Omit<AppDropdownProps, 'searchable' | 'searchPlaceholder'>> = ({
   placeholder,
   value: displayValue,
   selectedOptions,
@@ -139,4 +143,28 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
       ))}
     </select>
   );
+};
+
+export const AppDropdown: React.FC<AppDropdownProps> = ({
+  searchable = false,
+  searchPlaceholder,
+  ...props
+}) => {
+  if (searchable) {
+    return (
+      <SearchableSelect
+        placeholder={props.placeholder}
+        searchPlaceholder={searchPlaceholder}
+        value={props.value}
+        selectedOptions={props.selectedOptions}
+        disabled={props.disabled}
+        className={props.className}
+        onOptionSelect={props.onOptionSelect}
+      >
+        {props.children}
+      </SearchableSelect>
+    );
+  }
+
+  return <NativeAppSelect {...props} />;
 };

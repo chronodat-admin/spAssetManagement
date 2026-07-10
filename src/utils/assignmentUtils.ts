@@ -1,5 +1,37 @@
 import type { IAsset } from '../models/IAsset';
 
+export interface ICurrentUserRef {
+  id?: number;
+  email?: string;
+  displayName?: string;
+}
+
+/** True when the asset is assigned to the given user (by id, email, or display name). */
+export function isAssignedToUser(asset: IAsset, user: ICurrentUserRef): boolean {
+  const assignee = asset.AM_AssignedTo;
+  if (assignee) {
+    if (user.id && assignee.Id === user.id) {
+      return true;
+    }
+    if (
+      user.email &&
+      assignee.Email &&
+      assignee.Email.toLowerCase() === user.email.toLowerCase()
+    ) {
+      return true;
+    }
+    if (user.displayName && assignee.Title === user.displayName) {
+      return true;
+    }
+  }
+
+  if (user.id && asset.AssignedTo?.some((owner) => owner.Id === user.id)) {
+    return true;
+  }
+
+  return false;
+}
+
 export function validateAssignInput(assetId: number, assigneeUserId: number): string | undefined {
   if (!assetId || assetId <= 0) {
     return 'Select an asset.';

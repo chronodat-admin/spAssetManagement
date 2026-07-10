@@ -158,7 +158,7 @@ export class RiskControlLinkService {
     await this.ensureListReady();
 
     if (await this.linkExists(input.riskId, input.controlId)) {
-      throw new Error('This risk is already linked to that control.');
+      throw new Error('This asset is already linked to that control.');
     }
 
     const [risk, control] = await Promise.all([
@@ -167,7 +167,7 @@ export class RiskControlLinkService {
     ]);
 
     if (!risk) {
-      throw new Error('Risk not found.');
+      throw new Error('Asset not found.');
     }
     if (!control) {
       throw new Error('Control not found.');
@@ -327,7 +327,7 @@ export class RiskControlLinkService {
     const def = RISK_MANAGEMENT_LISTS.find((list) => list.title === RISK_CONTROL_LINKS_LIST_TITLE);
     const list = await this.rest.getListByTitle(RISK_CONTROL_LINKS_LIST_TITLE);
     if (!def || !list) {
-      throw new Error('Risk-control link list is not ready.');
+      throw new Error('Asset-control link list is not ready.');
     }
 
     const frameworkCode = await this.resolveFrameworkCode(control);

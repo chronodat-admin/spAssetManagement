@@ -17,7 +17,9 @@ type ColumnWidthDef = {
 };
 
 const COLUMN_WIDTH_BY_KEY: Record<string, ColumnWidthDef> = {
+  image: { width: '56px', minWidth: '56px' },
   riskId: { width: '96px', minWidth: '96px', truncate: true },
+  assetId: { width: '96px', minWidth: '96px', truncate: true },
   title: { width: '220px', minWidth: '220px', wrap: true },
   status: { width: '118px', minWidth: '118px', badge: true },
   profile: { width: '108px', minWidth: '108px', truncate: true },

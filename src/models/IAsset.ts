@@ -147,6 +147,21 @@ export interface IInventoryItem {
   AM_VarianceNotes?: string;
 }
 
+export type AssetRequestStatus = 'Pending' | 'Approved' | 'Rejected' | 'Fulfilled';
+
+export interface IAssetRequest {
+  Id: number;
+  Title: string;
+  AM_RequestedBy?: IUserValue;
+  AM_Category?: ILookupValue;
+  AM_Justification?: string;
+  AM_Status?: AssetRequestStatus;
+  AM_RequestDate?: string;
+  AM_ReviewedBy?: IUserValue;
+  AM_ReviewNotes?: string;
+  AM_FulfilledAsset?: ILookupValue;
+}
+
 export interface IAuditLogEntry {
   Id: number;
   Title: string;

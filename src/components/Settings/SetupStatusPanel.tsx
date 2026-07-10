@@ -106,13 +106,12 @@ export const SetupStatusPanel: React.FC<ISetupStatusPanelProps> = ({
       <DedicatedSubsiteWarning />
       {status.isComplete ? (
         <Text>
-          All {status.totalCount} SharePoint lists are present. {DEFAULT_APP_TITLE} is ready to use.
+          All required SharePoint lists are present. {DEFAULT_APP_TITLE} is ready to use.
         </Text>
       ) : (
         <Text>
-          <strong>{status.missingCount}</strong> of {status.totalCount} required lists still need
-          setup ({status.missingLists.map(getProvisioningListDisplayLabel).join(', ')}). Run setup to create or repair lists and seed
-          default data.
+          Some required SharePoint lists still need setup. Run setup to create or repair lists and
+          seed default data.
         </Text>
       )}
 

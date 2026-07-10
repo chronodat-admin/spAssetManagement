@@ -99,7 +99,7 @@ export function enableNumberingForEntity(
 /** Allocate a code; if numbering is disabled for the entity, enable it and allocate once. */
 export function allocateEntityCodeWithAutoEnable(
   workflowSettings: IWorkflowSettings,
-  entityType: Extract<NumberingEntityType, 'business' | 'project'>
+  entityType: Extract<NumberingEntityType, 'vendor' | 'project'>
 ): IAllocatedNumber | undefined {
   const direct = allocateEntityNumber(workflowSettings, entityType);
   if (direct) {

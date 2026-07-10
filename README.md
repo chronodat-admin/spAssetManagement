@@ -67,4 +67,20 @@ asset-management-spfx/
 
 ## Status
 
-Tasks 1–11 complete: project scaffold, build pipeline, UI shell, subscription gate architecture, layout components, and `gulp bundle` compile successfully. Domain services, provisioning, dashboard, and settings pages follow in tasks 12–32.
+Core asset-management development is substantially implemented: provisioning, dashboard, asset lists/forms, assignment and booking workflows, software licenses, inventory, depreciation, audit log, lookups, settings, report builder, subscription gating, Teams/M365 manifests, and store validation scripts are present.
+
+Release readiness depends on the verification gates below:
+
+```bash
+npm run lint
+npm test
+npm run verify:version
+npm run verify:display-name
+npm run assets:sppkg
+npm run assets:marketing:crops
+npm run verify:store
+```
+
+Before Partner Center submission, replace `config/publisher.json → mpnId` with the real Partner Center MPN ID, run `npm run sync:publisher`, run tenant-backed Playwright tests with `PLAYWRIGHT_BASE_URL`, and produce the final `.sppkg` with `npm run ship`.
+
+Compliance settings are intentionally hidden in this asset-only release until the compliance list model is fully wired. Scheduled reports and workflow rules remain hidden until a backend runner or Power Automate flow executes them.

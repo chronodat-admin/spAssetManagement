@@ -8,14 +8,22 @@ export type AppPage =
   | 'deletedAssets'
   | 'assignAsset'
   | 'returnAsset'
+  | 'bulkAssign'
+  | 'bulkReturn'
   | 'bookAsset'
   | 'bookingDetails'
   | 'software'
   | 'inventory'
+  | 'maintenance'
+  | 'requestAsset'
+  | 'myRequests'
+  | 'manageRequests'
+  | 'scanAsset'
   | 'reports'
   | 'depreciation'
   | 'auditLog'
   | 'categories'
+  | 'subCategories'
   | 'vendors'
   | 'locations'
   | 'projects'
@@ -30,6 +38,7 @@ export type {
   IAssignment,
   ISoftwareLicense,
   IInventoryItem,
+  IAssetRequest,
   IAppAdministrator,
   IProvisioningStep,
   IProvisioningStatus,

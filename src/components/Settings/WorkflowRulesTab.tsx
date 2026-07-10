@@ -5,8 +5,6 @@ import {
   Field,
   Input,
   Option,
-  MessageBar,
-  MessageBarBody,
   Spinner,
   Switch,
   Table,
@@ -28,6 +26,11 @@ import { serializeWorkflowSettings } from '../../lib/workflow-settings/storage';
 import { AssetService } from '../../services/AssetService';
 import { createTagId } from '../../lib/workflow-settings/utils';
 import {
+  ASSET_WORKFLOW_TRIGGER_EVENTS,
+  WORKFLOW_TRIGGER_LABELS,
+  normalizeWorkflowTriggerEvent
+} from '../../lib/workflow-settings/slugs';
+import {
   formatWorkflowActionLabel,
   formatWorkflowActionTarget,
   serializePersonTarget,
@@ -36,19 +39,18 @@ import {
 } from '../../utils/workflowActionTargetUtils';
 import { useWorkflowSettingsStyles } from './workflowSettingsStyles';
 import { useContentCardStyles } from '../Layout/ContentCard';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+
 import {
   DATA_TABLE_CLASS,
   getDataTableLayoutStyle,
   getListColumnStyle
 } from '../../lib/list-view/columnWidths';
 
-const TRIGGER_EVENTS = [
-  { value: 'risk_created', label: 'Risk created' },
-  { value: 'risk_updated', label: 'Risk updated' },
-  { value: 'risk_status_changed', label: 'Status changed' },
-  { value: 'risk_assigned', label: 'Risk assigned' },
-  { value: 'risk_overdue', label: 'Risk overdue' }
-];
+const TRIGGER_EVENTS = ASSET_WORKFLOW_TRIGGER_EVENTS.map((value) => ({
+  value,
+  label: WORKFLOW_TRIGGER_LABELS[value]
+}));
 
 const ACTION_TYPES = [
   { value: 'notify', label: 'Send notification' },
@@ -66,7 +68,7 @@ const CONDITION_FIELDS = [
   { value: 'Priority', label: 'Priority' },
   { value: 'Category', label: 'Category' },
   { value: 'Status', label: 'Status' },
-  { value: 'AssetValueSummary', label: 'Risk rating' },
+  { value: 'AssetValueSummary', label: 'Asset rating' },
   { value: 'consequence', label: 'Consequence score' }
 ];
 
@@ -89,7 +91,7 @@ export const WorkflowRulesTab: React.FC<IWorkflowRulesTabProps> = ({
   const [panelOpen, setPanelOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [name, setName] = React.useState('');
-  const [triggerEvent, setTriggerEvent] = React.useState('risk_created');
+  const [triggerEvent, setTriggerEvent] = React.useState('asset_created');
   const [isActive, setIsActive] = React.useState(false);
   const [conditions, setConditions] = React.useState<IWorkflowCondition[]>([]);
   const [actions, setActions] = React.useState<IWorkflowAction[]>([]);
@@ -115,7 +117,7 @@ export const WorkflowRulesTab: React.FC<IWorkflowRulesTabProps> = ({
   const resetForm = (): void => {
     setEditingId(null);
     setName('');
-    setTriggerEvent('risk_created');
+    setTriggerEvent('asset_created');
     setIsActive(false);
     setConditions([]);
     setActions([]);
@@ -265,7 +267,9 @@ export const WorkflowRulesTab: React.FC<IWorkflowRulesTabProps> = ({
                   {rule.name}
                 </TableCell>
                 <TableCell className={cardStyles.dataTableCell} style={getListColumnStyle('trigger')}>
-                  {rule.triggerEvent}
+                  {WORKFLOW_TRIGGER_LABELS[
+                    normalizeWorkflowTriggerEvent(rule.triggerEvent) as keyof typeof WORKFLOW_TRIGGER_LABELS
+                  ] || rule.triggerEvent}
                 </TableCell>
                 <TableCell style={getListColumnStyle('status')}>
                   <Badge appearance={rule.isActive ? 'filled' : 'outline'} color={rule.isActive ? 'success' : 'subtle'}>
@@ -319,9 +323,7 @@ export const WorkflowRulesTab: React.FC<IWorkflowRulesTabProps> = ({
       >
         <div className={styles.panelBody}>
           {saveError ? (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
+            <AppMessageBar intent="error">{saveError}</AppMessageBar>
           ) : null}
           <Field label="Rule name" required>
             <Input
@@ -333,9 +335,9 @@ export const WorkflowRulesTab: React.FC<IWorkflowRulesTabProps> = ({
           <Field label="Trigger event">
             <AppDropdown
               className={styles.panelFullWidth}
-              value={TRIGGER_EVENTS.find((item) => item.value === triggerEvent)?.label || 'Risk created'}
+              value={TRIGGER_EVENTS.find((item) => item.value === triggerEvent)?.label || 'Asset created'}
               selectedOptions={[triggerEvent]}
-              onOptionSelect={(_, data) => setTriggerEvent(String(data.optionValue || 'risk_created'))}
+              onOptionSelect={(_, data) => setTriggerEvent(String(data.optionValue || 'asset_created'))}
             >
               {TRIGGER_EVENTS.map((item) => (
                 <Option key={item.value} value={item.value}>

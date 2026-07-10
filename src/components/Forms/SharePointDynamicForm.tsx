@@ -2,8 +2,6 @@
 import {
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Option,
   Spinner,
   Switch,
@@ -13,12 +11,26 @@ import {
   mergeClasses,
   tokens
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import { AppDropdown } from '../Dropdown/AppDropdown';
+import { DEFAULT_FORM_SETTINGS } from '../../lib/form-config/defaults';
 import { BuiltFormConfig, FormMode } from '../../lib/form-config/types';
+import {
+  isTemplateTabKey,
+  resolveFormTemplateForCategory,
+  templateTabKey
+} from '../../lib/form-templates/resolve';
+import { parseTemplateValues, TemplateValues } from '../../lib/form-templates/types';
+import { validateTemplateFields } from '../../lib/form-templates/validate';
 import { ISharePointFormField, SharePointFormFieldValue, SharePointFormValues } from '../../models/ISharePointFormField';
+import { ASSETS_LIST_TITLE } from '../../models/IListDefinitions';
 import { IPersonPickerItem } from '../../models/IPersonPickerItem';
 import { AssetService } from '../../services/AssetService';
+import { AssetAttachmentsSection, IAssetAttachmentDraft } from './AssetAttachmentsSection';
+import { AssetImageSection, IAssetImageDraft } from './AssetImageSection';
+import { FormTemplateFields } from './FormTemplateFields';
 import { PeoplePickerField } from '../PeoplePicker/PeoplePickerField';
+import { UserCell } from '../PeoplePicker/UserAvatar';
 
 export interface ISharePointDynamicFormProps {
   listTitle: string;
@@ -78,6 +90,12 @@ const useStyles = makeStyles({
   },
   fullWidthField: {
     gridColumn: '1 / -1'
+  },
+  templatePanel: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    width: '100%'
   }
 });
 
@@ -175,6 +193,22 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
   const values = valuesOverride ?? internalValues;
   const valuesRef = React.useRef(values);
   valuesRef.current = values;
+  const [formTemplates, setFormTemplates] = React.useState<
+    import('../../lib/form-templates/types').AssetFormTemplate[]
+  >([]);
+  const [templateValues, setTemplateValues] = React.useState<TemplateValues>({});
+  const templateValuesRef = React.useRef(templateValues);
+  templateValuesRef.current = templateValues;
+  const [attachmentDraft, setAttachmentDraft] = React.useState<IAssetAttachmentDraft>({
+    uploads: [],
+    deletes: []
+  });
+  const attachmentDraftRef = React.useRef(attachmentDraft);
+  attachmentDraftRef.current = attachmentDraft;
+  const [assetImageUrl, setAssetImageUrl] = React.useState<string | undefined>();
+  const [imageDraft, setImageDraft] = React.useState<IAssetImageDraft>({});
+  const imageDraftRef = React.useRef(imageDraft);
+  imageDraftRef.current = imageDraft;
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -252,31 +286,150 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- includeFieldsKey/excludeFieldsKey are stable serializations for includeFields/excludeFields.
   }, [listTitle, itemId, riskService, includeFieldsKey, excludeFieldsKey, useControlledValues]);
 
+  React.useEffect(() => {
+    if (listTitle !== ASSETS_LIST_TITLE) {
+      setFormTemplates([]);
+      return;
+    }
+    let cancelled = false;
+    void riskService
+      .getFormTemplates()
+      .then((templates) => {
+        if (!cancelled) {
+          setFormTemplates(templates);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFormTemplates([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [listTitle, riskService]);
+
+  React.useEffect(() => {
+    setAttachmentDraft({ uploads: [], deletes: [] });
+    setImageDraft({});
+    if (!itemId) {
+      setAssetImageUrl(undefined);
+    }
+  }, [itemId, mode]);
+
+  React.useEffect(() => {
+    if (listTitle !== ASSETS_LIST_TITLE || !itemId) {
+      if (!itemId) {
+        setTemplateValues({});
+        setAssetImageUrl(undefined);
+      }
+      return;
+    }
+    let cancelled = false;
+    void riskService
+      .getRiskById(itemId)
+      .then((asset) => {
+        if (!cancelled && asset) {
+          setTemplateValues(parseTemplateValues(asset.AM_CustomJson || asset.TemplateData));
+          setAssetImageUrl(asset.AM_ImageUrl);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [listTitle, itemId, riskService]);
+
+  const selectedCategoryId = React.useMemo((): number | null => {
+    const raw = values.AM_Category;
+    if (raw === undefined || raw === null || raw === '') {
+      return null;
+    }
+    const parsed = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [values.AM_Category]);
+
+  const activeTemplate = React.useMemo(
+    () => resolveFormTemplateForCategory(formTemplates, selectedCategoryId),
+    [formTemplates, selectedCategoryId]
+  );
+
+  React.useEffect(() => {
+    if (!activeTemplate) {
+      return;
+    }
+    setTemplateValues((prev) => {
+      const allowed = new Set(activeTemplate.fields.map((field) => field.id));
+      const next: TemplateValues = {};
+      Object.keys(prev).forEach((key) => {
+        if (allowed.has(key)) {
+          next[key] = prev[key];
+        }
+      });
+      return next;
+    });
+  }, [activeTemplate]);
+
   const fieldsByKey = React.useMemo(
     () => new Map(fields.map((field) => [field.InternalName, field])),
     [fields]
   );
 
   const configuredTabs = React.useMemo(() => {
-    if (!formConfig?.tabs?.length || (includeFields && includeFields.length > 0)) {
+    if (includeFields && includeFields.length > 0) {
       return [];
     }
-    return formConfig.tabs.filter((tab) =>
-      tab.fields.some((fieldKey) => fieldsByKey.has(fieldKey))
-    );
-  }, [formConfig?.tabs, fieldsByKey, includeFields]);
+    // Prefer the configured tabs, but fall back to the entity defaults when the
+    // configured tabs don't match any real column (e.g. stale settings persisted
+    // before this list's schema existed). This keeps tabs visible instead of
+    // silently collapsing the form into a flat field list.
+    const defaultTabs = formConfig?.entity
+      ? DEFAULT_FORM_SETTINGS[formConfig.entity]?.tabs
+      : undefined;
+    for (const tabs of [formConfig?.tabs, defaultTabs]) {
+      if (!tabs?.length) {
+        continue;
+      }
+      const matched = tabs.filter((tab) =>
+        tab.fields.some((fieldKey) => fieldsByKey.has(fieldKey))
+      );
+      if (matched.length > 0) {
+        return matched;
+      }
+    }
+    return [];
+  }, [formConfig?.tabs, formConfig?.entity, fieldsByKey, includeFields]);
 
-  const [activeTab, setActiveTab] = React.useState(configuredTabs[0]?.key || 'general');
+  const displayTabs = React.useMemo(() => {
+    if (!activeTemplate) {
+      return configuredTabs;
+    }
+    return [
+      ...configuredTabs,
+      {
+        key: templateTabKey(activeTemplate),
+        label: activeTemplate.name,
+        fields: [] as string[]
+      }
+    ];
+  }, [configuredTabs, activeTemplate]);
+
+  const [activeTab, setActiveTab] = React.useState(displayTabs[0]?.key || 'general');
 
   React.useEffect(() => {
-    if (!configuredTabs.some((tab) => tab.key === activeTab)) {
-      setActiveTab(configuredTabs[0]?.key || 'general');
+    if (!displayTabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab(displayTabs[0]?.key || 'general');
     }
-  }, [configuredTabs, activeTab]);
+  }, [displayTabs, activeTab]);
+
+  const showingTemplateTab = isTemplateTabKey(activeTab) && Boolean(activeTemplate);
 
   const orderedFields = React.useMemo(() => {
-    if (configuredTabs.length > 0) {
-      const active = configuredTabs.find((tab) => tab.key === activeTab) || configuredTabs[0];
+    if (showingTemplateTab) {
+      return [];
+    }
+    if (displayTabs.length > 0) {
+      const active = displayTabs.find((tab) => tab.key === activeTab) || displayTabs[0];
       return active.fields
         .map((fieldKey) => fieldsByKey.get(fieldKey))
         .filter((field): field is ISharePointFormField => Boolean(field));
@@ -294,7 +447,7 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     }
 
     return fields;
-  }, [configuredTabs, activeTab, fieldsByKey, formConfig?.orderedKeys, fields]);
+  }, [showingTemplateTab, displayTabs, activeTab, fieldsByKey, formConfig?.orderedKeys, fields]);
 
   const visibleOrderedFields = React.useMemo(
     () =>
@@ -331,6 +484,18 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     onSubmittingChange?.(true);
 
     try {
+      if (listTitle === ASSETS_LIST_TITLE && activeTemplate) {
+        const templateError = validateTemplateFields(
+          activeTemplate.fields,
+          templateValuesRef.current
+        );
+        if (templateError) {
+          setError(templateError);
+          setActiveTab(templateTabKey(activeTemplate));
+          return;
+        }
+      }
+
       let savedItemId = itemId;
       const submitValues = valuesRef.current;
       if (mode === 'create') {
@@ -343,6 +508,26 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
       } else if (itemId) {
         await riskService.updateListItemFromForm(listTitle, itemId, fields, submitValues, formConfig);
       }
+
+      if (listTitle === ASSETS_LIST_TITLE && savedItemId) {
+        const templatePayload = activeTemplate
+          ? JSON.stringify(templateValuesRef.current)
+          : '';
+        await riskService.updateRiskTemplateData(savedItemId, templatePayload);
+
+        const pendingAttachments = attachmentDraftRef.current;
+        if (pendingAttachments.uploads.length > 0 || pendingAttachments.deletes.length > 0) {
+          await riskService.syncRiskAttachments(savedItemId, pendingAttachments);
+        }
+
+        const pendingImage = imageDraftRef.current;
+        if (pendingImage.upload || pendingImage.remove) {
+          const nextImageUrl = await riskService.syncAssetImage(savedItemId, pendingImage);
+          setAssetImageUrl(nextImageUrl);
+          setImageDraft({});
+        }
+      }
+
       onSaved(savedItemId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save item.');
@@ -356,7 +541,7 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     return <Spinner label="Loading form..." />;
   }
 
-  if (visibleOrderedFields.length === 0) {
+  if (!showingTemplateTab && visibleOrderedFields.length === 0) {
     return contentOnly ? null : (
       <Text style={{ color: tokens.colorNeutralForeground3 }}>
         {readOnly ? 'No fields available to display.' : 'No editable fields available.'}
@@ -372,6 +557,30 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     const current = values[field.InternalName];
 
     if (readOnly) {
+      if (field.TypeAsString === 'User' || field.TypeAsString === 'UserMulti') {
+        const users = Array.isArray(current) ? (current as IPersonPickerItem[]) : [];
+        return (
+          <div
+            key={field.InternalName}
+            className={isNoteField(field) ? styles.fullWidthField : undefined}
+          >
+            <Field label={label}>
+              {users.length === 0 ? (
+                <Text>—</Text>
+              ) : users.length === 1 ? (
+                <UserCell name={users[0].title} email={users[0].email} />
+              ) : (
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {users.map((user) => (
+                    <UserCell key={user.id} name={user.title} email={user.email} />
+                  ))}
+                </span>
+              )}
+            </Field>
+          </div>
+        );
+      }
+
       return (
         <div
           key={field.InternalName}
@@ -513,14 +722,26 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
   const fieldContent = (
     <>
       {error && (
-        <MessageBar intent="error" style={{ marginBottom: tokens.spacingVerticalM }}>
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error" style={{ marginBottom: tokens.spacingVerticalM }}>
+          {error}
+        </AppMessageBar>
       )}
 
-      {configuredTabs.length > 0 && (
+      {listTitle === ASSETS_LIST_TITLE && (
+        <AssetImageSection
+          imageUrl={assetImageUrl}
+          title={String(values.Title || '')}
+          riskService={riskService}
+          readOnly={readOnly}
+          disabled={saving}
+          draft={imageDraft}
+          onDraftChange={setImageDraft}
+        />
+      )}
+
+      {displayTabs.length > 0 && (
         <div className={mergeClasses('asset-mgmt-form-tab-bar', styles.tabBar)} role="tablist">
-          {configuredTabs.map((tab) => (
+          {displayTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
@@ -540,9 +761,30 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
         </div>
       )}
 
-      <div className={styles.formGrid} role="tabpanel">
-        {visibleOrderedFields.map((field) => renderField(field))}
-      </div>
+      {showingTemplateTab && activeTemplate ? (
+        <div className={styles.templatePanel} role="tabpanel">
+          <FormTemplateFields
+            fields={activeTemplate.fields}
+            values={templateValues}
+            readOnly={readOnly}
+            disabled={saving}
+            riskService={riskService}
+            onChange={setTemplateValues}
+          />
+          <AssetAttachmentsSection
+            itemId={itemId}
+            riskService={riskService}
+            readOnly={readOnly}
+            disabled={saving}
+            draft={attachmentDraft}
+            onDraftChange={setAttachmentDraft}
+          />
+        </div>
+      ) : (
+        <div className={styles.formGrid} role="tabpanel">
+          {visibleOrderedFields.map((field) => renderField(field))}
+        </div>
+      )}
     </>
   );
 

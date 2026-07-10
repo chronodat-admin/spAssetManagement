@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PIL import Image
+from PIL import ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "assets" / "website" / "marketing"
@@ -16,6 +17,13 @@ OUT = ROOT / "assets" / "store" / "listing" / "screenshots" / "marketing"
 
 TARGET_W, TARGET_H = 1366, 768
 STORE_SIZE_LIMIT_KB = 1024
+BG = (245, 247, 250)
+CARD = (255, 255, 255)
+INK = (15, 23, 42)
+MUTED = (71, 85, 105)
+BLUE = (37, 99, 235)
+GREEN = (22, 163, 74)
+AMBER = (217, 119, 6)
 
 # Prefer AI sheets for Partner Center store images; keep programmatic sheets as fallback.
 # The AI prompt requires the current package icon anywhere the app logo appears.
@@ -32,6 +40,29 @@ SHEETS = {
     "asset-management-all-features-infographic.png": "all-features-1366x768.png",
     "asset-management-surfaces-showcase-ai.png": "surfaces-1366x768.png",
     "asset-management-surfaces-showcase.png": "surfaces-1366x768.png",
+}
+
+FALLBACK_FRAMES = {
+    "dashboard-1366x768.png": (
+        "Asset Management Dashboard",
+        ["Portfolio KPIs", "Status and category charts", "Assignment and warranty visibility"],
+    ),
+    "feature-grid-1366x768.png": (
+        "Complete Asset Register",
+        ["Hardware and software tracking", "Assignments, bookings, and returns", "Configurable forms and lookups"],
+    ),
+    "compliance-1366x768.png": (
+        "Governed SharePoint Lists",
+        ["Provisioned list schema", "Audit log and administrator controls", "Microsoft Graph mail approval flow"],
+    ),
+    "analysis-1366x768.png": (
+        "Operations and Reporting",
+        ["Depreciation schedules", "Inventory scans", "Report builder exports"],
+    ),
+    "all-features-1366x768.png": (
+        "Asset Management for Microsoft 365",
+        ["SharePoint Framework app", "Teams and M365 manifests", "Store-ready packaging checks"],
+    ),
 }
 
 
@@ -84,6 +115,48 @@ def save_under_cap(img: Image.Image, path: Path) -> None:
     print(f"  {path.relative_to(ROOT)} ({TARGET_W}x{TARGET_H}, {kb:.0f} KB)")
 
 
+def load_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
+    candidates = ["arialbd.ttf" if bold else "arial.ttf", "segoeuib.ttf" if bold else "segoeui.ttf"]
+    for candidate in candidates:
+        try:
+            return ImageFont.truetype(candidate, size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def draw_fallback_frame(title: str, bullets: list[str]) -> Image.Image:
+    img = Image.new("RGB", (TARGET_W, TARGET_H), BG)
+    draw = ImageDraw.Draw(img)
+    title_font = load_font(52, bold=True)
+    subtitle_font = load_font(26)
+    body_font = load_font(30)
+    small_font = load_font(20)
+
+    draw.rounded_rectangle((72, 72, 1294, 696), radius=28, fill=CARD, outline=(203, 213, 225), width=2)
+    draw.rounded_rectangle((110, 112, 198, 200), radius=22, fill=BLUE)
+    draw.rectangle((149, 132, 159, 180), fill=(255, 255, 255))
+    draw.rectangle((130, 151, 178, 161), fill=(255, 255, 255))
+    draw.text((226, 118), "Chronodat", fill=MUTED, font=subtitle_font)
+    draw.text((226, 154), title, fill=INK, font=title_font)
+
+    chart_left, chart_top = 118, 292
+    for index, height in enumerate([180, 122, 220, 154, 96]):
+        x = chart_left + index * 82
+        draw.rounded_rectangle((x, chart_top + 230 - height, x + 44, chart_top + 230), radius=10, fill=[BLUE, GREEN, AMBER, BLUE, GREEN][index])
+    draw.line((chart_left - 8, chart_top + 230, chart_left + 430, chart_top + 230), fill=(148, 163, 184), width=2)
+
+    panel_x = 640
+    for index, bullet in enumerate(bullets):
+        y = 300 + index * 86
+        draw.ellipse((panel_x, y + 7, panel_x + 18, y + 25), fill=BLUE)
+        draw.text((panel_x + 36, y), bullet, fill=INK, font=body_font)
+
+    draw.rounded_rectangle((640, 580, 1164, 630), radius=16, fill=(239, 246, 255), outline=(191, 219, 254), width=1)
+    draw.text((666, 594), "SharePoint Online • Microsoft Teams • AppSource readiness", fill=BLUE, font=small_font)
+    return img
+
+
 def main() -> None:
     print(f"Store crops ({TARGET_W}x{TARGET_H}) from marketing sheets:")
     written: set[str] = set()
@@ -100,6 +173,12 @@ def main() -> None:
         frame = make_frame(Image.open(source_path).convert("RGB"))
         save_under_cap(frame, OUT / out_name)
         written.add(out_name)
+
+    for out_name, (title, bullets) in FALLBACK_FRAMES.items():
+        if out_name not in written:
+            frame = draw_fallback_frame(title, bullets)
+            save_under_cap(frame, OUT / out_name)
+            written.add(out_name)
 
     if missing:
         print("\nMissing AI sheets (see assets/website/marketing/PROMPTS.md or run npm run assets:marketing):")

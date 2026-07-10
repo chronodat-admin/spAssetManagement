@@ -5,9 +5,6 @@ import {
   Field,
   Input,
   makeStyles,
-  MessageBar,
-  MessageBarBody,
-  MessageBarTitle,
   Option,
   Spinner,
   Switch,
@@ -21,6 +18,7 @@ import {
   Textarea,
   tokens
 } from '@fluentui/react-components';
+import { AppMessageBar } from '../Layout/AppMessageBar';
 import { AppDropdown } from '../Dropdown/AppDropdown';
 import {
   AddRegular,
@@ -65,6 +63,10 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalS,
     flexWrap: 'wrap',
     justifyContent: 'flex-end'
+  },
+  infoBar: {
+    width: '100%',
+    minWidth: 0
   },
   tableWrap: {
     border: `1px solid ${tokens.colorNeutralStroke2}`,
@@ -162,7 +164,7 @@ export const FormTemplatesManager: React.FC<IFormTemplatesManagerProps> = ({ ris
 
   const [draft, setDraft] = React.useState<AssetFormTemplate | null>(null);
 
-  const load = React.useCallback(async (): Promise<void> => {
+  const load = React.useCallback(async (): Promise<AssetFormTemplate[]> => {
     setLoading(true);
     setError('');
     try {
@@ -173,11 +175,14 @@ export const FormTemplatesManager: React.FC<IFormTemplatesManagerProps> = ({ ris
       try {
         const templateList = await riskService.getFormTemplates();
         setTemplates(templateList);
+        return templateList;
       } catch {
         setTemplates([]);
+        return [];
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load form templates.');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -217,12 +222,16 @@ export const FormTemplatesManager: React.FC<IFormTemplatesManagerProps> = ({ ris
     setInfo('');
     try {
       const created = await riskService.seedDefaultFormTemplates(categories);
-      await load();
-      setInfo(
-        created > 0
-          ? `Created ${created} default template${created === 1 ? '' : 's'}.`
-          : 'Default templates already exist for your categories.'
-      );
+      const refreshed = await load();
+      if (created > 0) {
+        setInfo(`Created ${created} default template${created === 1 ? '' : 's'}.`);
+      } else if (refreshed.length > 0) {
+        setInfo('Default templates already exist for your categories.');
+      } else {
+        setError(
+          'No matching asset categories were found to generate default templates. Add categories under Dropdown Options, or use "Create Template" to build one manually.'
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create default templates.');
     } finally {
@@ -359,24 +368,17 @@ export const FormTemplatesManager: React.FC<IFormTemplatesManagerProps> = ({ ris
         </Button>
       </div>
 
-      <MessageBar intent="info" icon={<InfoRegular />}>
-        <MessageBarTitle>How form templates work</MessageBarTitle>
-        <MessageBarBody>
-          Each template is linked to a risk category. When creating or editing a risk, selecting a
-          category with a linked template will show additional custom fields. Common fields (Title,
-          Description, Status, Likelihood, Impact) are always available regardless of template.
-        </MessageBarBody>
-      </MessageBar>
+      <AppMessageBar intent="info" icon={<InfoRegular />} className={styles.infoBar} title="How form templates work">
+        Each template is linked to an asset category. When creating or editing an asset, selecting a
+        category with a linked template will show additional custom fields. Core fields (name, ID,
+        status, category, and notes) are always available regardless of template.
+      </AppMessageBar>
 
       {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="error">{error}</AppMessageBar>
       )}
       {info && (
-        <MessageBar intent="success">
-          <MessageBarBody>{info}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent="success">{info}</AppMessageBar>
       )}
 
       {loading ? (
@@ -480,7 +482,7 @@ export const FormTemplatesManager: React.FC<IFormTemplatesManagerProps> = ({ ris
         open={draft !== null}
         wide
         title={draft?.id === undefined ? 'New form template' : 'Edit form template'}
-        subtitle="Fields appear on the risk form for the selected category"
+        subtitle="Fields appear on the asset form for the selected category"
         onClose={() => setDraft(null)}
         footer={
           <>
@@ -509,7 +511,7 @@ export const FormTemplatesManager: React.FC<IFormTemplatesManagerProps> = ({ ris
               />
             </Field>
             <div className={styles.twoCol}>
-              <Field label="Risk category">
+              <Field label="Asset category">
                 <AppDropdown
                   placeholder="Select a category"
                   value={

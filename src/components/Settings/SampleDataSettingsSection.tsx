@@ -1,11 +1,10 @@
 ﻿import * as React from 'react';
 import {
   Button,
-  MessageBar,
-  MessageBarBody,
   tokens
 } from '@fluentui/react-components';
-import { DeleteRegular } from '@fluentui/react-icons';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+import { ArrowClockwiseRegular, DeleteRegular } from '@fluentui/react-icons';
 import { DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { IClearSeedDataResult } from '../../models/IAssetApp';
@@ -13,6 +12,7 @@ import type { IClearSeedDataResult } from '../../models/IAssetApp';
 export interface ISampleDataSettingsSectionProps {
   isSiteOwner: boolean;
   onClearSeedData: () => Promise<IClearSeedDataResult>;
+  onRestoreSampleData?: () => Promise<number>;
   onCleared?: () => void;
   settingRowClassName?: string;
   settingCopyClassName?: string;
@@ -21,12 +21,14 @@ export interface ISampleDataSettingsSectionProps {
 export const SampleDataSettingsSection: React.FC<ISampleDataSettingsSectionProps> = ({
   isSiteOwner,
   onClearSeedData,
+  onRestoreSampleData,
   onCleared,
   settingRowClassName,
   settingCopyClassName
 }) => {
   const { confirm, confirmDialog } = useConfirmDialog();
   const [clearing, setClearing] = React.useState(false);
+  const [restoring, setRestoring] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [messageIntent, setMessageIntent] = React.useState<'success' | 'error' | 'warning'>(
     'success'
@@ -37,7 +39,7 @@ export const SampleDataSettingsSection: React.FC<ISampleDataSettingsSectionProps
       title: 'Clear sample data',
       message:
         `Remove sample data seeded by ${DEFAULT_APP_TITLE}? Only onboarding/demo rows are deleted — ` +
-        'your own risks, lookup values, and settings are kept. You can re-seed sample data from Setup status.',
+        'your own assets, lookup values, and settings are kept. You can re-add sample data using Restore sample data.',
       confirmLabel: 'Clear sample data'
     });
     if (!confirmed) {
@@ -76,6 +78,30 @@ export const SampleDataSettingsSection: React.FC<ISampleDataSettingsSectionProps
     }
   };
 
+  const handleRestore = async (): Promise<void> => {
+    if (!onRestoreSampleData) {
+      return;
+    }
+
+    setRestoring(true);
+    setMessage('');
+    try {
+      const added = await onRestoreSampleData();
+      onCleared?.();
+      setMessageIntent('success');
+      setMessage(
+        added > 0
+          ? `Added ${added} sample item(s) from the built-in catalog.`
+          : 'Sample data is already present or could not be added.'
+      );
+    } catch (error) {
+      setMessageIntent('error');
+      setMessage(error instanceof Error ? error.message : 'Failed to restore sample data.');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   if (!isSiteOwner) {
     return null;
   }
@@ -83,27 +109,37 @@ export const SampleDataSettingsSection: React.FC<ISampleDataSettingsSectionProps
   return (
     <>
       {message && (
-        <MessageBar intent={messageIntent}>
-          <MessageBarBody>{message}</MessageBarBody>
-        </MessageBar>
+        <AppMessageBar intent={messageIntent}>{message}</AppMessageBar>
       )}
 
       <div className={settingRowClassName}>
         <div className={settingCopyClassName}>
           <strong>Sample data</strong>
           <div style={{ color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 }}>
-            Remove demo risks, lookup values, form templates, and compliance samples that were
-            seeded during setup. Your own records are not deleted.
+            Manage demo assets, software licenses, and lookup rows that were seeded during setup.
+            Your own records are not deleted when clearing sample data.
           </div>
         </div>
-        <Button
-          appearance="secondary"
-          icon={<DeleteRegular />}
-          disabled={clearing}
-          onClick={() => void handleClear()}
-        >
-          {clearing ? 'Clearing...' : 'Clear sample data'}
-        </Button>
+        <div style={{ display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' }}>
+          {onRestoreSampleData ? (
+            <Button
+              appearance="secondary"
+              icon={<ArrowClockwiseRegular />}
+              disabled={restoring || clearing}
+              onClick={() => void handleRestore()}
+            >
+              {restoring ? 'Restoring...' : 'Restore sample data'}
+            </Button>
+          ) : null}
+          <Button
+            appearance="secondary"
+            icon={<DeleteRegular />}
+            disabled={clearing || restoring}
+            onClick={() => void handleClear()}
+          >
+            {clearing ? 'Clearing...' : 'Clear sample data'}
+          </Button>
+        </div>
       </div>
       {confirmDialog}
     </>

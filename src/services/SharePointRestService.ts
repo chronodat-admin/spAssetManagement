@@ -930,13 +930,16 @@ export class SharePointRestService {
     listId: string,
     fields: Record<string, SharePointFieldValue>,
     fieldDefinitions: Array<{ internalName: string; displayName?: string }>,
-    maxAttempts = 5
+    maxAttempts = 5,
+    fieldMaps?: Array<{ payloadKey: string; internalName: string; displayName?: string }>
   ): Promise<number> {
-    const fieldMap = fieldDefinitions.map((field) => ({
-      payloadKey: field.internalName,
-      internalName: field.internalName,
-      displayName: field.displayName
-    }));
+    const fieldMap =
+      fieldMaps ??
+      fieldDefinitions.map((field) => ({
+        payloadKey: field.internalName,
+        internalName: field.internalName,
+        displayName: field.displayName
+      }));
 
     let lastError = 'Failed to add list item';
 
@@ -955,11 +958,12 @@ export class SharePointRestService {
           throw error instanceof Error ? error : new Error(lastError);
         }
 
-        const waitNames = Object.keys(remapped).filter((name) => name !== 'Title');
+        const waitNames = this.normalizeFieldWaitNames(Object.keys(remapped).filter((name) => name !== 'Title'));
         if (waitNames.length > 0) {
           await this.waitForFields(listId, waitNames, {
-            attempts: 12,
-            delayMs: 750
+            attempts: 24,
+            delayMs: 750,
+            listTitle
           });
         } else {
           await this.delay(1000 * (attempt + 1));
@@ -968,6 +972,20 @@ export class SharePointRestService {
     }
 
     throw new Error(lastError);
+  }
+
+  /** Resolve REST *Id keys and text columns to SharePoint internal names for field readiness checks. */
+  private normalizeFieldWaitNames(fieldNames: string[]): string[] {
+    return Array.from(
+      new Set(
+        fieldNames.map((name) => {
+          if (name.endsWith('Id') && name.length > 2) {
+            return name.slice(0, -2);
+          }
+          return name;
+        })
+      )
+    );
   }
 
   public async listMissingFields(listId: string, internalNames: string[]): Promise<string[]> {
@@ -1025,9 +1043,9 @@ export class SharePointRestService {
       const isLookupIdField =
         field.payloadKey.endsWith('Id') &&
         field.internalName &&
-        field.payloadKey.slice(0, -2) !== field.internalName;
+        field.payloadKey === `${field.internalName}Id`;
 
-      if (isLookupIdField || field.payloadKey.endsWith('Id')) {
+      if (isLookupIdField) {
         const targetKey = `${resolved}Id`;
         if (targetKey !== field.payloadKey) {
           remapped[targetKey] = remapped[field.payloadKey];
@@ -1835,7 +1853,7 @@ export class SharePointRestService {
       return {
         registered: false,
         alreadyRegistered: false,
-        message: `Could not register the risk form customizer: ${errorText}`
+        message: `Could not register the asset form customizer: ${errorText}`
       };
     } catch (error) {
       return {
@@ -1844,7 +1862,7 @@ export class SharePointRestService {
         message:
           error instanceof Error
             ? error.message
-            : 'Could not register the risk form customizer on this site.'
+            : 'Could not register the asset form customizer on this site.'
       };
     }
   }
@@ -2074,13 +2092,32 @@ export class SharePointRestService {
     return false;
   }
 
+  private fieldPresenceVariants(internalName: string): string[] {
+    if (internalName.endsWith('Id') && internalName.length > 2) {
+      const baseName = internalName.slice(0, -2);
+      return [internalName, baseName, `${baseName}Id`];
+    }
+
+    return [internalName, `${internalName}Id`];
+  }
+
   private async getMissingFields(listId: string, internalNames: string[]): Promise<string[]> {
     if (internalNames.length === 0) {
       return [];
     }
 
-    const existing = await this.getFieldsByInternalNamesInChunks(listId, internalNames);
-    return internalNames.filter((name) => !existing.has(name) && !existing.has(`${name}Id`));
+    const queryNames = Array.from(
+      new Set(
+        internalNames.reduce<string[]>((names, name) => {
+          this.fieldPresenceVariants(name).forEach((variant) => names.push(variant));
+          return names;
+        }, [])
+      )
+    );
+    const existing = await this.getFieldsByInternalNamesInChunks(listId, queryNames);
+    return internalNames.filter(
+      (name) => !this.fieldPresenceVariants(name).some((variant) => existing.has(variant))
+    );
   }
 
   private async getFieldsByInternalNamesInChunks(

@@ -20,6 +20,14 @@ describe('numberingEngine', () => {
     assert.equal(formatNumberFromConfig(project, 7), previewNumberingFormat({ ...project, nextValue: 7 }));
   });
 
+  it('uses AST prefix for assets by default', () => {
+    const settings = cloneDefaultWorkflowSettings();
+    const asset = settings.numbering.find((item) => item.entityType === 'asset');
+    assert.ok(asset);
+    assert.equal(asset.prefix, 'AST');
+    assert.match(previewNumberingFormat(asset), /^AST-\d{4}-\d{4}$/);
+  });
+
   it('allocates sequential project numbers when enabled', () => {
     const settings = cloneDefaultWorkflowSettings();
     const first = allocateEntityNumber(settings, 'project');
@@ -33,26 +41,26 @@ describe('numberingEngine', () => {
     assert.equal(second.sequence, 2);
   });
 
-  it('returns undefined when numbering is disabled', () => {
+  it('returns undefined when vendor numbering is disabled', () => {
     const settings = cloneDefaultWorkflowSettings();
-    const business = settings.numbering.find((item) => item.entityType === 'business');
-    assert.ok(business);
-    assert.equal(business.enabled, false);
-    assert.equal(allocateEntityNumber(settings, 'business'), undefined);
+    const vendor = settings.numbering.find((item) => item.entityType === 'vendor');
+    assert.ok(vendor);
+    assert.equal(vendor.enabled, false);
+    assert.equal(allocateEntityNumber(settings, 'vendor'), undefined);
   });
 
-  it('auto-enables disabled entity numbering on first allocate', () => {
+  it('auto-enables disabled vendor numbering on first allocate', () => {
     const settings = cloneDefaultWorkflowSettings();
-    const allocated = allocateEntityCodeWithAutoEnable(settings, 'business');
+    const allocated = allocateEntityCodeWithAutoEnable(settings, 'vendor');
     assert.ok(allocated);
-    assert.match(allocated.number, /^BIZ-\d{4}-\d{4}$/);
+    assert.match(allocated.number, /^VND-\d{4}-\d{4}$/);
 
-    const updatedBusiness = allocated.updatedSettings.numbering.find((item) => item.entityType === 'business');
-    assert.equal(updatedBusiness?.enabled, true);
+    const updatedVendor = allocated.updatedSettings.numbering.find((item) => item.entityType === 'vendor');
+    assert.equal(updatedVendor?.enabled, true);
     const periodKey = getNumberingPeriodKey('yearly');
-    assert.equal(updatedBusiness?.sequenceCounters?.[periodKey], 1);
+    assert.equal(updatedVendor?.sequenceCounters?.[periodKey], 1);
 
-    const second = allocateEntityNumber(allocated.updatedSettings, 'business');
+    const second = allocateEntityNumber(allocated.updatedSettings, 'vendor');
     assert.ok(second);
     assert.equal(second.sequence, 2);
   });
@@ -61,9 +69,9 @@ describe('numberingEngine', () => {
     const settings = cloneDefaultWorkflowSettings();
     const enabled = enableNumberingForEntity(settings, 'project');
     const project = enabled.numbering.find((item) => item.entityType === 'project');
-    const business = enabled.numbering.find((item) => item.entityType === 'business');
+    const vendor = enabled.numbering.find((item) => item.entityType === 'vendor');
     assert.equal(project?.enabled, true);
-    assert.equal(business?.enabled, false);
+    assert.equal(vendor?.enabled, false);
   });
 
   it('uses yearly period keys for reset frequency', () => {

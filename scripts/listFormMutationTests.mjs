@@ -32,6 +32,15 @@ const businessField = {
   Hidden: false
 };
 
+const assignedToField = {
+  InternalName: 'AM_AssignedTo',
+  Title: 'Assigned To',
+  TypeAsString: 'User',
+  Required: false,
+  ReadOnlyField: false,
+  Hidden: false
+};
+
 describe('buildListFormPayload', () => {
   it('includes visible fields and lookup ids', () => {
     const payload = buildListFormPayload(
@@ -69,6 +78,23 @@ describe('buildListFormPayload', () => {
 
     assert.equal(payload.Title, 'Old title');
     assert.equal(payload.Code, undefined);
+  });
+
+  it('clears optional user fields when emptied on edit', () => {
+    const payload = buildListFormPayload(
+      [assignedToField],
+      { AM_AssignedTo: [] },
+      {
+        entity: 'risks',
+        mode: 'edit',
+        fields: {
+          AM_AssignedTo: { label: 'Assigned To', visible: true, required: false }
+        },
+        orderedKeys: ['AM_AssignedTo']
+      }
+    );
+
+    assert.equal(payload.AM_AssignedToId, null);
   });
 });
 

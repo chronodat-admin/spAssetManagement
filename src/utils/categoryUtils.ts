@@ -1,4 +1,4 @@
-import { ILookupItem } from '../models/IAssetApp';
+import type { ILookupItem } from '../models/IAssetApp';
 
 export function filterSubCategoriesByCategory(
   subCategories: ILookupItem[],

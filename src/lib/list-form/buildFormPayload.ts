@@ -61,6 +61,9 @@ export function buildListFormPayload(
         }
       } else if (required) {
         throw new Error(`${config?.label || field.Title} is required.`);
+      } else {
+        payload[`${field.InternalName}Id`] =
+          field.TypeAsString === 'UserMulti' ? [] : null;
       }
       return;
     }

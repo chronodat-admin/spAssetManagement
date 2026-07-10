@@ -4,8 +4,6 @@ import {
   Checkbox,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Spinner,
   Table,
   TableBody,
@@ -16,15 +14,19 @@ import {
 } from '@fluentui/react-components';
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons';
 import { ContentCard } from '../Layout/ContentCard';
+import { useFormStyles } from '../Forms/formStyles';
 import { InventoryService } from '../../services/InventoryService';
 import type { IInventoryItem } from '../../models/IAssetApp';
 import { DATA_TABLE_CLASS } from '../../lib/list-view/columnWidths';
+import { PageNotifications } from '../Layout/PageNotifications';
+
 
 export interface IInventoryPageProps {
   inventoryService: InventoryService;
 }
 
 export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService }) => {
+  const styles = useFormStyles();
   const [rows, setRows] = React.useState<IInventoryItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -77,14 +79,10 @@ export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService 
 
   return (
     <ContentCard>
-      {error ? (
-        <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-        </MessageBar>
-      ) : null}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 16 }}>
-        <Field label="Scan label">
-          <Input value={title} onChange={(_, d) => setTitle(d.value)} />
+      <PageNotifications error={error || undefined} />
+      <div className={styles.inlineRow}>
+        <Field label="Scan label" className={styles.inlineField}>
+          <Input value={title} onChange={(_, d) => setTitle(d.value)} placeholder="e.g. Barcode or asset tag" />
         </Field>
         <Checkbox label="Asset found" checked={found} onChange={(_, d) => setFound(Boolean(d.checked))} />
         <Button appearance="primary" icon={<AddRegular />} disabled={saving || !title.trim()} onClick={() => void handleAdd()}>

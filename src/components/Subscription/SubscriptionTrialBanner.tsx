@@ -1,13 +1,5 @@
 ﻿import * as React from 'react';
-import {
-  Button,
-  MessageBar,
-  MessageBarActions,
-  MessageBarBody,
-  MessageBarTitle,
-  makeStyles,
-  tokens
-} from '@fluentui/react-components';
+import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import { ArrowSyncRegular, DismissRegular, PaymentRegular, SettingsRegular } from '@fluentui/react-icons';
 import { DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
 import { useSubscription } from '../../contexts/SubscriptionContext';
@@ -15,6 +7,8 @@ import {
   dismissTrialBanner,
   isTrialBannerDismissed
 } from '../../utils/subscriptionTrialBannerStorage';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+import { PageNotifications } from '../Layout/PageNotifications';
 
 const useStyles = makeStyles({
   root: {
@@ -97,40 +91,38 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
   if (status.status === 'active') {
     return (
       <div className={`${styles.root} asset-mgmt-no-print`}>
-        {error ? (
-          <MessageBar intent="warning" layout="multiline">
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
-        ) : null}
-        <MessageBar intent="success" layout="multiline">
-          <MessageBarBody>
-            <MessageBarTitle>Yearly subscription active</MessageBarTitle>
-            {status.currentPeriodEnd
-              ? `Your subscription renews on ${formatPeriodEnd(status.currentPeriodEnd)}.`
-              : `Thank you for subscribing to ${DEFAULT_APP_TITLE}.`}
-          </MessageBarBody>
-          <MessageBarActions>
-            <Button
-              appearance="secondary"
-              size="small"
-              icon={<PaymentRegular />}
-              disabled={portalLoading}
-              onClick={() => void handlePortal()}
-            >
-              {portalLoading ? 'Opening…' : 'Manage billing'}
-            </Button>
-            {onOpenSubscriptionSettings ? (
+        <PageNotifications warning={error || undefined} />
+        <AppMessageBar
+          intent="success"
+          title="Yearly subscription active"
+          actions={
+            <>
               <Button
-                appearance="subtle"
+                appearance="secondary"
                 size="small"
-                icon={<SettingsRegular />}
-                onClick={onOpenSubscriptionSettings}
+                icon={<PaymentRegular />}
+                disabled={portalLoading}
+                onClick={() => void handlePortal()}
               >
-                Subscription
+                {portalLoading ? 'Opening…' : 'Manage billing'}
               </Button>
-            ) : null}
-          </MessageBarActions>
-        </MessageBar>
+              {onOpenSubscriptionSettings ? (
+                <Button
+                  appearance="subtle"
+                  size="small"
+                  icon={<SettingsRegular />}
+                  onClick={onOpenSubscriptionSettings}
+                >
+                  Subscription
+                </Button>
+              ) : null}
+            </>
+          }
+        >
+          {status.currentPeriodEnd
+            ? `Your subscription renews on ${formatPeriodEnd(status.currentPeriodEnd)}.`
+            : `Thank you for subscribing to ${DEFAULT_APP_TITLE}.`}
+        </AppMessageBar>
       </div>
     );
   }
@@ -138,32 +130,30 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
   if (status.status === 'past_due') {
     return (
       <div className={`${styles.root} asset-mgmt-no-print`}>
-        {actionError ? (
-          <MessageBar intent="error" layout="multiline" style={{ marginBottom: tokens.spacingVerticalM }}>
-            <MessageBarBody>{actionError}</MessageBarBody>
-          </MessageBar>
-        ) : null}
-        <MessageBar intent="warning" layout="multiline">
-          <MessageBarBody>
-            <MessageBarTitle>Payment issue</MessageBarTitle>
-            We could not process your latest subscription payment. Update your billing details to
-            avoid losing access.
-          </MessageBarBody>
-          <MessageBarActions>
-            <Button
-              appearance="primary"
-              size="small"
-              icon={<PaymentRegular />}
-              disabled={portalLoading}
-              onClick={() => void handlePortal()}
-            >
-              {portalLoading ? 'Opening…' : 'Update payment'}
-            </Button>
-            <Button appearance="subtle" size="small" icon={<ArrowSyncRegular />} onClick={() => void refresh()}>
-              Refresh
-            </Button>
-          </MessageBarActions>
-        </MessageBar>
+        <PageNotifications error={actionError || undefined} />
+        <AppMessageBar
+          intent="warning"
+          title="Payment issue"
+          actions={
+            <>
+              <Button
+                appearance="primary"
+                size="small"
+                icon={<PaymentRegular />}
+                disabled={portalLoading}
+                onClick={() => void handlePortal()}
+              >
+                {portalLoading ? 'Opening…' : 'Update payment'}
+              </Button>
+              <Button appearance="subtle" size="small" icon={<ArrowSyncRegular />} onClick={() => void refresh()}>
+                Refresh
+              </Button>
+            </>
+          }
+        >
+          We could not process your latest subscription payment. Update your billing details to avoid losing
+          access.
+        </AppMessageBar>
       </div>
     );
   }
@@ -178,47 +168,41 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
 
     return (
       <div className={`${styles.root} asset-mgmt-no-print`}>
-        {actionError ? (
-          <MessageBar intent="error" layout="multiline" style={{ marginBottom: tokens.spacingVerticalM }}>
-            <MessageBarBody>{actionError}</MessageBarBody>
-          </MessageBar>
-        ) : null}
-        {error ? (
-          <MessageBar intent="warning" layout="multiline" style={{ marginBottom: tokens.spacingVerticalM }}>
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
-        ) : null}
-        <MessageBar intent="info" layout="multiline">
-          <MessageBarBody>
-            <MessageBarTitle>Free trial — {days} {dayLabel} remaining</MessageBarTitle>
-            You have {days} {dayLabel} left in your {status.trialDaysTotal}-day trial.
-            {status.trialEndsAt
-              ? ` Trial ends ${formatPeriodEnd(status.trialEndsAt)}.`
-              : ''}{' '}
-            Subscribe for a yearly plan to keep using {DEFAULT_APP_TITLE} after the trial.
-            {!isAppAdministrator ? ' Ask an app administrator to subscribe or view the plan.' : ''}
-          </MessageBarBody>
-          {isAppAdministrator ? (
-            <MessageBarActions>
-              <Button
-                appearance="primary"
-                size="small"
-                icon={<PaymentRegular />}
-                disabled={checkoutLoading}
-                onClick={() => void handleCheckout()}
-              >
-                {checkoutLoading ? 'Redirecting…' : 'Subscribe yearly'}
-              </Button>
-              {onOpenSubscriptionSettings ? (
+        <PageNotifications error={actionError || undefined} warning={error || undefined} />
+        <AppMessageBar
+          intent="info"
+          title={`Free trial — ${days} ${dayLabel} remaining`}
+          actions={
+            isAppAdministrator ? (
+              <>
                 <Button
-                  appearance="secondary"
+                  appearance="primary"
                   size="small"
-                  icon={<SettingsRegular />}
-                  onClick={onOpenSubscriptionSettings}
+                  icon={<PaymentRegular />}
+                  disabled={checkoutLoading}
+                  onClick={() => void handleCheckout()}
                 >
-                  View plan
+                  {checkoutLoading ? 'Redirecting…' : 'Subscribe yearly'}
                 </Button>
-              ) : null}
+                {onOpenSubscriptionSettings ? (
+                  <Button
+                    appearance="secondary"
+                    size="small"
+                    icon={<SettingsRegular />}
+                    onClick={onOpenSubscriptionSettings}
+                  >
+                    View plan
+                  </Button>
+                ) : null}
+                <Button
+                  appearance="subtle"
+                  size="small"
+                  icon={<DismissRegular />}
+                  aria-label="Dismiss trial notice"
+                  onClick={handleDismissTrialBanner}
+                />
+              </>
+            ) : (
               <Button
                 appearance="subtle"
                 size="small"
@@ -226,19 +210,14 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
                 aria-label="Dismiss trial notice"
                 onClick={handleDismissTrialBanner}
               />
-            </MessageBarActions>
-          ) : (
-            <MessageBarActions>
-              <Button
-                appearance="subtle"
-                size="small"
-                icon={<DismissRegular />}
-                aria-label="Dismiss trial notice"
-                onClick={handleDismissTrialBanner}
-              />
-            </MessageBarActions>
-          )}
-        </MessageBar>
+            )
+          }
+        >
+          You have {days} {dayLabel} left in your {status.trialDaysTotal}-day trial.
+          {status.trialEndsAt ? ` Trial ends ${formatPeriodEnd(status.trialEndsAt)}.` : ''} Subscribe for a
+          yearly plan to keep using {DEFAULT_APP_TITLE} after the trial.
+          {!isAppAdministrator ? ' Ask an app administrator to subscribe or view the plan.' : ''}
+        </AppMessageBar>
       </div>
     );
   }

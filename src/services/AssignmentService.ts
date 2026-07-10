@@ -97,6 +97,34 @@ export class AssignmentService {
     });
   }
 
+  public async bulkAssignAssets(inputs: IAssignAssetInput[]): Promise<{ success: number; failed: number }> {
+    let success = 0;
+    let failed = 0;
+    for (const input of inputs) {
+      try {
+        await this.assignAsset(input);
+        success += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    return { success, failed };
+  }
+
+  public async bulkReturnAssets(assetIds: number[], notes?: string): Promise<{ success: number; failed: number }> {
+    let success = 0;
+    let failed = 0;
+    for (const assetId of assetIds) {
+      try {
+        await this.returnAsset({ assetId, notes });
+        success += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    return { success, failed };
+  }
+
   public async getAssignments(filter?: string): Promise<IAssignment[]> {
     const items = await this.rest.getAllItems<
       IAssignment & { AM_AssignedTo?: { Id: number; Title: string; EMail?: string; Email?: string } }

@@ -2,14 +2,12 @@ import type { SettingsPageId } from '../components/Settings/settingsPageMeta';
 import type { NotificationWorkflowKey } from '../models/IWorkflowSettings';
 
 /** Settings tabs hidden until a scheduler/backend runner is available. */
-export const HIDDEN_SCHEDULE_DEPENDENT_SETTINGS_PAGE_IDS: SettingsPageId[] = [
-  'scheduledReports',
-  'workflowRules'
-];
+export const HIDDEN_SCHEDULE_DEPENDENT_SETTINGS_PAGE_IDS: SettingsPageId[] = [];
 
 /** Settings tabs hidden from the sidebar (pending UI, feature flags, or backend). */
 export const HIDDEN_SETTINGS_PAGE_IDS: SettingsPageId[] = [
   ...HIDDEN_SCHEDULE_DEPENDENT_SETTINGS_PAGE_IDS,
+  'compliance',
   'lookupLikelihood',
   'lookupConsequences',
   'lookupRiskProfile',
@@ -22,12 +20,10 @@ export function isHiddenSettingsPage(pageId: SettingsPageId): boolean {
 }
 
 /** Notification workflows that require a scheduled job (not event-driven in SPFx). */
-export const HIDDEN_SCHEDULE_DEPENDENT_NOTIFICATION_KEYS: NotificationWorkflowKey[] = [
-  'riskOverdue'
-];
+export const HIDDEN_SCHEDULE_DEPENDENT_NOTIFICATION_KEYS: NotificationWorkflowKey[] = [];
 
 /** Built-in email templates tied to schedule-dependent notifications. */
-export const HIDDEN_SCHEDULE_DEPENDENT_EMAIL_TEMPLATE_SLUGS = ['risk_overdue'] as const;
+export const HIDDEN_SCHEDULE_DEPENDENT_EMAIL_TEMPLATE_SLUGS = [] as const;
 
 export function isScheduleDependentSettingsPageHidden(pageId: SettingsPageId): boolean {
   return HIDDEN_SCHEDULE_DEPENDENT_SETTINGS_PAGE_IDS.includes(pageId);

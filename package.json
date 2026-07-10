@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.3",
+  "version": "1.0.0.12",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -12,15 +12,17 @@
     "serve": "gulp serve",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/depreciationTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs",
+    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/listSchemaCoverageTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/assetSeedDataTests.mjs scripts/assetImageTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/numberingMigrationTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/depreciationTests.mjs scripts/depreciationFilterTests.mjs scripts/assetDropdownFieldsTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs scripts/assetValidationTests.mjs scripts/assetExportTests.mjs scripts/dashboardAnalyticsTests.mjs scripts/auditPayloadTests.mjs scripts/serviceCrudTests.mjs scripts/settingsStorageTests.mjs scripts/versionLookupCoverageTests.mjs scripts/reportBuilderTests.mjs scripts/tenantWorkflowContractTests.mjs scripts/utilityCoverageTests.mjs",
     "test:spfx": "gulp test",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "sync:publisher": "node scripts/sync-publisher-manifests.mjs",
     "sync:version": "node scripts/sync-version.mjs",
+    "sync:icon": "python scripts/sync-webpart-icon.py",
     "verify:version": "node scripts/verify-version-sync.mjs",
     "verify:display-name": "node scripts/verify-app-display-name.mjs",
-    "verify:store": "node scripts/verify-store-readiness.mjs && node scripts/verify-store-screenshots.mjs",
+    "verify:store": "node scripts/verify-store-readiness.mjs && node scripts/verify-store-icons.mjs && node scripts/verify-store-screenshots.mjs",
+    "assets:icons": "python scripts/generate-app-icons.py",
     "assets:sppkg": "python scripts/prepare-sppkg-assets.py",
     "teams:package": "powershell -ExecutionPolicy Bypass -File teams/build-package.ps1",
     "teams:package:m365": "powershell -ExecutionPolicy Bypass -File teams/build-package.ps1 -IncludeM365",
@@ -29,7 +31,8 @@
     "docs:user-guide": "python scripts/build-user-guide.py",
     "docs:user-guide:capture": "playwright test e2e/screenshots/capture-user-guide.spec.ts",
     "docs:user-guide:all": "npm run docs:user-guide:capture && npm run docs:user-guide",
-    "docs:word": "python scripts/build-architecture-doc.py && python scripts/build-user-guide.py",
+    "docs:adoption-guide": "python scripts/build-adoption-guide.py",
+    "docs:word": "python scripts/build-architecture-doc.py && python scripts/build-user-guide.py && python scripts/build-adoption-guide.py",
     "docs:marketing": "python scripts/build-marketing-images.py",
     "assets:marketing": "python scripts/generate-marketing-one-pagers.py",
     "assets:marketing:crops": "python scripts/generate-marketing-store-crops.py",
@@ -40,7 +43,7 @@
     "test:e2e:setup": "playwright test --project=setup --headed",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "ship": "node scripts/sync-publisher-manifests.mjs && node scripts/sync-version.mjs && npm run teams:package:m365 && npm run assets:sppkg && node scripts/clean-release.mjs && gulp bundle --ship && gulp package-solution --ship && npm run fix:sppkg-teams"
+    "ship": "node scripts/sync-publisher-manifests.mjs && node scripts/sync-version.mjs && npm run assets:icons && npm run teams:package:m365 && npm run assets:sppkg && node scripts/clean-release.mjs && gulp bundle --ship && gulp package-solution --ship && npm run fix:sppkg-teams"
   },
   "dependencies": {
     "@fluentui/react-components": "^9.74.1",

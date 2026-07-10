@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Sync config/publisher.json into config/package-solution.json developer fields.
+ * Sync config/publisher.json into package, Teams, and M365 manifest developer fields.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,7 +35,20 @@ const developerFields = {
 const packageSolution = readJson('config/package-solution.json');
 packageSolution.solution.developer = { ...packageSolution.solution.developer, ...developerFields };
 writeJson('config/package-solution.json', packageSolution);
-console.log('Updated config/package-solution.json developer fields from config/publisher.json');
+
+for (const manifestPath of ['teams/manifest.json', 'm365/manifest.json']) {
+  const manifest = readJson(manifestPath);
+  manifest.developer = {
+    ...manifest.developer,
+    name: publisher.name,
+    websiteUrl: publisher.websiteUrl,
+    privacyUrl: publisher.privacyUrl,
+    termsOfUseUrl: publisher.termsOfUseUrl
+  };
+  writeJson(manifestPath, manifest);
+}
+
+console.log('Updated package, Teams, and M365 developer fields from config/publisher.json');
 
 if (!publisher.mpnId) {
   console.warn('\nWarning: config/publisher.json mpnId is empty. Set your Partner Center MPN ID before submitting.');

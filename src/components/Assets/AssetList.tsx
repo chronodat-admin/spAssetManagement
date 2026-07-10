@@ -1,6 +1,6 @@
 ﻿import * as React from 'react';
-import { Button, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components';
-import { ArrowDownloadRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons';
+import { Button, Spinner } from '@fluentui/react-components';
+import { ArrowDownloadRegular, DeleteRegular, EditRegular, BarcodeScannerRegular } from '@fluentui/react-icons';
 import { ContentCard } from '../Layout/ContentCard';
 import { ContentToolbar } from '../Layout/ContentToolbar';
 import { DataListView, IDataListColumn, IDataListSelection } from '../ListView/DataListView';
@@ -8,6 +8,7 @@ import { ListFiltersBar } from '../ListView/ListFiltersBar';
 import { ListViewControls } from '../ListView/ListViewControls';
 import { IAppSettings, IAsset } from '../../models/IAssetApp';
 import { parseWorkflowSettings } from '../../lib/workflow-settings/storage';
+import { parseAppearanceSettings } from '../../lib/appearance-settings/storage';
 import { AssetService } from '../../services/AssetService';
 import { exportAssetsToCsv } from '../../utils/assetExport';
 import { RiskStatusBadge } from './AssetColoredBadges';
@@ -22,9 +23,14 @@ import type { ListColumnMeta } from '../../lib/list-view/types';
 import { useListViewPreferences } from '../../lib/list-view/useListViewPreferences';
 import { useBulkSelection } from '../../hooks/useBulkSelection';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { UserAvatar } from '../PeoplePicker/UserAvatar';
+import { UserCell } from '../PeoplePicker/UserAvatar';
+import { AssetImageThumbnail } from './AssetImageThumbnail';
+import { BarcodeLabelDialog } from './BarcodeLabelDialog';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { PageNotifications } from '../Layout/PageNotifications';
 
-const ASSET_COLUMNS: ListColumnMeta[] = [
+
+const BASE_ASSET_COLUMNS: ListColumnMeta[] = [
   { key: 'assetId', label: 'Asset ID', defaultVisible: true, locked: true },
   { key: 'title', label: 'Title', defaultVisible: true, locked: true },
   { key: 'status', label: 'Status', defaultVisible: true },
@@ -35,9 +41,36 @@ const ASSET_COLUMNS: ListColumnMeta[] = [
   { key: 'cost', label: 'Cost', defaultVisible: false }
 ];
 
-function buildAssetColumns(settings?: IAppSettings): IDataListColumn<IAsset>[] {
+function buildAssetColumnMeta(showImageColumn: boolean): ListColumnMeta[] {
+  if (!showImageColumn) {
+    return BASE_ASSET_COLUMNS;
+  }
+  return [{ key: 'image', label: 'Image', defaultVisible: true }, ...BASE_ASSET_COLUMNS];
+}
+
+function buildAssetColumns(
+  showImageColumn: boolean,
+  settings?: IAppSettings,
+  webOrigin?: string
+): IDataListColumn<IAsset>[] {
   const workflowSettings = parseWorkflowSettings(settings);
-  return [
+  const columns: IDataListColumn<IAsset>[] = [];
+
+  if (showImageColumn) {
+    columns.push({
+      key: 'image',
+      label: 'Image',
+      render: (asset) => (
+        <AssetImageThumbnail
+          imageUrl={asset.AM_ImageUrl}
+          alt={asset.Title ? `${asset.Title} image` : 'Asset image'}
+          webOrigin={webOrigin}
+        />
+      )
+    });
+  }
+
+  columns.push(
     { key: 'assetId', label: 'Asset ID', render: (asset) => asset.AM_AssetId || '—' },
     {
       key: 'title',
@@ -67,10 +100,7 @@ function buildAssetColumns(settings?: IAppSettings): IDataListColumn<IAsset>[] {
       render: (asset) => {
         const assignee = asset.AM_AssignedTo || asset.AssignedTo?.[0];
         return assignee ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <UserAvatar name={assignee.Title} email={assignee.Email} size={24} />
-            {assignee.Title}
-          </span>
+          <UserCell name={assignee.Title} email={assignee.Email} />
         ) : (
           '—'
         );
@@ -82,7 +112,9 @@ function buildAssetColumns(settings?: IAppSettings): IDataListColumn<IAsset>[] {
       label: 'Cost',
       render: (asset) => (asset.AM_Cost != null ? `$${asset.AM_Cost.toLocaleString()}` : '—')
     }
-  ];
+  );
+
+  return columns;
 }
 
 export interface IAssetListProps {
@@ -96,6 +128,7 @@ export interface IAssetListProps {
   onEdit: (asset: IAsset) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  canRunBulkOps?: boolean;
   onRefresh: () => void;
 }
 
@@ -110,10 +143,28 @@ export const AssetList: React.FC<IAssetListProps> = ({
   onEdit,
   canEdit = false,
   canDelete = false,
+  canRunBulkOps = false,
   onRefresh
 }) => {
-  const columns = React.useMemo(() => buildAssetColumns(settings), [settings]);
-  const viewPrefs = useListViewPreferences(listKey, ASSET_COLUMNS);
+  const { t } = useTranslation();
+  const webOrigin = React.useMemo(() => {
+    try {
+      return new URL(riskService.getSiteWebUrl()).origin;
+    } catch {
+      return undefined;
+    }
+  }, [riskService]);
+  const appearanceSettings = React.useMemo(() => parseAppearanceSettings(settings), [settings]);
+  const showImageColumn = appearanceSettings.showAssetImageColumn;
+  const assetColumnMeta = React.useMemo(
+    () => buildAssetColumnMeta(showImageColumn),
+    [showImageColumn]
+  );
+  const columns = React.useMemo(
+    () => buildAssetColumns(showImageColumn, settings, webOrigin),
+    [showImageColumn, settings, webOrigin]
+  );
+  const viewPrefs = useListViewPreferences(listKey, assetColumnMeta);
   const [localFilters, setLocalFilters] = React.useState<IAssetListFilters>(EMPTY_ASSET_LIST_FILTERS);
   const [deletingId, setDeletingId] = React.useState<number | undefined>();
   const [error, setError] = React.useState('');
@@ -128,8 +179,15 @@ export const AssetList: React.FC<IAssetListProps> = ({
 
   const bulkSelection = useBulkSelection(filteredAssets, getAssetKey);
   const { confirm, confirmDialog } = useConfirmDialog();
+  const [labelDialogOpen, setLabelDialogOpen] = React.useState(false);
 
-  const listSelection: IDataListSelection | undefined = canDelete
+  const selectedAssets = React.useMemo(
+    () => filteredAssets.filter((asset) => bulkSelection.selectedKeys.has(asset.Id)),
+    [bulkSelection.selectedKeys, filteredAssets]
+  );
+
+  const listSelection: IDataListSelection | undefined =
+    canDelete || canRunBulkOps
     ? {
         selectedKeys: bulkSelection.selectedKeys,
         allSelected: bulkSelection.allSelected,
@@ -157,6 +215,27 @@ export const AssetList: React.FC<IAssetListProps> = ({
       onRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setDeletingId(undefined);
+    }
+  };
+
+  const handleBulkDelete = async (): Promise<void> => {
+    if (!canDelete || bulkSelection.selectedCount === 0) return;
+    const ok = await confirm({
+      title: 'Delete selected assets',
+      message: `Soft-delete ${bulkSelection.selectedCount} selected asset(s)?`
+    });
+    if (!ok) return;
+    setDeletingId(-1);
+    try {
+      for (const id of bulkSelection.selectedKeys) {
+        await riskService.deleteRisk(Number(id));
+      }
+      bulkSelection.clearSelection();
+      onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Bulk delete failed');
     } finally {
       setDeletingId(undefined);
     }
@@ -191,7 +270,7 @@ export const AssetList: React.FC<IAssetListProps> = ({
               <ListViewControls
                 viewMode={viewPrefs.viewMode}
                 onViewModeChange={viewPrefs.setViewMode}
-                columns={ASSET_COLUMNS}
+                columns={assetColumnMeta}
                 visibleColumns={viewPrefs.visibleColumns}
                 onToggleColumn={viewPrefs.toggleColumn}
                 settingsOpen={viewPrefs.settingsOpen}
@@ -202,10 +281,27 @@ export const AssetList: React.FC<IAssetListProps> = ({
               appearance="secondary"
               icon={<ArrowDownloadRegular />}
               disabled={filteredAssets.length === 0}
-              onClick={() => exportAssetsToCsv(filteredAssets)}
+              onClick={() =>
+                exportAssetsToCsv(
+                  selectedAssets.length > 0 ? selectedAssets : filteredAssets,
+                  selectedAssets.length > 0 ? 'assets-selected-export.csv' : 'assets-export.csv'
+                )
+              }
             >
-              Export CSV
+              {selectedAssets.length > 0
+                ? t('operations', 'exportSelected', 'Export selected')
+                : t('operations', 'exportCsv', 'Export CSV')}
             </Button>
+            {canRunBulkOps && bulkSelection.selectedCount > 0 ? (
+              <Button appearance="secondary" icon={<BarcodeScannerRegular />} onClick={() => setLabelDialogOpen(true)}>
+                {t('barcode', 'generate', 'Generate labels')}
+              </Button>
+            ) : null}
+            {canDelete && bulkSelection.selectedCount > 0 ? (
+              <Button appearance="secondary" icon={<DeleteRegular />} onClick={() => void handleBulkDelete()}>
+                {t('operations', 'deleteSelected', 'Delete selected')} ({bulkSelection.selectedCount})
+              </Button>
+            ) : null}
           </ContentToolbar>
         }
         filtersBar={
@@ -229,11 +325,7 @@ export const AssetList: React.FC<IAssetListProps> = ({
           />
         }
       >
-        {error ? (
-          <MessageBar intent="error">
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
-        ) : null}
+        <PageNotifications error={error || undefined} />
         <DataListView
           items={filteredAssets}
           columns={columns}
@@ -249,6 +341,11 @@ export const AssetList: React.FC<IAssetListProps> = ({
           getSelectionLabel={(asset) => asset.Title}
         />
       </ContentCard>
+      <BarcodeLabelDialog
+        open={labelDialogOpen}
+        assets={selectedAssets}
+        onClose={() => setLabelDialogOpen(false)}
+      />
       {confirmDialog}
     </>
   );

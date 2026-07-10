@@ -25,16 +25,16 @@ export function validateRiskForm(
   allowedStatuses?: string[]
 ): string | undefined {
   if (!values.title.trim()) {
-    return 'Risk/Opportunity title is required.';
+    return 'Asset title is required.';
   }
   if (!values.categoryId) {
-    return 'Risk category is required.';
+    return 'Asset category is required.';
   }
   if (!values.businessId) {
     return 'Business is required.';
   }
   if (!values.profileId) {
-    return 'Risk profile type is required.';
+    return 'Asset type is required.';
   }
   if (!values.likelihood || !LIKELIHOOD_CHOICES.includes(values.likelihood as (typeof LIKELIHOOD_CHOICES)[number])) {
     return 'Potential likelihood is required.';
@@ -44,7 +44,7 @@ export function validateRiskForm(
   }
   const statusOptions = allowedStatuses && allowedStatuses.length > 0 ? allowedStatuses : [...ASSET_STATUS_CHOICES];
   if (!statusOptions.includes(values.status)) {
-    return 'Risk status is invalid.';
+    return 'Asset status is invalid.';
   }
   return undefined;
 }
@@ -85,10 +85,10 @@ export function validateAppSettings(values: {
     return 'App display name is required.';
   }
   if (!values.prefix.trim()) {
-    return 'Risk ID prefix is required.';
+    return 'Asset ID prefix is required.';
   }
   if (values.prefix.trim().length > 20) {
-    return 'Risk ID prefix must be 20 characters or fewer.';
+    return 'Asset ID prefix must be 20 characters or fewer.';
   }
   if (!values.colorScheme.trim()) {
     return 'Color scheme is required.';

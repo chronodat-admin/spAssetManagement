@@ -51,8 +51,8 @@ console.log('Updated src/utils/appVersion.ts');
 const storeDocPath = path.join(REPO_ROOT, 'docs', 'microsoft-store-submission.md');
 let storeDoc = fs.readFileSync(storeDocPath, 'utf8');
 storeDoc = storeDoc.replace(
-  /- \[ \] Bump `version` in `config\/package-solution\.json` \(currently \*\*[^*]+\*\*\)/,
-  `- [ ] Bump \`version\` in \`config/package-solution.json\` (currently **${version}**)`
+  /- \[ \] Bump `version` in `config\/package-solution\.json`[^(\n]*\(currently \*\*[^*]+\*\*\)/,
+  `- [ ] Bump \`version\` in \`config/package-solution.json\` before each store upload (currently **${version}**)`
 );
 storeDoc = storeDoc.replace(
   /Current package version: \*\*[^*]+\*\*/,

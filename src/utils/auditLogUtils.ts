@@ -8,7 +8,7 @@
   PROJECTS_LIST_TITLE,
   SUB_CATEGORIES_LIST_TITLE,
   ADMINISTRATORS_LIST_TITLE
-} from '../models/IListDefinitions';
+} from '../models/IListDefinitions.js';
 
 const LIST_ENTITY_MAP: Record<string, string> = {
   Risks: 'AM_Assets',

@@ -352,7 +352,7 @@ export const AppearanceSettingsTab: React.FC<IAppearanceSettingsTabProps> = ({ v
 
       <div className={styles.sectionTitle}>Primary action button</div>
       <Text className={styles.sectionHint}>
-        Colors for the + New Asset and + New Assessment buttons in the top accent bar.
+        Colors for the + New Asset button in the top accent bar.
       </Text>
       <div className={styles.colorFieldRow}>
         <Field label="Button background">
@@ -441,6 +441,23 @@ export const AppearanceSettingsTab: React.FC<IAppearanceSettingsTabProps> = ({ v
           All Assets
         </div>
         <div className={styles.previewNavItem}>Settings</div>
+      </div>
+
+      <div className={styles.sectionTitle}>Asset list views</div>
+      <Text className={styles.sectionHint}>
+        Control which columns appear in asset tables and lists across the app.
+      </Text>
+      <div className={styles.settingRow}>
+        <div className={styles.settingCopy}>
+          <strong>Show image column</strong>
+          <div style={{ color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 }}>
+            Display the thumbnail image column in All Assets and filtered asset list views.
+          </div>
+        </div>
+        <Switch
+          checked={value.showAssetImageColumn}
+          onChange={(_, data) => update({ showAssetImageColumn: data.checked })}
+        />
       </div>
 
       <div className={styles.sectionTitle}>Layout and typography</div>

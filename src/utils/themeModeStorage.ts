@@ -1,4 +1,4 @@
-import { AppearanceThemeMode } from '../models/IAppearanceSettings';
+import type { AppearanceThemeMode } from '../models/IAppearanceSettings';
 
 const STORAGE_PREFIX = 'asset-mgmt-theme-mode-v1';
 

@@ -4,6 +4,7 @@ import type {
   NotificationWorkflowKey
 } from '../../models/IWorkflowSettings';
 import { DEFAULT_EMAIL_TEMPLATES, DEFAULT_NOTIFICATION_WORKFLOWS } from './defaults.js';
+import { LEGACY_EMAIL_TEMPLATE_SLUG_MAP, normalizeEmailTemplateSlug } from './slugs.js';
 
 /** True when a saved template still uses the pre-confirmation notification format. */
 export function isLegacyNotificationBody(body?: string): boolean {
@@ -76,13 +77,31 @@ export function mergeEmailTemplatesWithRefresh(
 
   const bySlug = new Map(parsed.map((item) => [item.slug, item]));
   const merged = DEFAULT_EMAIL_TEMPLATES.map((seed) => {
-    const existing = bySlug.get(seed.slug);
-    return existing ? refreshLegacyEmailTemplate(existing, seed) : { ...seed };
+    const existing =
+      bySlug.get(seed.slug) ||
+      (Object.keys(LEGACY_EMAIL_TEMPLATE_SLUG_MAP) as Array<
+        keyof typeof LEGACY_EMAIL_TEMPLATE_SLUG_MAP
+      >)
+        .map((legacySlug) =>
+          LEGACY_EMAIL_TEMPLATE_SLUG_MAP[legacySlug] === seed.slug
+            ? bySlug.get(legacySlug)
+            : undefined
+        )
+        .find(Boolean);
+    if (existing) {
+      const normalized = {
+        ...existing,
+        slug: normalizeEmailTemplateSlug(existing.slug)
+      };
+      return refreshLegacyEmailTemplate(normalized, seed);
+    }
+    return { ...seed };
   });
 
   parsed.forEach((item) => {
-    if (!DEFAULT_EMAIL_TEMPLATES.some((seed) => seed.slug === item.slug)) {
-      merged.push(item);
+    const normalizedSlug = normalizeEmailTemplateSlug(item.slug);
+    if (!DEFAULT_EMAIL_TEMPLATES.some((seed) => seed.slug === normalizedSlug)) {
+      merged.push({ ...item, slug: normalizedSlug });
     }
   });
 
@@ -90,5 +109,6 @@ export function mergeEmailTemplatesWithRefresh(
 }
 
 export function getDefaultEmailTemplateBySlug(slug: string): IEmailTemplate | undefined {
-  return DEFAULT_EMAIL_TEMPLATES.find((item) => item.slug === slug);
+  const normalized = normalizeEmailTemplateSlug(slug);
+  return DEFAULT_EMAIL_TEMPLATES.find((item) => item.slug === normalized);
 }

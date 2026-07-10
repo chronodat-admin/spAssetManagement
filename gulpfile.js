@@ -45,6 +45,8 @@ build.addSuppression(
 build.addSuppression(/Unexpected STDERR output from ESLint/);
 build.addSuppression(/Error - \[lint\]/);
 build.addSuppression(/Warning - \[webpack\]/);
+build.addSuppression(/Warning - \[configure-webpack\]/);
+build.addSuppression(/Unable to resolve project/);
 
 build.configureWebpack.mergeConfig({
   additionalConfiguration: (generatedConfiguration) => {

@@ -1,17 +1,18 @@
 ﻿import type { IEmailTemplate, NotificationWorkflowKey } from '../../models/IWorkflowSettings';
+import { normalizeEmailTemplateSlug } from './slugs.js';
 
 /** Maps notification workflow keys to reusable email template slugs. */
 export const WORKFLOW_TO_TEMPLATE_SLUG: Partial<Record<NotificationWorkflowKey, string>> = {
-  open: 'risk_created',
-  assignedTo: 'risk_assigned',
-  inProgress: 'risk_in_progress',
-  closed: 'risk_resolved',
-  incomplete: 'risk_incomplete',
-  onHold: 'risk_on_hold',
-  riskUpdated: 'risk_updated',
-  riskCommentAdded: 'risk_comment',
-  riskOverdue: 'risk_overdue',
-  riskPriorityChanged: 'risk_priority_changed'
+  open: 'asset_created',
+  assignedTo: 'asset_assigned',
+  inProgress: 'asset_in_progress',
+  closed: 'asset_closed',
+  incomplete: 'asset_incomplete',
+  onHold: 'asset_on_hold',
+  riskUpdated: 'asset_updated',
+  riskCommentAdded: 'asset_comment',
+  riskOverdue: 'asset_overdue',
+  riskPriorityChanged: 'asset_priority_changed'
 };
 
 export interface INotificationPlaceholderValues {
@@ -81,7 +82,10 @@ export function resolveEmailTemplateContent(
 ): { subject: string; body: string; isHtml: boolean } {
   const slug = WORKFLOW_TO_TEMPLATE_SLUG[workflowKey];
   const template = slug
-    ? (emailTemplates || []).find((item) => item.slug === slug && item.isActive)
+    ? (emailTemplates || []).find(
+        (item) =>
+          normalizeEmailTemplateSlug(item.slug) === normalizeEmailTemplateSlug(slug) && item.isActive
+      )
     : undefined;
 
   if (template) {
