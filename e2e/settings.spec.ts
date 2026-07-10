@@ -6,7 +6,7 @@ const SETTINGS_TABS: Array<{ label: string; heading: string; assertion: string |
   { label: 'General', heading: 'General', assertion: 'App display name' },
   { label: 'Appearance', heading: 'Appearance', assertion: /color|theme|navigation/i },
   { label: 'Dashboard', heading: 'Dashboard', assertion: 'Dashboard name' },
-  { label: 'Forms', heading: 'Forms', assertion: 'AM_Assets' },
+  { label: 'Forms', heading: 'Forms', assertion: /Configure forms for|Built-in Fields/i },
   { label: 'Form Templates', heading: 'Form Templates', assertion: /template/i },
   { label: 'Asset Status', heading: 'Asset Status', assertion: /status/i },
   { label: 'Subscription', heading: 'Subscription', assertion: /trial|subscription/i },
@@ -53,7 +53,8 @@ test.describe('Settings tabs', () => {
       const root = appRoot(page);
       await navigateSettingsTab(page, tab.label);
       await expect(root.getByRole('heading', { name: tab.heading, level: 2 })).toBeVisible();
-      await expect(root.getByText(tab.assertion)).toBeVisible();
+      const assertion = root.getByText(tab.assertion);
+      await expect(assertion.first()).toBeVisible();
     });
   }
 });

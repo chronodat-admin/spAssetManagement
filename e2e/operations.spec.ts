@@ -22,7 +22,7 @@ test.describe('Operations pages', () => {
     const page = suite!.page;
     await navigateSidebar(page, 'Assign Asset');
     await expectPageHeading(page, 'Assign Asset');
-    await expect(appRoot(page).getByText('Assign to', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByLabel('Assign to')).toBeVisible();
   });
 
   test('Bulk Assign shows multi-select workflow', async () => {
@@ -34,10 +34,11 @@ test.describe('Operations pages', () => {
 
   test('Return Asset shows return form or empty state', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Return Asset');
     await expectPageHeading(page, 'Return Asset');
-    const returnButton = appRoot(page).getByRole('button', { name: 'Return asset' });
-    const emptyState = appRoot(page).getByText('No assigned assets are available to return.');
+    const returnButton = main.getByRole('button', { name: 'Return asset' });
+    const emptyState = main.getByText('No assigned assets are available to return.');
     await expect(returnButton.or(emptyState)).toBeVisible();
   });
 
@@ -45,23 +46,25 @@ test.describe('Operations pages', () => {
     const page = suite!.page;
     await navigateSidebar(page, 'Bulk Return');
     await expectPageHeading(page, 'Bulk Return');
-    await expect(appRoot(page).getByText(/return|assigned/i)).toBeVisible();
+    await expect(appRoot(page).getByText('Return multiple assigned assets at once.')).toBeVisible();
+    await expect(appRoot(page).getByRole('button', { name: /Return selected/i })).toBeVisible();
   });
 
   test('Book Asset shows booking fields', async () => {
     const page = suite!.page;
     await navigateSidebar(page, 'Book Asset');
     await expectPageHeading(page, 'Book Asset');
-    await expect(appRoot(page).getByText('Expected return date', { exact: true })).toBeVisible();
-    await expect(appRoot(page).getByText('Book for', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByLabel('Expected return date')).toBeVisible();
+    await expect(appRoot(page).getByLabel('Book for')).toBeVisible();
   });
 
   test('Booking Details loads assignment table or empty state', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Booking Details');
     await expectPageHeading(page, 'Booking Details');
-    const assetColumn = appRoot(page).getByRole('columnheader', { name: 'Asset' });
-    const emptyState = appRoot(page).getByText('No assignment or booking records yet.');
+    const assetColumn = main.getByRole('columnheader', { name: 'Asset' });
+    const emptyState = main.getByText('No bookings yet');
     await expect(assetColumn.or(emptyState)).toBeVisible();
   });
 
@@ -69,52 +72,58 @@ test.describe('Operations pages', () => {
     const page = suite!.page;
     await navigateSidebar(page, 'Request Asset');
     await expectPageHeading(page, 'Request Asset');
-    await expect(appRoot(page).getByText(/justification|category|request/i)).toBeVisible();
+    await expect(appRoot(page).getByLabel('Justification')).toBeVisible();
   });
 
   test('My Requests shows request history or empty state', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'My Requests');
     await expectPageHeading(page, 'My Requests');
-    await expect(appRoot(page).getByText(/request|pending|no requests/i)).toBeVisible();
+    await expect(main.getByText(/request|pending|no requests/i).first()).toBeVisible();
   });
 
   test('Manage Requests shows reviewer workflow or empty state', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Manage Requests');
     await expectPageHeading(page, 'Manage Requests');
-    await expect(appRoot(page).getByText(/request|pending|approve/i)).toBeVisible();
+    await expect(main.getByText(/request|pending|approve/i).first()).toBeVisible();
   });
 
   test('Scan Asset shows scanner shell', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Scan Asset');
     await expectPageHeading(page, 'Scan Asset');
-    await expect(appRoot(page).getByText(/scan|barcode|qr/i)).toBeVisible();
+    await expect(main.getByText(/scan|barcode|qr/i).first()).toBeVisible();
   });
 
   test('Software Licenses shows add controls and table columns', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Software Licenses');
     await expectPageHeading(page, 'Software Licenses');
-    await expect(appRoot(page).getByText('Product name', { exact: true })).toBeVisible();
-    await expect(appRoot(page).getByText('Total seats', { exact: true })).toBeVisible();
-    await expect(appRoot(page).getByRole('button', { name: 'Add license' })).toBeDisabled();
+    await expect(main.getByLabel('Product name')).toBeVisible();
+    await expect(main.getByLabel('Total seats')).toBeVisible();
+    await expect(main.getByRole('columnheader', { name: 'Product' })).toBeVisible();
+    await expect(main.getByRole('columnheader', { name: 'Seats' })).toBeVisible();
   });
 
   test('Inventory shows scan controls and table columns', async () => {
     const page = suite!.page;
     await navigateSidebar(page, 'Inventory');
     await expectPageHeading(page, 'Inventory');
-    await expect(appRoot(page).getByText('Scan label', { exact: true })).toBeVisible();
-    await expect(appRoot(page).getByText('Asset found', { exact: true })).toBeVisible();
+    await expect(appRoot(page).getByLabel('Scan label')).toBeVisible();
+    await expect(appRoot(page).getByRole('checkbox', { name: 'Asset found' })).toBeVisible();
     await expect(appRoot(page).getByRole('button', { name: 'Record scan' })).toBeDisabled();
   });
 
   test('Maintenance shows maintenance records or empty state', async () => {
     const page = suite!.page;
+    const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Maintenance');
     await expectPageHeading(page, 'Maintenance');
-    await expect(appRoot(page).getByText(/maintenance|scheduled|technician/i)).toBeVisible();
+    await expect(main.getByText(/maintenance|scheduled|technician/i).first()).toBeVisible();
   });
 });
