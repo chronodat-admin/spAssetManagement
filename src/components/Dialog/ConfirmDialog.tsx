@@ -12,6 +12,7 @@ import {
 } from '@fluentui/react-components';
 import { WarningRegular } from '@fluentui/react-icons';
 import type { ILookupDeleteReference } from '../../utils/lookupDeleteReferences';
+import { useTranslation } from '../../i18n/LocaleContext';
 
 const useStyles = makeStyles({
   content: {
@@ -86,14 +87,17 @@ export const ConfirmDialog: React.FC<IConfirmDialogProps> = ({
   title,
   message,
   references = [],
-  confirmLabel = 'Delete',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   confirming = false,
   onConfirm,
   onCancel,
   onOpenChange
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
+  const resolvedConfirmLabel = confirmLabel ?? t('common', 'delete', 'Delete');
+  const resolvedCancelLabel = cancelLabel ?? t('common', 'cancel', 'Cancel');
   const hasReferences = references.length > 0;
 
   return (
@@ -117,15 +121,15 @@ export const ConfirmDialog: React.FC<IConfirmDialogProps> = ({
               </div>
               {hasReferences && (
                 <div>
-                  <p className={styles.referencesTitle}>Referenced in</p>
+                  <p className={styles.referencesTitle}>{t('confirmDialog', 'referencedIn', 'Referenced in')}</p>
                   <table className={styles.referencesTable}>
                     <thead>
                       <tr>
                         <th className={styles.referencesHeaderCell} scope="col">
-                          List
+                          {t('confirmDialog', 'list', 'List')}
                         </th>
                         <th className={styles.referencesHeaderCell} scope="col" style={{ textAlign: 'right' }}>
-                          Items
+                          {t('confirmDialog', 'items', 'Items')}
                         </th>
                       </tr>
                     </thead>
@@ -144,10 +148,10 @@ export const ConfirmDialog: React.FC<IConfirmDialogProps> = ({
           </DialogContent>
           <DialogActions>
             <Button appearance="secondary" disabled={confirming} onClick={onCancel}>
-              {cancelLabel}
+              {resolvedCancelLabel}
             </Button>
             <Button appearance="primary" disabled={confirming} onClick={onConfirm}>
-              {confirming ? 'Deleting...' : confirmLabel}
+              {confirming ? t('confirmDialog', 'deleting', 'Deleting...') : resolvedConfirmLabel}
             </Button>
           </DialogActions>
         </DialogBody>

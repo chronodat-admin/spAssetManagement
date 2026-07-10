@@ -52,33 +52,36 @@ import {
 } from '../../lib/report-builder/csvExport';
 import { getDefaultSelectedColumnKeys } from '../../lib/report-builder/columns';
 import { ReportBuilderService } from '../../services/ReportBuilderService';
-import { ContentCard } from '../Layout/ContentCard';import { PageNotifications } from '../Layout/PageNotifications';
+import { ContentCard } from '../Layout/ContentCard';
+import { PageNotifications } from '../Layout/PageNotifications';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 
 
 const PREVIEW_MAX_ROWS = 200;
 
-const DATA_SOURCES: Array<{
+const DATA_SOURCE_KEYS: Array<{
   key: ReportDataSource;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: React.ReactElement;
 }> = [
   {
     key: 'risks',
-    label: 'AM_Assets',
-    description: 'All asset register entries',
+    labelKey: 'dataSourceAssets',
+    descriptionKey: 'dataSourceAssetsDesc',
     icon: <ShieldRegular />
   },
   {
     key: 'business',
-    label: 'Business',
-    description: 'Business details',
+    labelKey: 'dataSourceBusiness',
+    descriptionKey: 'dataSourceBusinessDesc',
     icon: <BuildingRegular />
   },
   {
     key: 'projects',
-    label: 'Projects',
-    description: 'Project portfolio data',
+    labelKey: 'dataSourceProjects',
+    descriptionKey: 'dataSourceProjectsDesc',
     icon: <FolderOpenRegular />
   }
 ];
@@ -288,6 +291,7 @@ export interface IReportBuilderProps {
 
 export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderService }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [activeSource, setActiveSource] = React.useState<ReportDataSource>('risks');
   const [columns, setColumns] = React.useState<IReportColumnDef[]>([]);
   const [selectedColumns, setSelectedColumns] = React.useState<string[]>([]);
@@ -302,6 +306,19 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
   const [filterField, setFilterField] = React.useState('');
   const [filterOperator, setFilterOperator] = React.useState<IReportFilter['operator']>('equals');
   const [filterValue, setFilterValue] = React.useState('');
+
+  const getOperatorLabel = React.useCallback(
+    (operator: IReportFilter['operator']): string => {
+      if (operator === 'not_equals') {
+        return t('reportBuilder', 'notEquals', 'Not equals');
+      }
+      if (operator === 'contains') {
+        return t('reportBuilder', 'contains', 'Contains');
+      }
+      return t('reportBuilder', 'equals', 'Equals');
+    },
+    [t]
+  );
 
   React.useEffect(() => {
     let cancelled = false;
@@ -323,7 +340,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
         setFilterValue('');
       } catch {
         if (!cancelled) {
-          setError('Failed to load available columns.');
+          setError(t('reportBuilder', 'loadColumnsFailed', 'Failed to load available columns.'));
         }
       } finally {
         if (!cancelled) {
@@ -336,7 +353,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
     return () => {
       cancelled = true;
     };
-  }, [activeSource, reportBuilderService]);
+  }, [activeSource, reportBuilderService, t]);
 
   const selectedColumnDefs = React.useMemo(
     () => columns.filter((column) => selectedColumns.includes(column.key)),
@@ -372,7 +389,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
       setColumnPickerOpen(false);
       setFilters([]);
     } catch {
-      setError('Failed to generate report.');
+      setError(t('reportBuilder', 'generateFailed', 'Failed to generate report.'));
     } finally {
       setGenerating(false);
     }
@@ -433,14 +450,18 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
             icon={<ArrowDownloadRegular />}
             onClick={handleDownloadCsv}
           >
-            Download CSV ({data.length} rows)
+            {formatMessage(t('reportBuilder', 'downloadCsv', 'Download CSV ({count} rows)'), {
+              count: data.length
+            })}
           </Button>
         </div>
       ) : null}
 
       <div className={styles.sourceGrid}>
-        {DATA_SOURCES.map((source) => {
+        {DATA_SOURCE_KEYS.map((source) => {
           const isActive = activeSource === source.key;
+          const label = t('reportBuilder', source.labelKey, source.labelKey);
+          const description = t('reportBuilder', source.descriptionKey, source.descriptionKey);
           return (
             <div
               key={source.key}
@@ -465,7 +486,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
               </div>
               <div>
                 <Text weight="semibold" style={{ color: 'inherit' }}>
-                  {source.label}
+                  {label}
                 </Text>
                 <Text
                   size={200}
@@ -475,7 +496,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                     opacity: isActive ? 0.88 : 1
                   }}
                 >
-                  {source.description}
+                  {description}
                 </Text>
               </div>
             </div>
@@ -492,7 +513,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
             <div className={mergeClasses(styles.sectionIcon, styles.columnsIcon)}>
               <ColumnTripleRegular />
             </div>
-            <Title3 as="h2">Select Columns</Title3>
+            <Title3 as="h2">{t('reportBuilder', 'selectColumns', 'Select Columns')}</Title3>
             <Badge appearance="filled" color="informative">
               {selectedColumns.length} / {columns.length}
             </Badge>
@@ -503,11 +524,11 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
         {columnPickerOpen ? (
           <>
             <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-              Choose which columns to include in your report
+              {t('reportBuilder', 'selectColumnsDesc', 'Choose which columns to include in your report')}
             </Text>
 
             {loadingColumns ? (
-              <Spinner size="medium" label="Loading columns..." />
+              <Spinner size="medium" label={t('reportBuilder', 'loadingColumns', 'Loading columns...')} />
             ) : (
               <>
                 <div className={styles.columnActions}>
@@ -516,14 +537,14 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                     icon={<CheckmarkCircleRegular />}
                     onClick={() => setSelectedColumns(columns.map((column) => column.key))}
                   >
-                    Select All
+                    {t('reportBuilder', 'selectAll', 'Select All')}
                   </Button>
                   <Button
                     appearance="secondary"
                     icon={<DismissRegular />}
                     onClick={() => setSelectedColumns([])}
                   >
-                    Deselect All
+                    {t('reportBuilder', 'deselectAll', 'Deselect All')}
                   </Button>
                 </div>
 
@@ -533,10 +554,10 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                   <>
                     <div className={styles.customSectionDivider}>
                       <Badge appearance="outline" color="important">
-                        Custom Fields
+                        {t('reportBuilder', 'customFields', 'Custom Fields')}
                       </Badge>
                       <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                        From form templates
+                        {t('reportBuilder', 'fromFormTemplates', 'From form templates')}
                       </Text>
                     </div>
                     <div className={styles.columnGrid}>{customColumns.map(renderColumnPill)}</div>
@@ -552,10 +573,10 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                   >
                     {generating ? (
                       <>
-                        <Spinner size="tiny" /> Generating...
+                        <Spinner size="tiny" /> {t('reportBuilder', 'generating', 'Generating...')}
                       </>
                     ) : (
-                      'Generate Report'
+                      t('reportBuilder', 'generateReport', 'Generate Report')
                     )}
                   </Button>
                 </div>
@@ -573,10 +594,12 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                 <div className={mergeClasses(styles.sectionIcon, styles.filterIcon)}>
                   <FilterRegular />
                 </div>
-                <Title3 as="h2">Filters</Title3>
+                <Title3 as="h2">{t('reportBuilder', 'filters', 'Filters')}</Title3>
                 {filters.length > 0 ? (
                   <Badge appearance="filled" color="informative">
-                    {filters.length} active
+                    {formatMessage(t('reportBuilder', 'activeFilters', '{count} active'), {
+                      count: filters.length
+                    })}
                   </Badge>
                 ) : null}
               </div>
@@ -586,12 +609,16 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
             {filterOpen ? (
               <>
                 <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                  Filter the preview table. CSV export includes all generated rows.
+                  {t(
+                    'reportBuilder',
+                    'filtersDesc',
+                    'Filter the preview table. CSV export includes all generated rows.'
+                  )}
                 </Text>
                 <div className={styles.filterForm}>
-                  <Field label="Field">
+                  <Field label={t('reportBuilder', 'field', 'Field')}>
                     <Dropdown
-                      placeholder="Select a column"
+                      placeholder={t('reportBuilder', 'selectColumnPlaceholder', 'Select a column')}
                       value={
                         filterField
                           ? selectedColumnDefs.find((column) => column.key === filterField)?.label
@@ -609,15 +636,9 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                       ))}
                     </Dropdown>
                   </Field>
-                  <Field label="Operator">
+                  <Field label={t('reportBuilder', 'operator', 'Operator')}>
                     <Dropdown
-                      value={
-                        filterOperator === 'equals'
-                          ? 'Equals'
-                          : filterOperator === 'not_equals'
-                            ? 'Not equals'
-                            : 'Contains'
-                      }
+                      value={getOperatorLabel(filterOperator)}
                       selectedOptions={[filterOperator]}
                       onOptionSelect={(_, optionData) =>
                         setFilterOperator(
@@ -625,20 +646,20 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                         )
                       }
                     >
-                      <Option value="equals">Equals</Option>
-                      <Option value="not_equals">Not equals</Option>
-                      <Option value="contains">Contains</Option>
+                      <Option value="equals">{t('reportBuilder', 'equals', 'Equals')}</Option>
+                      <Option value="not_equals">{t('reportBuilder', 'notEquals', 'Not equals')}</Option>
+                      <Option value="contains">{t('reportBuilder', 'contains', 'Contains')}</Option>
                     </Dropdown>
                   </Field>
-                  <Field label="Value">
+                  <Field label={t('reportBuilder', 'value', 'Value')}>
                     <Input
                       value={filterValue}
                       onChange={(_, inputData) => setFilterValue(inputData.value)}
-                      placeholder="Filter value"
+                      placeholder={t('reportBuilder', 'filterValuePlaceholder', 'Filter value')}
                     />
                   </Field>
                   <Button appearance="secondary" icon={<AddRegular />} onClick={addFilter}>
-                    Add
+                    {t('reportBuilder', 'add', 'Add')}
                   </Button>
                   <Button
                     appearance="subtle"
@@ -646,7 +667,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                     disabled={filters.length === 0}
                     onClick={() => setFilters([])}
                   >
-                    Clear filters
+                    {t('reportBuilder', 'clearFilters', 'Clear filters')}
                   </Button>
                 </div>
 
@@ -662,12 +683,12 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                           appearance="outline"
                           color="informative"
                         >
-                          {label} {filter.operator.replace('_', ' ')} &quot;{filter.value}&quot;
+                          {label} {getOperatorLabel(filter.operator)} &quot;{filter.value}&quot;
                           <Button
                             appearance="transparent"
                             size="small"
                             icon={<DismissRegular />}
-                            aria-label="Remove filter"
+                            aria-label={t('reportBuilder', 'removeFilter', 'Remove filter')}
                             onClick={() => removeFilter(index)}
                           />
                         </Badge>
@@ -686,14 +707,22 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                   <div className={mergeClasses(styles.sectionIcon, styles.columnsIcon)}>
                     <DocumentTableRegular />
                   </div>
-                  <Title3 as="h2">Report Preview</Title3>
+                  <Title3 as="h2">{t('reportBuilder', 'reportPreview', 'Report Preview')}</Title3>
                   <Badge appearance="filled">
-                    {filteredData.length} row{filteredData.length === 1 ? '' : 's'}
+                    {formatMessage(
+                      filteredData.length === 1
+                        ? t('reportBuilder', 'rowCountSingular', '{count} row')
+                        : t('reportBuilder', 'rowCountPlural', '{count} rows'),
+                      { count: filteredData.length }
+                    )}
                   </Badge>
                 </div>
                 {filteredData.length > PREVIEW_MAX_ROWS ? (
                   <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                    Showing first {PREVIEW_MAX_ROWS} of {filteredData.length} rows
+                    {formatMessage(
+                      t('reportBuilder', 'showingRows', 'Showing first {shown} of {total} rows'),
+                      { shown: PREVIEW_MAX_ROWS, total: filteredData.length }
+                    )}
                   </Text>
                 ) : null}
               </div>
@@ -708,7 +737,7 @@ export const ReportBuilder: React.FC<IReportBuilderProps> = ({ reportBuilderServ
                   color: tokens.colorNeutralForeground3
                 }}
               >
-                No rows match the current filters.
+                {t('reportBuilder', 'noRowsMatch', 'No rows match the current filters.')}
               </Text>
             ) : (
               <div className={styles.tableWrap}>

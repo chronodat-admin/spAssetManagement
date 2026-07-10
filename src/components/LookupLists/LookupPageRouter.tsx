@@ -11,6 +11,8 @@ import { AssetService } from '../../services/AssetService';
 import { LookupListManager } from '../LookupLists/LookupListManager';
 import { ProjectListManager } from '../LookupLists/ProjectListManager';
 import { SubCategoryListManager } from '../LookupLists/SubCategoryListManager';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { getPageSubtitle, getPageTitle } from '../../utils/pageTitles';
 
 export interface ILookupPageRouterProps {
   page: AppPage;
@@ -27,14 +29,16 @@ export const LookupPageRouter: React.FC<ILookupPageRouterProps> = ({
   categories,
   onChanged
 }) => {
+  const { t } = useTranslation();
+
   switch (page) {
     case 'categories':
       return (
         <LookupListManager
           listTitle={CATEGORIES_LIST_TITLE}
-          displayTitle="Categories"
-          pageTitle="Categories"
-          pageDescription="Manage asset categories."
+          displayTitle={getPageTitle('categories', t)}
+          pageTitle={getPageTitle('categories', t)}
+          pageDescription={getPageSubtitle('categories', undefined, t)}
           pageIcon={TagRegular}
           riskService={assetService}
           settings={settings}
@@ -48,8 +52,8 @@ export const LookupPageRouter: React.FC<ILookupPageRouterProps> = ({
           settings={settings}
           categories={categories}
           onChanged={onChanged}
-          pageTitle="Sub-Categories"
-          pageDescription="Manage sub-categories linked to parent asset categories."
+          pageTitle={getPageTitle('subCategories', t)}
+          pageDescription={getPageSubtitle('subCategories', undefined, t)}
           pageIcon={TagMultipleRegular}
         />
       );
@@ -57,9 +61,9 @@ export const LookupPageRouter: React.FC<ILookupPageRouterProps> = ({
       return (
         <LookupListManager
           listTitle={VENDORS_LIST_TITLE}
-          displayTitle="Vendors"
-          pageTitle="Vendors"
-          pageDescription="Manage vendors and suppliers."
+          displayTitle={getPageTitle('vendors', t)}
+          pageTitle={getPageTitle('vendors', t)}
+          pageDescription={t('lookups', 'vendorsSubtitle', 'Manage vendors and suppliers.')}
           pageIcon={BuildingRegular}
           riskService={assetService}
           settings={settings}
@@ -70,9 +74,9 @@ export const LookupPageRouter: React.FC<ILookupPageRouterProps> = ({
       return (
         <LookupListManager
           listTitle={LOCATIONS_LIST_TITLE}
-          displayTitle="Locations"
-          pageTitle="Locations"
-          pageDescription="Manage physical locations."
+          displayTitle={getPageTitle('locations', t)}
+          pageTitle={getPageTitle('locations', t)}
+          pageDescription={getPageSubtitle('locations', undefined, t)}
           pageIcon={LocationRegular}
           riskService={assetService}
           settings={settings}

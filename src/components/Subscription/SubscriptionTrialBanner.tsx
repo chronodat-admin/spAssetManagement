@@ -9,6 +9,8 @@ import {
 } from '../../utils/subscriptionTrialBannerStorage';
 import { AppMessageBar } from '../Layout/AppMessageBar';
 import { PageNotifications } from '../Layout/PageNotifications';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 
 const useStyles = makeStyles({
   root: {
@@ -35,6 +37,7 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
   onOpenSubscriptionSettings
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const { configured, loading, error, status, refresh, startCheckout, openBillingPortal, spfxContext } =
     useSubscription();
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
@@ -72,7 +75,7 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
     try {
       await startCheckout();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to start checkout.');
+      setActionError(err instanceof Error ? err.message : t('subscription', 'checkoutFailed'));
       setCheckoutLoading(false);
     }
   };
@@ -83,7 +86,7 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
     try {
       await openBillingPortal();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to open billing portal.');
+      setActionError(err instanceof Error ? err.message : t('subscription', 'billingPortalFailed'));
       setPortalLoading(false);
     }
   };
@@ -94,7 +97,7 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
         <PageNotifications warning={error || undefined} />
         <AppMessageBar
           intent="success"
-          title="Yearly subscription active"
+          title={t('subscription', 'yearlyActive')}
           actions={
             <>
               <Button
@@ -104,24 +107,26 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
                 disabled={portalLoading}
                 onClick={() => void handlePortal()}
               >
-                {portalLoading ? 'Opening…' : 'Manage billing'}
+                {portalLoading ? t('subscription', 'opening') : t('subscription', 'manageBilling')}
               </Button>
               {onOpenSubscriptionSettings ? (
                 <Button
-                  appearance="subtle"
+                  appearance="secondary"
                   size="small"
                   icon={<SettingsRegular />}
                   onClick={onOpenSubscriptionSettings}
                 >
-                  Subscription
+                  {t('subscription', 'subscription')}
                 </Button>
               ) : null}
             </>
           }
         >
           {status.currentPeriodEnd
-            ? `Your subscription renews on ${formatPeriodEnd(status.currentPeriodEnd)}.`
-            : `Thank you for subscribing to ${DEFAULT_APP_TITLE}.`}
+            ? formatMessage(t('subscription', 'subscriptionRenewsOn'), {
+                date: formatPeriodEnd(status.currentPeriodEnd)
+              })
+            : formatMessage(t('subscription', 'subscriptionThanksApp'), { appName: DEFAULT_APP_TITLE })}
         </AppMessageBar>
       </div>
     );
@@ -133,7 +138,7 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
         <PageNotifications error={actionError || undefined} />
         <AppMessageBar
           intent="warning"
-          title="Payment issue"
+          title={t('subscription', 'paymentIssue')}
           actions={
             <>
               <Button
@@ -143,16 +148,15 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
                 disabled={portalLoading}
                 onClick={() => void handlePortal()}
               >
-                {portalLoading ? 'Opening…' : 'Update payment'}
+                {portalLoading ? t('subscription', 'opening') : t('subscription', 'updatePayment')}
               </Button>
               <Button appearance="subtle" size="small" icon={<ArrowSyncRegular />} onClick={() => void refresh()}>
-                Refresh
+                {t('subscription', 'refresh')}
               </Button>
             </>
           }
         >
-          We could not process your latest subscription payment. Update your billing details to avoid losing
-          access.
+          {t('subscription', 'paymentPastDueBody')}
         </AppMessageBar>
       </div>
     );
@@ -164,14 +168,14 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
     }
 
     const days = status.trialDaysRemaining;
-    const dayLabel = days === 1 ? 'day' : 'days';
+    const dayLabel = days === 1 ? t('subscription', 'day') : t('subscription', 'days');
 
     return (
       <div className={`${styles.root} asset-mgmt-no-print`}>
         <PageNotifications error={actionError || undefined} warning={error || undefined} />
         <AppMessageBar
           intent="info"
-          title={`Free trial — ${days} ${dayLabel} remaining`}
+          title={formatMessage(t('subscription', 'freeTrialDays'), { days })}
           actions={
             isAppAdministrator ? (
               <>
@@ -182,7 +186,7 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
                   disabled={checkoutLoading}
                   onClick={() => void handleCheckout()}
                 >
-                  {checkoutLoading ? 'Redirecting…' : 'Subscribe yearly'}
+                  {checkoutLoading ? t('subscription', 'redirecting') : t('subscription', 'subscribeYearly')}
                 </Button>
                 {onOpenSubscriptionSettings ? (
                   <Button
@@ -191,14 +195,14 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
                     icon={<SettingsRegular />}
                     onClick={onOpenSubscriptionSettings}
                   >
-                    View plan
+                    {t('subscription', 'viewPlan')}
                   </Button>
                 ) : null}
                 <Button
                   appearance="subtle"
                   size="small"
                   icon={<DismissRegular />}
-                  aria-label="Dismiss trial notice"
+                  aria-label={t('subscription', 'dismissTrial')}
                   onClick={handleDismissTrialBanner}
                 />
               </>
@@ -207,16 +211,22 @@ export const SubscriptionTrialBanner: React.FC<ISubscriptionTrialBannerProps> = 
                 appearance="subtle"
                 size="small"
                 icon={<DismissRegular />}
-                aria-label="Dismiss trial notice"
+                aria-label={t('subscription', 'dismissTrial')}
                 onClick={handleDismissTrialBanner}
               />
             )
           }
         >
-          You have {days} {dayLabel} left in your {status.trialDaysTotal}-day trial.
-          {status.trialEndsAt ? ` Trial ends ${formatPeriodEnd(status.trialEndsAt)}.` : ''} Subscribe for a
-          yearly plan to keep using {DEFAULT_APP_TITLE} after the trial.
-          {!isAppAdministrator ? ' Ask an app administrator to subscribe or view the plan.' : ''}
+          {formatMessage(t('subscription', 'trialRemaining'), {
+            days,
+            dayLabel,
+            totalDays: status.trialDaysTotal
+          })}
+          {status.trialEndsAt
+            ? formatMessage(t('subscription', 'trialEndsOn'), { date: formatPeriodEnd(status.trialEndsAt) })
+            : ''}
+          {formatMessage(t('subscription', 'trialSubscribeAfter'), { appName: DEFAULT_APP_TITLE })}
+          {!isAppAdministrator ? t('subscription', 'trialNonAdminSuffix') : ''}
         </AppMessageBar>
       </div>
     );

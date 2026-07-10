@@ -90,6 +90,7 @@ import { getDataTableLayoutStyle, getListColumnStyle, DATA_TABLE_CLASS } from '.
 import { useContentCardStyles } from '../Layout/ContentCard';
 import { UserCell } from '../PeoplePicker/UserAvatar';
 import { isAssignedToUser } from '../../utils/assignmentUtils';
+import { useTranslation } from '../../i18n/LocaleContext';
 
 const useStyles = makeStyles({
   root: {
@@ -257,6 +258,7 @@ export const Dashboard: React.FC<IDashboardProps> = ({
   const styles = useStyles();
   const tabStyles = useAppTabStyles();
   const cardStyles = useContentCardStyles();
+  const { t } = useTranslation();
   const filters = React.useMemo<IDashboardFilters>(
     () => filtersProp ?? { businessId: 'all', projectId: 'all' },
     [filtersProp]
@@ -346,20 +348,24 @@ export const Dashboard: React.FC<IDashboardProps> = ({
     [filteredRisks]
   );
 
-  const latestTabs: Array<{ id: LatestTab; label: string }> = useAssetKpis
-    ? [
-        { id: 'recent', label: 'Latest' },
-        { id: 'assigned', label: 'Assigned to me' },
-        { id: 'available', label: 'Available' },
-        { id: 'inRepair', label: 'In repair' }
-      ]
-    : [
-        { id: 'recent', label: 'Latest' },
-        { id: 'assigned', label: 'Assigned to me' },
-        { id: 'overdue', label: 'Overdue' },
-        { id: 'dueToday', label: 'Due today' },
-        { id: 'dueWeek', label: 'Due this week' }
-      ];
+  const latestTabs: Array<{ id: LatestTab; label: string }> = React.useMemo(
+    () =>
+      useAssetKpis
+        ? [
+            { id: 'recent', label: t('dashboard', 'latest', 'Latest') },
+            { id: 'assigned', label: t('dashboard', 'assignedToMe', 'Assigned to me') },
+            { id: 'available', label: t('nav', 'available', 'Available') },
+            { id: 'inRepair', label: t('nav', 'inRepair', 'In Repair') }
+          ]
+        : [
+            { id: 'recent', label: t('dashboard', 'latest', 'Latest') },
+            { id: 'assigned', label: t('dashboard', 'assignedToMe', 'Assigned to me') },
+            { id: 'overdue', label: t('dashboard', 'overdue', 'Overdue') },
+            { id: 'dueToday', label: t('dashboard', 'dueToday', 'Due today') },
+            { id: 'dueWeek', label: t('dashboard', 'dueThisWeek', 'Due this week') }
+          ],
+    [t, useAssetKpis]
+  );
 
   const recentRisks = React.useMemo(() => {
     let source = [...filteredRisks];
@@ -407,41 +413,75 @@ export const Dashboard: React.FC<IDashboardProps> = ({
 
   const hoverEnabled = isDashboardHoverEnabled(settings);
 
-  const stats = useAssetKpis
-    ? [
-        { label: 'Total Assets', value: assetStats.total, icon: <BoxRegular className={styles.statIcon} /> },
-        { label: 'Available', value: assetStats.available, icon: <CheckmarkCircleRegular className={styles.statIcon} /> },
-        { label: 'Assigned', value: assetStats.assigned, icon: <PersonRegular className={styles.statIcon} /> },
-        { label: 'In Repair', value: assetStats.inRepair, icon: <ArrowSyncRegular className={styles.statIcon} /> },
-        {
-          label: 'Warranty (90d)',
-          value: assetStats.warrantyExpiring,
-          icon: <WarningRegular className={styles.statIcon} />
-        }
-      ]
-    : [
-        { label: 'Open Items', value: openCount, icon: <FolderOpenRegular className={styles.statIcon} /> },
-        {
-          label: 'In Progress',
-          value: inProgressCount,
-          icon: <ArrowSyncRegular className={styles.statIcon} />
-        },
-        {
-          label: 'Closed',
-          value: closedCount,
-          icon: <CheckmarkCircleRegular className={styles.statIcon} />
-        },
-        {
-          label: 'Critical (Active)',
-          value: criticalCount,
-          icon: <WarningRegular className={styles.statIcon} />
-        },
-        {
-          label: 'Avg Item Age (days)',
-          value: avgAgeDays,
-          icon: <CalendarLtrRegular className={styles.statIcon} />
-        }
-      ];
+  const stats = React.useMemo(
+    () =>
+      useAssetKpis
+        ? [
+            {
+              label: t('dashboard', 'totalAssets', 'Total Assets'),
+              value: assetStats.total,
+              icon: <BoxRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'available', 'Available'),
+              value: assetStats.available,
+              icon: <CheckmarkCircleRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'assigned', 'Assigned'),
+              value: assetStats.assigned,
+              icon: <PersonRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'inRepair', 'In Repair'),
+              value: assetStats.inRepair,
+              icon: <ArrowSyncRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'warranty90d', 'Warranty (90d)'),
+              value: assetStats.warrantyExpiring,
+              icon: <WarningRegular className={styles.statIcon} />
+            }
+          ]
+        : [
+            {
+              label: t('dashboard', 'openItems', 'Open Items'),
+              value: openCount,
+              icon: <FolderOpenRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'inProgress', 'In Progress'),
+              value: inProgressCount,
+              icon: <ArrowSyncRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'closed', 'Closed'),
+              value: closedCount,
+              icon: <CheckmarkCircleRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'criticalActive', 'Critical (Active)'),
+              value: criticalCount,
+              icon: <WarningRegular className={styles.statIcon} />
+            },
+            {
+              label: t('dashboard', 'avgItemAgeDays', 'Avg Item Age (days)'),
+              value: avgAgeDays,
+              icon: <CalendarLtrRegular className={styles.statIcon} />
+            }
+          ],
+    [
+      t,
+      useAssetKpis,
+      assetStats,
+      openCount,
+      inProgressCount,
+      closedCount,
+      criticalCount,
+      avgAgeDays,
+      styles.statIcon
+    ]
+  );
 
   const printHeatmapMatrix = React.useMemo(
     () => buildHeatmapMatrix(filteredRisks, true),
@@ -506,7 +546,11 @@ export const Dashboard: React.FC<IDashboardProps> = ({
             <AssetHeatmap
               risks={filteredRisks}
               variant="inherent"
-              subtitle="Inherent likelihood vs impact for open and in-progress items"
+              subtitle={t(
+                'dashboard',
+                'heatmapSubtitle',
+                'Inherent likelihood vs impact for open and in-progress items'
+              )}
               activeOnly
               hoverEnabled={hoverEnabled}
               onRiskClick={onEditRisk}
@@ -516,10 +560,14 @@ export const Dashboard: React.FC<IDashboardProps> = ({
 
           <Card className={styles.card}>
             <CardHeader
-              header={<Title3 as="h2">Severity Summary</Title3>}
+              header={<Title3 as="h2">{t('dashboard', 'severitySummary', 'Severity Summary')}</Title3>}
               description={
                 <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                  Active items grouped by inherent priority
+                  {t(
+                    'dashboard',
+                    'severitySummaryDesc',
+                    'Active items grouped by inherent priority'
+                  )}
                 </Text>
               }
             />
@@ -532,27 +580,51 @@ export const Dashboard: React.FC<IDashboardProps> = ({
 
       {!useAssetKpis && onNavigateToAssetValueSummary ? (
         <AppMessageBar intent="info" style={{ marginBottom: tokens.spacingVerticalL }}>
-          Residual rating matrices are on the{' '}
+          {t('dashboard', 'residualRatingInfoPrefix', 'Residual rating matrices are on the')}{' '}
           <Link as="button" onClick={onNavigateToAssetValueSummary}>
-            Asset Rating
+            {t('dashboard', 'assetRatingPage', 'Asset Rating')}
           </Link>{' '}
-          page (inherent and residual side by side).
+          {t(
+            'dashboard',
+            'residualRatingInfoSuffix',
+            'page (inherent and residual side by side).'
+          )}
         </AppMessageBar>
       ) : null}
 
       <div className={styles.bottomGrid}>
         <Card className={styles.card}>
           <DashboardSectionHeader
-            title={useAssetKpis ? 'Latest Assets' : 'Latest Items'}
+            title={
+              useAssetKpis
+                ? t('dashboard', 'latestAssets', 'Latest Assets')
+                : t('dashboard', 'latestItems', 'Latest Items')
+            }
             description={
               useAssetKpis
-                ? 'Recently updated assets across your inventory'
-                : 'Recently updated items across your portfolio'
+                ? t(
+                    'dashboard',
+                    'latestAssetsDesc',
+                    'Recently updated assets across your inventory'
+                  )
+                : t(
+                    'dashboard',
+                    'latestItemsDesc',
+                    'Recently updated items across your portfolio'
+                  )
             }
             icon={<ClipboardTaskListLtrRegular />}
             iconTone="teal"
           />
-          <div className={tabStyles.tabBar} role="tablist" aria-label={useAssetKpis ? 'Latest assets views' : 'Latest items views'}>
+          <div
+            className={tabStyles.tabBar}
+            role="tablist"
+            aria-label={
+              useAssetKpis
+                ? t('dashboard', 'latestAssetsViewsAria', 'Latest assets views')
+                : t('dashboard', 'latestItemsViewsAria', 'Latest items views')
+            }
+          >
             {latestTabs.map((tab) => (
               <button
                 key={tab.id}
@@ -573,53 +645,59 @@ export const Dashboard: React.FC<IDashboardProps> = ({
           </div>
           <div className={styles.tableScroll}>
           <Table
-            aria-label={useAssetKpis ? 'Latest assets' : 'Latest items'}
+            aria-label={
+              useAssetKpis
+                ? t('dashboard', 'latestAssetsAria', 'Latest assets')
+                : t('dashboard', 'latestItemsAria', 'Latest items')
+            }
             className={DATA_TABLE_CLASS}
             style={getDataTableLayoutStyle(useAssetKpis ? 920 : 980)}
           >
             <TableHeader>
               <TableRow>
                 <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('riskId')}>
-                  {useAssetKpis ? 'Asset ID' : 'Item ID'}
+                  {useAssetKpis
+                    ? t('dashboard', 'assetId', 'Asset ID')
+                    : t('dashboard', 'itemId', 'Item ID')}
                 </TableHeaderCell>
                 <TableHeaderCell
                   className={cardStyles.tableHeaderCell}
                   style={getListColumnStyle('title')}
                 >
-                  Title
+                  {t('dashboard', 'title', 'Title')}
                 </TableHeaderCell>
                 {!useAssetKpis ? (
                   <>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('priority')}>
-                      Priority
+                      {t('dashboard', 'priority', 'Priority')}
                     </TableHeaderCell>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('rating')}>
-                      Rating (L×C)
+                      {t('dashboard', 'ratingLxC', 'Rating (L×C)')}
                     </TableHeaderCell>
                   </>
                 ) : (
                   <>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('status')}>
-                      Status
+                      {t('dashboard', 'status', 'Status')}
                     </TableHeaderCell>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('category')}>
-                      Category
+                      {t('dashboard', 'category', 'Category')}
                     </TableHeaderCell>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('priority')}>
-                      Assigned To
+                      {t('dashboard', 'assignedTo', 'Assigned To')}
                     </TableHeaderCell>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('rating')}>
-                      Cost
+                      {t('dashboard', 'cost', 'Cost')}
                     </TableHeaderCell>
                   </>
                 )}
                 {!useAssetKpis ? (
                   <>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('status')}>
-                      Status
+                      {t('dashboard', 'status', 'Status')}
                     </TableHeaderCell>
                     <TableHeaderCell className={cardStyles.tableHeaderCell} style={getListColumnStyle('category')}>
-                      Category
+                      {t('dashboard', 'category', 'Category')}
                     </TableHeaderCell>
                   </>
                 ) : null}
@@ -629,7 +707,17 @@ export const Dashboard: React.FC<IDashboardProps> = ({
               {recentRisks.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={useAssetKpis ? 6 : 6} className={styles.emptyCell}>
-                    {useAssetKpis ? 'No assets match the current filters.' : 'No items match the current filters.'}
+                    {useAssetKpis
+                      ? t(
+                          'dashboard',
+                          'noAssetsMatchFilters',
+                          'No assets match the current filters.'
+                        )
+                      : t(
+                          'dashboard',
+                          'noItemsMatchFilters',
+                          'No items match the current filters.'
+                        )}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -723,8 +811,12 @@ export const Dashboard: React.FC<IDashboardProps> = ({
         </Card>
 
         <DashboardChartCard
-          title="Status Distribution"
-          description={useAssetKpis ? 'Assets by current status' : 'Items by current status'}
+          title={t('dashboard', 'statusDistribution', 'Status Distribution')}
+          description={
+            useAssetKpis
+              ? t('dashboard', 'statusDistributionAssetsDesc', 'Assets by current status')
+              : t('dashboard', 'statusDistributionItemsDesc', 'Items by current status')
+          }
           icon={<DataBarVerticalRegular />}
           iconTone="pink"
         >
@@ -736,9 +828,15 @@ export const Dashboard: React.FC<IDashboardProps> = ({
 
       <div className={styles.chartsGrid}>
         <DashboardChartCard
-          title={useAssetKpis ? 'Assets by Category' : 'Status by Business'}
+          title={
+            useAssetKpis
+              ? t('dashboard', 'assetsByCategory', 'Assets by Category')
+              : t('dashboard', 'statusByBusiness', 'Status by Business')
+          }
           description={
-            useAssetKpis ? 'Asset counts grouped by category' : 'Item counts by business category'
+            useAssetKpis
+              ? t('dashboard', 'assetsByCategoryDesc', 'Asset counts grouped by category')
+              : t('dashboard', 'statusByBusinessDesc', 'Item counts by business category')
           }
           icon={<TargetRegular />}
           iconTone="indigo"
@@ -753,8 +851,8 @@ export const Dashboard: React.FC<IDashboardProps> = ({
 
         {!useAssetKpis ? (
           <DashboardChartCard
-            title="Status by Priority"
-            description="Item counts by priority"
+            title={t('dashboard', 'statusByPriority', 'Status by Priority')}
+            description={t('dashboard', 'statusByPriorityDesc', 'Item counts by priority')}
             icon={<ChartMultipleRegular />}
             iconTone="orange"
           >
@@ -764,17 +862,17 @@ export const Dashboard: React.FC<IDashboardProps> = ({
           </DashboardChartCard>
         ) : (
           <DashboardChartCard
-            title="Assets by Type"
-            description="Inventory counts grouped by asset type"
+            title={t('dashboard', 'assetsByType', 'Assets by Type')}
+            description={t('dashboard', 'assetsByTypeDesc', 'Inventory counts grouped by asset type')}
             icon={<BoxRegular />}
             iconTone="orange"
           >
             <ChartSuspense>
               <DashboardDonutChart
                 data={assetTypeChartData}
-                emptyMessage="No asset type data available"
-                centerLabel="Assets"
-                tooltipLabel="Assets"
+                emptyMessage={t('dashboard', 'noAssetTypeData', 'No asset type data available')}
+                centerLabel={t('dashboard', 'assetsLabel', 'Assets')}
+                tooltipLabel={t('dashboard', 'assetsLabel', 'Assets')}
               />
             </ChartSuspense>
           </DashboardChartCard>
@@ -784,33 +882,41 @@ export const Dashboard: React.FC<IDashboardProps> = ({
       {useAssetKpis ? (
         <div className={styles.analyticsGrid}>
           <DashboardChartCard
-            title="Value by Location"
-            description="Share of total asset cost by location"
+            title={t('dashboard', 'valueByLocation', 'Value by Location')}
+            description={t('dashboard', 'valueByLocationDesc', 'Share of total asset cost by location')}
             icon={<LocationRegular />}
             iconTone="teal"
           >
             <ChartSuspense>
               <DashboardDonutChart
                 data={locationValueChartData}
-                emptyMessage="No location value data available"
-                centerLabel="Total value"
+                emptyMessage={t('dashboard', 'noLocationValueData', 'No location value data available')}
+                centerLabel={t('dashboard', 'totalValueLabel', 'Total value')}
                 valueFormatter={formatAssetCost}
-                tooltipLabel="Value"
+                tooltipLabel={t('dashboard', 'valueLabel', 'Value')}
               />
             </ChartSuspense>
           </DashboardChartCard>
 
           <DashboardChartCard
-            title="Warranty Expiring"
-            description="Assets with warranty ending in the next 90 days"
+            title={t('dashboard', 'warrantyExpiring', 'Warranty Expiring')}
+            description={t(
+              'dashboard',
+              'warrantyExpiringDesc',
+              'Assets with warranty ending in the next 90 days'
+            )}
             icon={<ShieldRegular />}
             iconTone="orange"
           >
             <ChartSuspense>
               <DashboardTrendChart
                 data={warrantyChartData}
-                emptyMessage="No warranties expiring in the next 90 days"
-                seriesLabel="Assets"
+                emptyMessage={t(
+                  'dashboard',
+                  'noWarrantyExpiring',
+                  'No warranties expiring in the next 90 days'
+                )}
+                seriesLabel={t('dashboard', 'assetsLabel', 'Assets')}
                 stroke="#f59e0b"
                 fill="rgba(245, 158, 11, 0.14)"
                 variant="area"
@@ -819,32 +925,36 @@ export const Dashboard: React.FC<IDashboardProps> = ({
           </DashboardChartCard>
 
           <DashboardChartCard
-            title="Top Vendors"
-            description="Asset counts by vendor (top 8)"
+            title={t('dashboard', 'topVendors', 'Top Vendors')}
+            description={t('dashboard', 'topVendorsDesc', 'Asset counts by vendor (top 8)')}
             icon={<BuildingRegular />}
             iconTone="indigo"
           >
             <ChartSuspense>
               <DashboardDonutChart
                 data={vendorChartData}
-                emptyMessage="No vendor data available"
-                centerLabel="Assets"
-                tooltipLabel="Assets"
+                emptyMessage={t('dashboard', 'noVendorData', 'No vendor data available')}
+                centerLabel={t('dashboard', 'assetsLabel', 'Assets')}
+                tooltipLabel={t('dashboard', 'assetsLabel', 'Assets')}
               />
             </ChartSuspense>
           </DashboardChartCard>
 
           <DashboardChartCard
-            title="Purchase Activity"
-            description="Assets acquired per month (last 12 months)"
+            title={t('dashboard', 'purchaseActivity', 'Purchase Activity')}
+            description={t(
+              'dashboard',
+              'purchaseActivityDesc',
+              'Assets acquired per month (last 12 months)'
+            )}
             icon={<CalendarLtrRegular />}
             iconTone="pink"
           >
             <ChartSuspense>
               <DashboardTrendChart
                 data={purchaseTrendChartData}
-                emptyMessage="No purchase date data available"
-                seriesLabel="Purchases"
+                emptyMessage={t('dashboard', 'noPurchaseDateData', 'No purchase date data available')}
+                seriesLabel={t('dashboard', 'purchasesLabel', 'Purchases')}
                 stroke="#6366f1"
                 fill="rgba(99, 102, 241, 0.1)"
                 variant="line"
@@ -856,10 +966,21 @@ export const Dashboard: React.FC<IDashboardProps> = ({
       </div>
 
       <DashboardPrintView
-        title={printTitle || 'Dashboard'}
-        subtitle={printSubtitle || (useAssetKpis
-          ? 'Overview of assets, status, and assignments across your organization.'
-          : 'Overview of items, severity, and status across your organization.')}
+        title={printTitle || t('pages', 'dashboard', 'Dashboard')}
+        subtitle={
+          printSubtitle ||
+          (useAssetKpis
+            ? t(
+                'dashboard',
+                'printSubtitle',
+                'Overview of assets, status, and assignments across your organization.'
+              )
+            : t(
+                'dashboard',
+                'printSubtitleItems',
+                'Overview of items, severity, and status across your organization.'
+              ))
+        }
         printedAt={new Date().toLocaleString()}
         kpis={stats.map((stat) => ({ title: stat.label, value: stat.value }))}
         heatmapMatrix={printHeatmapMatrix}

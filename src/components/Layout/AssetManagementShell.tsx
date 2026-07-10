@@ -37,6 +37,7 @@ import { useIsMobile } from '../../utils/useMediaQuery';
 
 import { AccentBarButton } from './AccentBarButton';
 import { ThemeModeToggle } from './ThemeModeToggle';
+import { UserLanguageMenu } from './UserLanguageMenu';
 
 import { Sidebar, NAVIGATION_ITEMS } from './Sidebar';
 import type { IAppPermissions } from '../../utils/rbac';
@@ -46,6 +47,8 @@ import { AppBrandIcon } from './AppBrandIcon';
 import { useAppearanceTheme } from '../../contexts/AppearanceThemeContext';
 import { isContentActionsLayoutEnabled } from '../../utils/contentActionsLayout';
 import { APP_COPYRIGHT_HOLDER, DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 
 
 
@@ -699,6 +702,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
   children
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const { appearance } = useAppearanceTheme();
   const contentActionsLayout = isContentActionsLayoutEnabled(appearance, isTeamsHost);
   const showUserPill =
@@ -706,8 +710,8 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
   const pageIcon = NAVIGATION_ITEMS.find((item) => item.id === currentPage)?.icon;
   const accentPrimaryAction = headerPrimaryAction ?? {
-    label: 'New Asset',
-    ariaLabel: 'Create new asset',
+    label: t('shell', 'newAsset', 'New Asset'),
+    ariaLabel: t('shell', 'createNewAssetAria', 'Create new asset'),
     onClick: onCreateAsset,
     disabled: createAssetDisabled
   };
@@ -812,12 +816,15 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
           href={assetProcedureUrl}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Open ${DEFAULT_APP_TITLE} procedure document`}
+          aria-label={formatMessage(t('shell', 'openProcedureAria', 'Open {app} procedure document'), {
+            app: DEFAULT_APP_TITLE
+          })}
         >
-          <span className={styles.procedureLabel}>Procedure</span>
+          <span className={styles.procedureLabel}>{t('shell', 'procedure', 'Procedure')}</span>
         </AccentBarButton>
       )}
       <ThemeModeToggle compact={isMobile} />
+      <UserLanguageMenu showCode={!isMobile} />
       {headerActions}
       <AccentBarButton
         variant="solid"
@@ -874,7 +881,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
           className={styles.backdrop}
 
-          aria-label="Close navigation"
+          aria-label={t('shell', 'closeNavigation', 'Close navigation')}
 
           onClick={handleCloseMobileNav}
 
@@ -919,7 +926,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
             <div className={styles.pageTitleRow}>
               {isMobile && (
                 <ToolbarButton
-                  aria-label="Open navigation"
+                  aria-label={t('shell', 'openNavigation', 'Open navigation')}
                   icon={<NavigationRegular />}
                   onClick={handleToggleSidebar}
                 />
@@ -941,10 +948,10 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
             </div>
 
             {currentPage !== 'dashboard' && (
-              <Breadcrumb aria-label="Breadcrumb" className={styles.breadcrumb}>
+              <Breadcrumb aria-label={t('shell', 'breadcrumb', 'Breadcrumb')} className={styles.breadcrumb}>
                 <BreadcrumbItem>
                   <BreadcrumbButton icon={<HomeRegular />} onClick={() => handleNavigate('dashboard')}>
-                    Home
+                    {t('shell', 'home', 'Home')}
                   </BreadcrumbButton>
                 </BreadcrumbItem>
                 <BreadcrumbItem>
@@ -973,7 +980,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
               icon={<ArrowUpRegular />}
               onClick={() => scrollAppContentToTop('smooth')}
             >
-              Back to top
+              {t('shell', 'backToTop', 'Back to top')}
             </Button>
           </footer>
         </main>

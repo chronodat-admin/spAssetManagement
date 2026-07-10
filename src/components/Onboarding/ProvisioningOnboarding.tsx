@@ -35,46 +35,42 @@ import { getListProgressLabel } from '../../utils/provisioningListLabels';
 import { SetupContextNotifications } from './SetupContextNotifications';
 import { MailSendApprovalPanel } from './MailSendApprovalPanel';
 import type { MailSendApprovalUiStatus } from '../../models/IMailSendApproval';
+import { useTranslation } from '../../i18n/LocaleContext';
 
 const SETUP_PORTAL_CLASS = 'asset-mgmt-setup-portal';
 
-interface IFeatureHighlight {
+interface IFeatureHighlightConfig {
   icon: React.ReactElement;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
   highlight?: boolean;
 }
 
-const FEATURE_HIGHLIGHTS: IFeatureHighlight[] = [
+const FEATURE_HIGHLIGHT_KEYS: IFeatureHighlightConfig[] = [
   {
     icon: <ListRegular />,
-    title: 'Asset register & lifecycle',
-    description:
-      'Register hardware and software, track serial numbers, warranties, assignments, check-out/return, and maintenance.'
+    titleKey: 'featureRegisterLifecycle',
+    descriptionKey: 'featureRegisterLifecycleDesc'
   },
   {
     icon: <DataHistogramRegular />,
-    title: 'Asset dashboards',
-    description:
-      'See counts by category and status, warranty expirations, utilization, and portfolio health at a glance.'
+    titleKey: 'featureDashboards',
+    descriptionKey: 'featureDashboardsDesc'
   },
   {
     icon: <DataTrendingRegular />,
-    title: 'Depreciation & inventory',
-    description:
-      'Run depreciation schedules, periodic inventory scans, and software license seat tracking against entitlements.'
+    titleKey: 'featureDepreciationInventory',
+    descriptionKey: 'featureDepreciationInventoryDesc'
   },
   {
     icon: <DocumentRegular />,
-    title: 'Asset reports & export',
-    description:
-      'Lifecycle, assignment, and depreciation reports with CSV export and a configurable report builder.'
+    titleKey: 'featureReportsExport',
+    descriptionKey: 'featureReportsExportDesc'
   },
   {
     icon: <FlowchartRegular />,
-    title: 'Asset forms & settings',
-    description:
-      'Custom asset fields, categories, form templates, and email notifications — no code required.'
+    titleKey: 'featureFormsSettings',
+    descriptionKey: 'featureFormsSettingsDesc'
   }
 ];
 
@@ -269,6 +265,7 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
   onOpenSettings
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
   const [includeSampleData, setIncludeSampleData] = React.useState(true);
   const allDone = steps.every((s) => s.status === 'done');
@@ -293,13 +290,17 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
             </Title3>
           </div>
           {variant === 'modal' && onClose && !isRunning && (
-            <Button appearance="subtle" icon={<DismissRegular />} aria-label="Close" onClick={onClose} />
+            <Button
+              appearance="subtle"
+              icon={<DismissRegular />}
+              aria-label={t('onboarding', 'close')}
+              onClick={onClose}
+            />
           )}
         </div>
 
         <Text block style={{ color: tokens.colorNeutralForeground3 }}>
-          This web part prepares your workspace for hardware and software asset tracking, operations,
-          and reporting. You can optionally load starter data to get up and running quickly.
+          {t('onboarding', 'webPartIntro')}
         </Text>
 
         {showSetupNotifications ? (
@@ -317,12 +318,12 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
         {showPreSetupOverview && (
           <div className={styles.overview}>
             <Text size={200} className={styles.overviewLabel}>
-              What you&apos;ll get
+              {t('onboarding', 'whatYouGet')}
             </Text>
             <div className={styles.featureGrid}>
-              {FEATURE_HIGHLIGHTS.map((feature) => (
+              {FEATURE_HIGHLIGHT_KEYS.map((feature) => (
                 <div
-                  key={feature.title}
+                  key={feature.titleKey}
                   className={mergeClasses(
                     styles.featureItem,
                     feature.highlight && styles.featureItemHighlight
@@ -333,10 +334,10 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
                   </span>
                   <span>
                     <Text size={300} weight="semibold" block>
-                      {feature.title}
+                      {t('onboarding', feature.titleKey)}
                     </Text>
                     <Text size={200} block style={{ color: tokens.colorNeutralForeground3 }}>
-                      {feature.description}
+                      {t('onboarding', feature.descriptionKey)}
                     </Text>
                   </span>
                 </div>
@@ -344,9 +345,7 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
             </div>
             <div className={styles.trustNote}>
               <LockClosedRegular />
-              <Text size={200}>
-                Everything runs inside your Microsoft 365 tenant — your data stays in SharePoint.
-              </Text>
+              <Text size={200}>{t('onboarding', 'tenantTrust')}</Text>
             </div>
           </div>
         )}
@@ -356,11 +355,10 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
             <Checkbox
               checked={includeSampleData}
               onChange={(_, data) => setIncludeSampleData(Boolean(data.checked))}
-              label="Seed sample data"
+              label={t('onboarding', 'seedSampleData')}
             />
             <Text size={200} block style={{ color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS }}>
-              Adds demo assets, software licenses, and assignments so you can explore the app right
-              away. Default picklists and form templates are always included.
+              {t('onboarding', 'seedSampleDataDescExtended')}
             </Text>
           </div>
         )}
@@ -406,7 +404,7 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
 
         {isRunning && (
           <Text size={200} block italic style={{ color: tokens.colorNeutralForeground3 }}>
-            Setup may take a few minutes on slower connections; progress is shown under each step.
+            {t('onboarding', 'setupMayTakeTimeProgress')}
           </Text>
         )}
 
@@ -426,7 +424,7 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
         <div className={styles.footer}>
           {showPreSetupOverview && onSkip && (
             <Button appearance="secondary" onClick={onSkip}>
-              Skip (already set up)
+              {t('onboarding', 'skipSetup')}
             </Button>
           )}
           {showPreSetupOverview && (
@@ -435,12 +433,12 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
               icon={<PlayRegular />}
               onClick={() => onStart({ includeSampleData })}
             >
-              Start Setup
+              {t('onboarding', 'startSetup')}
             </Button>
           )}
           {allDone && (
             <AppMessageBar intent="success" style={{ flex: 1 }}>
-              Setup complete! Loading application...
+              {t('onboarding', 'setupCompleteLoading')}
             </AppMessageBar>
           )}
         </div>

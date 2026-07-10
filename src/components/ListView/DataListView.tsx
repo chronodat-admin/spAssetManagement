@@ -30,6 +30,8 @@ import {
 import type { ListViewMode } from '../../lib/list-view/types';
 import { useContentCardStyles } from '../Layout/ContentCard';
 import { EmptyState } from '../Layout/EmptyState';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 
 const useStyles = makeStyles({
   listWrap: {
@@ -264,6 +266,19 @@ export function DataListView<T>({
 }: IDataListViewProps<T>): React.ReactElement {
   const styles = useStyles();
   const cardStyles = useContentCardStyles();
+  const { t } = useTranslation();
+
+  const getSelectLabel = (item: T, card = false): string => {
+    if (getSelectionLabel) {
+      return formatMessage(t('listView', 'selectNamed', 'Select {name}'), {
+        name: getSelectionLabel(item)
+      });
+    }
+    if (card) {
+      return t('listView', 'selectCard', 'Select card');
+    }
+    return t('listView', 'selectRow', 'Select row');
+  };
 
   const renderSelectCheckbox = (item: T, label?: string): React.ReactNode => {
     if (!selection) {
@@ -275,7 +290,7 @@ export function DataListView<T>({
       <Checkbox
         checked={selection.selectedKeys.has(key)}
         onChange={(_, data) => selection.onToggleItem(key, Boolean(data.checked))}
-        aria-label={label || 'Select row'}
+        aria-label={label || t('listView', 'selectRow', 'Select row')}
         onClick={(event) => event.stopPropagation()}
       />
     );
@@ -354,7 +369,7 @@ export function DataListView<T>({
                       selection.allSelected ? true : selection.someSelected ? 'mixed' : false
                     }
                     onChange={(_, data) => selection.onToggleAll(Boolean(data.checked))}
-                    aria-label="Select all rows"
+                    aria-label={t('listView', 'selectAllRows', 'Select all rows')}
                   />
                 </TableHeaderCell>
               )}
@@ -376,7 +391,7 @@ export function DataListView<T>({
                   className={cardStyles.tableHeaderCell}
                   style={{ width: LIST_ACTIONS_COLUMN_WIDTH, minWidth: LIST_ACTIONS_COLUMN_WIDTH }}
                 >
-                  Actions
+                  {t('listView', 'actions', 'Actions')}
                 </TableHeaderCell>
               )}
             </TableRow>
@@ -386,10 +401,7 @@ export function DataListView<T>({
               <TableRow key={getItemKey(item)}>
                 {selection && (
                   <TableCell className={styles.selectCell}>
-                    {renderSelectCheckbox(
-                      item,
-                      getSelectionLabel ? `Select ${getSelectionLabel(item)}` : 'Select row'
-                    )}
+                    {renderSelectCheckbox(item, getSelectLabel(item))}
                   </TableCell>
                 )}
                 {visibleDataColumns.map((column) => (
@@ -444,10 +456,7 @@ export function DataListView<T>({
           <div key={getItemKey(item)} className={styles.listRow}>
             {selection && (
               <div className={styles.listSelect}>
-                {renderSelectCheckbox(
-                  item,
-                  getSelectionLabel ? `Select ${getSelectionLabel(item)}` : 'Select row'
-                )}
+                {renderSelectCheckbox(item, getSelectLabel(item))}
               </div>
             )}
             <div className={styles.listMain}>
@@ -520,7 +529,7 @@ export function DataListView<T>({
             {selection &&
               renderSelectCheckbox(
                 item,
-                getSelectionLabel ? `Select ${getSelectionLabel(item)}` : 'Select card'
+                getSelectLabel(item, true)
               )}
           </div>
           {detailColumns.map((column) => (

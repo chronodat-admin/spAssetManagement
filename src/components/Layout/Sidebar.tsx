@@ -46,6 +46,15 @@ export interface INavigationItem {
 
 
 
+const NAV_SECTION_KEYS: Record<string, string> = {
+  MAIN: 'sectionMain',
+  ASSETS: 'sectionAssets',
+  OPERATIONS: 'sectionOperations',
+  ANALYSIS: 'sectionAnalysis',
+  LOOKUPS: 'sectionLookups',
+  ADMIN: 'sectionAdmin'
+};
+
 export const NAVIGATION_ITEMS: INavigationItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <GridRegular />, section: 'MAIN' },
   { id: 'allAssets', label: 'All Assets', icon: <ListRegular />, section: 'ASSETS' },
@@ -377,7 +386,9 @@ export const Sidebar: React.FC<ISidebarProps> = ({
     return items.map((item) => ({
       ...item,
       label: t('nav', item.id, item.label),
-      section: item.section ? t('nav', `section${item.section}`, item.section) : item.section
+      section: item.section
+        ? t('nav', NAV_SECTION_KEYS[item.section] ?? item.section, item.section)
+        : item.section
     }));
   }, [permissions, permissionRows, showSettings, t]);
 

@@ -1,6 +1,7 @@
 ﻿import * as React from 'react';
 import { WeatherMoonRegular, WeatherSunnyRegular } from '@fluentui/react-icons';
 import { useAppearanceTheme } from '../../contexts/AppearanceThemeContext';
+import { useTranslation } from '../../i18n/LocaleContext';
 import { AccentBarButton } from './AccentBarButton';
 
 export interface IThemeModeToggleProps {
@@ -9,16 +10,19 @@ export interface IThemeModeToggleProps {
 
 export const ThemeModeToggle: React.FC<IThemeModeToggleProps> = ({ compact }) => {
   const { isDark, toggleThemeMode } = useAppearanceTheme();
+  const { t } = useTranslation();
+  const lightLabel = t('shell', 'lightMode', 'Light mode');
+  const darkLabel = t('shell', 'darkMode', 'Dark mode');
 
   return (
     <AccentBarButton
       variant="ghost"
       icon={isDark ? <WeatherSunnyRegular /> : <WeatherMoonRegular />}
       onClick={toggleThemeMode}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? lightLabel : darkLabel}
       size={compact ? 'small' : 'medium'}
     >
-      {compact ? undefined : isDark ? 'Light mode' : 'Dark mode'}
+      {compact ? undefined : isDark ? lightLabel : darkLabel}
     </AccentBarButton>
   );
 };

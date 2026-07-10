@@ -93,6 +93,11 @@ export const en: ITranslationDictionary = {
     reports: 'Preset asset and assignment reports.',
     depreciation: 'Depreciation schedules and book values.',
     auditLog: 'Append-only audit trail for all mutations.',
+    categories: 'Manage asset categories.',
+    subCategories: 'Manage sub-categories linked to parent asset categories.',
+    vendors: 'Vendors and suppliers.',
+    locations: 'Physical locations.',
+    projects: 'Projects linked to assets.',
     settings: 'Configure branding, notifications, roles, and integrations.'
   },
   common: {
@@ -150,6 +155,10 @@ export const en: ITranslationDictionary = {
   settings: {
     language: 'Language',
     languageDescription: 'Choose the display language for navigation and Tier 1 features.',
+    languageEn: 'English',
+    languageEs: 'Spanish',
+    languageFr: 'French',
+    languageDe: 'German',
     userRoles: 'User Roles',
     userRolesDescription: 'Assign Admin, Asset Manager, User, or Read Only roles to people.',
     intuneSync: 'Intune Sync',
@@ -243,5 +252,21 @@ export const en: ITranslationDictionary = {
     returnOverdue: 'Return overdue',
     remindersSent: 'Reminder notifications processed',
     runReminders: 'Run reminders now'
+  },
+  user: {
+    languageLabel: 'Language',
+    languageAriaLabel: 'Change display language'
+  },
+  shell: {
+    procedure: 'Procedure',
+    newAsset: 'New Asset',
+    lightMode: 'Light mode',
+    darkMode: 'Dark mode',
+    backToTop: 'Back to top',
+    home: 'Home',
+    menu: 'Menu',
+    closeNavigation: 'Close navigation',
+    openNavigation: 'Open navigation',
+    completeSetup: 'Complete Setup'
   }
 };

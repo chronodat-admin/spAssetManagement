@@ -27,31 +27,42 @@ import { UserCell } from '../PeoplePicker/UserAvatar';
 import { AssetImageThumbnail } from './AssetImageThumbnail';
 import { BarcodeLabelDialog } from './BarcodeLabelDialog';
 import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 import { PageNotifications } from '../Layout/PageNotifications';
 
 
-const BASE_ASSET_COLUMNS: ListColumnMeta[] = [
-  { key: 'assetId', label: 'Asset ID', defaultVisible: true, locked: true },
-  { key: 'title', label: 'Title', defaultVisible: true, locked: true },
-  { key: 'status', label: 'Status', defaultVisible: true },
-  { key: 'category', label: 'Category', defaultVisible: true },
-  { key: 'location', label: 'Location', defaultVisible: true },
-  { key: 'assignee', label: 'Assigned To', defaultVisible: true },
-  { key: 'serial', label: 'Serial Number', defaultVisible: false },
-  { key: 'cost', label: 'Cost', defaultVisible: false }
-];
+const BASE_ASSET_COLUMN_KEYS = [
+  { key: 'assetId', labelKey: 'assetId' },
+  { key: 'title', labelKey: 'title' },
+  { key: 'status', labelKey: 'status' },
+  { key: 'category', labelKey: 'category' },
+  { key: 'location', labelKey: 'location' },
+  { key: 'assignee', labelKey: 'assignedTo' },
+  { key: 'serial', labelKey: 'serialNumber' },
+  { key: 'cost', labelKey: 'cost' }
+] as const;
 
-function buildAssetColumnMeta(showImageColumn: boolean): ListColumnMeta[] {
+function buildAssetColumnMeta(
+  showImageColumn: boolean,
+  t: (section: 'assets', key: string, fallback?: string) => string
+): ListColumnMeta[] {
+  const base = BASE_ASSET_COLUMN_KEYS.map((col) => ({
+    key: col.key,
+    label: t('assets', col.labelKey, col.labelKey),
+    defaultVisible: col.key !== 'serial' && col.key !== 'cost',
+    locked: col.key === 'assetId' || col.key === 'title'
+  }));
   if (!showImageColumn) {
-    return BASE_ASSET_COLUMNS;
+    return base;
   }
-  return [{ key: 'image', label: 'Image', defaultVisible: true }, ...BASE_ASSET_COLUMNS];
+  return [{ key: 'image', label: t('assets', 'image', 'Image'), defaultVisible: true }, ...base];
 }
 
 function buildAssetColumns(
   showImageColumn: boolean,
-  settings?: IAppSettings,
-  webOrigin?: string
+  settings: IAppSettings | undefined,
+  webOrigin: string | undefined,
+  t: (section: 'assets', key: string, fallback?: string) => string
 ): IDataListColumn<IAsset>[] {
   const workflowSettings = parseWorkflowSettings(settings);
   const columns: IDataListColumn<IAsset>[] = [];
@@ -59,11 +70,15 @@ function buildAssetColumns(
   if (showImageColumn) {
     columns.push({
       key: 'image',
-      label: 'Image',
+      label: t('assets', 'image', 'Image'),
       render: (asset) => (
         <AssetImageThumbnail
           imageUrl={asset.AM_ImageUrl}
-          alt={asset.Title ? `${asset.Title} image` : 'Asset image'}
+          alt={
+            asset.Title
+              ? formatMessage(t('assets', 'imageAlt', '{title} image'), { title: asset.Title })
+              : t('assets', 'assetImage', 'Asset image')
+          }
           webOrigin={webOrigin}
         />
       )
@@ -71,16 +86,16 @@ function buildAssetColumns(
   }
 
   columns.push(
-    { key: 'assetId', label: 'Asset ID', render: (asset) => asset.AM_AssetId || '—' },
+    { key: 'assetId', label: t('assets', 'assetId', 'Asset ID'), render: (asset) => asset.AM_AssetId || '—' },
     {
       key: 'title',
-      label: 'Title',
+      label: t('assets', 'title', 'Title'),
       isPrimary: true,
       render: (asset) => asset.Title || '—'
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('assets', 'status', 'Status'),
       render: (asset) => (
         <RiskStatusBadge
           status={
@@ -92,11 +107,11 @@ function buildAssetColumns(
         />
       )
     },
-    { key: 'category', label: 'Category', render: (asset) => asset.AM_Category?.Title || '—' },
-    { key: 'location', label: 'Location', render: (asset) => asset.AM_Location?.Title || '—' },
+    { key: 'category', label: t('assets', 'category', 'Category'), render: (asset) => asset.AM_Category?.Title || '—' },
+    { key: 'location', label: t('assets', 'location', 'Location'), render: (asset) => asset.AM_Location?.Title || '—' },
     {
       key: 'assignee',
-      label: 'Assigned To',
+      label: t('assets', 'assignedTo', 'Assigned To'),
       render: (asset) => {
         const assignee = asset.AM_AssignedTo || asset.AssignedTo?.[0];
         return assignee ? (
@@ -106,10 +121,10 @@ function buildAssetColumns(
         );
       }
     },
-    { key: 'serial', label: 'Serial Number', render: (asset) => asset.AM_SerialNumber || '—' },
+    { key: 'serial', label: t('assets', 'serialNumber', 'Serial Number'), render: (asset) => asset.AM_SerialNumber || '—' },
     {
       key: 'cost',
-      label: 'Cost',
+      label: t('assets', 'cost', 'Cost'),
       render: (asset) => (asset.AM_Cost != null ? `$${asset.AM_Cost.toLocaleString()}` : '—')
     }
   );
@@ -157,12 +172,12 @@ export const AssetList: React.FC<IAssetListProps> = ({
   const appearanceSettings = React.useMemo(() => parseAppearanceSettings(settings), [settings]);
   const showImageColumn = appearanceSettings.showAssetImageColumn;
   const assetColumnMeta = React.useMemo(
-    () => buildAssetColumnMeta(showImageColumn),
-    [showImageColumn]
+    () => buildAssetColumnMeta(showImageColumn, t),
+    [showImageColumn, t]
   );
   const columns = React.useMemo(
-    () => buildAssetColumns(showImageColumn, settings, webOrigin),
-    [showImageColumn, settings, webOrigin]
+    () => buildAssetColumns(showImageColumn, settings, webOrigin, t),
+    [showImageColumn, settings, webOrigin, t]
   );
   const viewPrefs = useListViewPreferences(listKey, assetColumnMeta);
   const [localFilters, setLocalFilters] = React.useState<IAssetListFilters>(EMPTY_ASSET_LIST_FILTERS);
@@ -204,8 +219,10 @@ export const AssetList: React.FC<IAssetListProps> = ({
 
   const handleDelete = async (asset: IAsset): Promise<void> => {
     const ok = await confirm({
-      title: 'Delete asset',
-      message: `Soft-delete "${asset.Title}"?`
+      title: t('assets', 'deleteAssetTitle', 'Delete asset'),
+      message: formatMessage(t('assets', 'deleteAssetMessage', 'Soft-delete "{title}"?'), {
+        title: asset.Title
+      })
     });
     if (!ok) return;
     setDeletingId(asset.Id);
@@ -214,7 +231,7 @@ export const AssetList: React.FC<IAssetListProps> = ({
       bulkSelection.clearSelection();
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed');
+      setError(err instanceof Error ? err.message : t('assets', 'deleteFailed', 'Delete failed'));
     } finally {
       setDeletingId(undefined);
     }
@@ -223,8 +240,10 @@ export const AssetList: React.FC<IAssetListProps> = ({
   const handleBulkDelete = async (): Promise<void> => {
     if (!canDelete || bulkSelection.selectedCount === 0) return;
     const ok = await confirm({
-      title: 'Delete selected assets',
-      message: `Soft-delete ${bulkSelection.selectedCount} selected asset(s)?`
+      title: t('assets', 'deleteSelectedAssetsTitle', 'Delete selected assets'),
+      message: formatMessage(t('assets', 'deleteSelectedAssetsMessage', 'Soft-delete {count} selected asset(s)?'), {
+        count: bulkSelection.selectedCount
+      })
     });
     if (!ok) return;
     setDeletingId(-1);
@@ -235,7 +254,7 @@ export const AssetList: React.FC<IAssetListProps> = ({
       bulkSelection.clearSelection();
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bulk delete failed');
+      setError(err instanceof Error ? err.message : t('assets', 'bulkDeleteFailed', 'Bulk delete failed'));
     } finally {
       setDeletingId(undefined);
     }
@@ -244,13 +263,13 @@ export const AssetList: React.FC<IAssetListProps> = ({
   const renderActions = (asset: IAsset): React.ReactNode => (
     <>
       {canEdit ? (
-        <Button appearance="subtle" icon={<EditRegular />} aria-label="Edit" onClick={() => onEdit(asset)} />
+        <Button appearance="subtle" icon={<EditRegular />} aria-label={t('lookups', 'editAria', 'Edit')} onClick={() => onEdit(asset)} />
       ) : null}
       {canDelete ? (
         <Button
           appearance="subtle"
           icon={<DeleteRegular />}
-          aria-label="Delete"
+          aria-label={t('lookups', 'deleteAria', 'Delete')}
           disabled={deletingId === asset.Id}
           onClick={() => void handleDelete(asset)}
         />
@@ -265,7 +284,7 @@ export const AssetList: React.FC<IAssetListProps> = ({
         flushBody
         pageHeader={subtitle ? undefined : undefined}
         toolbar={
-          <ContentToolbar count={filteredAssets.length} countLabel="assets">
+          <ContentToolbar count={filteredAssets.length} countLabel={t('assets', 'assetsCount', 'assets')}>
             {viewPrefs.ready ? (
               <ListViewControls
                 viewMode={viewPrefs.viewMode}

@@ -24,30 +24,38 @@ import { SettingsPageHeader } from '../Settings/SettingsPageHeader';
 import { useListPermissions } from '../../hooks/useListPermissions';
 import { useBulkSelection } from '../../hooks/useBulkSelection';
 import { useLookupDeleteConfirm } from '../../hooks/useLookupDeleteConfirm';
-import type { ListPanelMode } from '../../utils/listPermissions';import { AppMessageBar } from '../Layout/AppMessageBar';
+import type { ListPanelMode } from '../../utils/listPermissions';
+import { AppMessageBar } from '../Layout/AppMessageBar';
+import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 
 
 type PanelMode = ListPanelMode;
 
-function buildLookupColumns(showRating?: boolean): {
+function buildLookupColumns(
+  showRating: boolean | undefined,
+  t: (section: 'lookups' | 'common', key: string, fallback?: string) => string
+): {
   meta: ListColumnMeta[];
   columns: IDataListColumn<ILookupItem>[];
 } {
-  const meta: ListColumnMeta[] = [{ key: 'title', label: 'Title', defaultVisible: true, locked: true }];
+  const titleLabel = t('common', 'title', 'Title');
+  const meta: ListColumnMeta[] = [{ key: 'title', label: titleLabel, defaultVisible: true, locked: true }];
   const columns: IDataListColumn<ILookupItem>[] = [
     {
       key: 'title',
-      label: 'Title',
+      label: titleLabel,
       isPrimary: true,
       render: (item) => item.Title
     }
   ];
 
   if (showRating) {
-    meta.push({ key: 'rating', label: 'Rating', defaultVisible: true });
+    const ratingLabel = t('lookups', 'rating', 'Rating');
+    meta.push({ key: 'rating', label: ratingLabel, defaultVisible: true });
     columns.push({
       key: 'rating',
-      label: 'Rating',
+      label: ratingLabel,
       render: (item) => item.Rating || '—'
     });
   }
@@ -82,6 +90,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
   pageIcon,
   onChanged
 }) => {
+  const { t } = useTranslation();
   const [items, setItems] = React.useState<ILookupItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -93,8 +102,8 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
   const { confirmLookupDelete, confirmDialog, checkingDelete } = useLookupDeleteConfirm(riskService);
 
   const { meta: columnMeta, columns } = React.useMemo(
-    () => buildLookupColumns(showRating),
-    [showRating]
+    () => buildLookupColumns(showRating, t),
+    [showRating, t]
   );
   const viewPrefs = useListViewPreferences(listTitle, columnMeta);
   const [filters, setFilters] = React.useState(EMPTY_LOOKUP_LIST_FILTERS);
@@ -143,7 +152,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
       setItems(data);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load items.');
+      setError(err instanceof Error ? err.message : t('lookups', 'loadFailed', 'Failed to load items.'));
     } finally {
       setLoading(false);
     }
@@ -192,7 +201,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
     const confirmed = await confirmLookupDelete({
       listTitle,
       items: [{ id: item.Id, title: item.Title }],
-      dialogTitle: 'Delete item'
+      dialogTitle: t('lookups', 'deleteItemTitle', 'Delete item')
     });
     if (!confirmed) {
       return;
@@ -203,7 +212,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
     try {
       await riskService.deleteLookupItem(listTitle, item.Id);
       bulkSelection.clearSelection();
-      setSuccess(`Deleted "${item.Title}".`);
+      setSuccess(formatMessage(t('lookups', 'deletedItem', 'Deleted "{title}".'), { title: item.Title }));
       if (editingItem?.Id === item.Id) {
         closePanel();
       }
@@ -228,7 +237,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
     const confirmed = await confirmLookupDelete({
       listTitle,
       items: selectedItems,
-      dialogTitle: 'Delete items'
+      dialogTitle: t('lookups', 'deleteItemsTitle', 'Delete items')
     });
     if (!confirmed) {
       return;
@@ -245,15 +254,25 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
       await loadItems();
 
       if (result.failed.length === 0) {
-        setSuccess(`Deleted ${result.deletedIds.length} item(s).`);
+        setSuccess(
+          formatMessage(t('lookups', 'deletedCount', 'Deleted {count} item(s).'), {
+            count: result.deletedIds.length
+          })
+        );
       } else {
         setError(
-          `Deleted ${result.deletedIds.length} of ${ids.length} item(s). ${result.failed.length} could not be deleted.`
+          formatMessage(
+            t('lookups', 'bulkDeletePartial', 'Deleted {deleted} item(s). {failed} could not be deleted.'),
+            {
+              deleted: result.deletedIds.length,
+              failed: result.failed.length
+            }
+          )
         );
       }
       onChanged?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete selected items.');
+      setError(err instanceof Error ? err.message : t('lookups', 'deleteSelectedFailed', 'Failed to delete selected items.'));
     } finally {
       setSaving(false);
     }
@@ -262,13 +281,13 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
   const renderActions = (item: ILookupItem): React.ReactNode => (
     <>
       {canEdit && (
-        <Button appearance="subtle" icon={<EditRegular />} aria-label="Edit" onClick={() => openEditPanel(item)} />
+        <Button appearance="subtle" icon={<EditRegular />} aria-label={t('lookups', 'editAria', 'Edit')} onClick={() => openEditPanel(item)} />
       )}
       {canDelete && (
         <Button
           appearance="subtle"
           icon={<DeleteRegular />}
-          aria-label="Delete"
+          aria-label={t('lookups', 'deleteAria', 'Delete')}
           disabled={saving || checkingDelete}
           onClick={() => void handleDelete(item)}
         />
@@ -290,7 +309,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
               actions={
                 canAdd ? (
                   <Button appearance="primary" icon={<AddRegular />} onClick={openCreatePanel}>
-                    Add new
+                    {t('lookups', 'addNew', 'Add new')}
                   </Button>
                 ) : undefined
               }
@@ -298,7 +317,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
           ) : undefined
         }
         toolbar={
-          <ContentToolbar count={filteredItems.length} countLabel="items">
+          <ContentToolbar count={filteredItems.length} countLabel={t('lookups', 'items', 'items')}>
             {viewPrefs.ready && (
               <ListViewControls
                 viewMode={viewPrefs.viewMode}
@@ -317,12 +336,14 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
                 disabled={saving || checkingDelete}
                 onClick={() => void handleBulkDelete()}
               >
-                Delete selected ({bulkSelection.selectedCount})
+                {formatMessage(t('lookups', 'deleteSelected', 'Delete selected ({count})'), {
+                  count: bulkSelection.selectedCount
+                })}
               </Button>
             )}
             {canAdd && !(pageDescription || pageIcon) && (
               <Button appearance="primary" icon={<AddRegular />} onClick={openCreatePanel}>
-                Add new
+                {t('lookups', 'addNew', 'Add new')}
               </Button>
             )}
           </ContentToolbar>
@@ -333,8 +354,8 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
             onSearchChange={(search) => setFilters((current) => ({ ...current, search }))}
             searchPlaceholder={
               showRating
-                ? 'Search by title or rating...'
-                : 'Search by title...'
+                ? t('lookups', 'searchByTitleOrRating', 'Search by title or rating...')
+                : t('lookups', 'searchByTitle', 'Search by title...')
             }
             showClear={hasActiveLookupListFilters(filters)}
             onClear={() => setFilters(EMPTY_LOOKUP_LIST_FILTERS)}
@@ -354,7 +375,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
 
         {loading ? (
           <div style={{ padding: 24 }}>
-            <Spinner label="Loading..." />
+            <Spinner label={t('lookups', 'loading', 'Loading...')} />
           </div>
         ) : (
           viewPrefs.ready && (
@@ -364,7 +385,11 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
               visibleColumns={viewPrefs.visibleColumns}
               viewMode={viewPrefs.viewMode}
               ariaLabel={displayTitle}
-              emptyMessage={`No items yet. ${canAdd ? 'Click Add new to create one.' : 'Edit ratings as needed.'}`}
+              emptyMessage={
+                canAdd
+                  ? t('lookups', 'emptyHint', 'No items yet. Click Add new to create one.')
+                  : t('lookups', 'emptyRatingHint', 'Edit ratings as needed.')
+              }
               getItemKey={getItemKey}
               renderActions={showRowActions ? renderActions : undefined}
               onPrimaryClick={openViewPanel}
@@ -383,10 +408,10 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
         itemId={editingItem?.Id}
         title={
           panelMode === 'create'
-            ? `Add ${singularTitle}`
+            ? formatMessage(t('lookups', 'addTitle', 'Add {singular}'), { singular: singularTitle })
             : panelMode === 'view'
-              ? `View ${singularTitle}`
-              : `Edit ${singularTitle}`
+              ? formatMessage(t('lookups', 'viewTitle', 'View {singular}'), { singular: singularTitle })
+              : formatMessage(t('lookups', 'editTitle', 'Edit {singular}'), { singular: singularTitle })
         }
         subtitle={editingItem?.Title}
         riskService={riskService}
@@ -397,7 +422,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
         onEdit={panelMode === 'view' ? () => setPanelMode('edit') : undefined}
         onSaved={async () => {
           closePanel();
-          setSuccess(panelMode === 'create' ? 'Item created.' : 'Item updated.');
+          setSuccess(panelMode === 'create' ? t('lookups', 'itemCreated', 'Item created.') : t('lookups', 'itemUpdated', 'Item updated.'));
           onChanged?.();
           await loadItems();
         }}

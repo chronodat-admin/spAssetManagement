@@ -5,6 +5,10 @@ import {
 } from '@fluentui/react-icons';
 import { Button, tokens } from '@fluentui/react-components';
 import { makeStyles, mergeClasses, shorthands } from '@fluentui/react-components';
+import { useTranslation } from '../../i18n/LocaleContext';
+import {
+  getLocalizedSettingsPageLabel
+} from '../../i18n/pageLabels';
 import { SETTINGS_PAGES, SettingsPageId } from './settingsPageMeta';
 import { isHiddenSettingsPage } from '../../constants/scheduleDependentFeatures';
 import { MailSendApprovalPanel } from '../Onboarding/MailSendApprovalPanel';
@@ -98,6 +102,7 @@ export const SettingsSidebar: React.FC<ISettingsSidebarProps> = ({
   refreshingMailSendStatus
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [expanded, setExpanded] = React.useState({ general: true, preferences: true, lookups: true });
 
   const visibleItems = SETTINGS_PAGES.filter(
@@ -107,9 +112,9 @@ export const SettingsSidebar: React.FC<ISettingsSidebarProps> = ({
   );
 
   const sections = [
-    { key: 'general' as const, label: 'General' },
-    { key: 'preferences' as const, label: 'Preferences' },
-    { key: 'lookups' as const, label: 'Lookups' }
+    { key: 'general' as const, label: t('settingsSections', 'general', 'General') },
+    { key: 'preferences' as const, label: t('settingsSections', 'preferences', 'Preferences') },
+    { key: 'lookups' as const, label: t('settingsSections', 'lookups', 'Lookups') }
   ];
 
   return (
@@ -140,7 +145,7 @@ export const SettingsSidebar: React.FC<ISettingsSidebarProps> = ({
                     icon={<Icon className={styles.navIcon} />}
                     onClick={() => onSelect(item.id)}
                   >
-                    {item.label}
+                    {getLocalizedSettingsPageLabel(item.id, t, item.label)}
                   </Button>
                 );
               })}

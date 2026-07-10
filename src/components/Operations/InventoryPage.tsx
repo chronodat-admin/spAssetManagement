@@ -19,6 +19,7 @@ import { InventoryService } from '../../services/InventoryService';
 import type { IInventoryItem } from '../../models/IAssetApp';
 import { DATA_TABLE_CLASS } from '../../lib/list-view/columnWidths';
 import { PageNotifications } from '../Layout/PageNotifications';
+import { useTranslation } from '../../i18n/LocaleContext';
 
 
 export interface IInventoryPageProps {
@@ -27,6 +28,7 @@ export interface IInventoryPageProps {
 
 export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService }) => {
   const styles = useFormStyles();
+  const { t } = useTranslation();
   const [rows, setRows] = React.useState<IInventoryItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -40,11 +42,11 @@ export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService 
     try {
       setRows(await inventoryService.getScans());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load scans.');
+      setError(err instanceof Error ? err.message : t('inventory', 'loadFailed', 'Failed to load scans.'));
     } finally {
       setLoading(false);
     }
-  }, [inventoryService]);
+  }, [inventoryService, t]);
 
   React.useEffect(() => {
     void load();
@@ -62,7 +64,7 @@ export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService 
       setTitle('');
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Create failed.');
+      setError(err instanceof Error ? err.message : t('inventory', 'createFailed', 'Create failed.'));
     } finally {
       setSaving(false);
     }
@@ -73,7 +75,7 @@ export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService 
       await inventoryService.deleteScan(id);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed.');
+      setError(err instanceof Error ? err.message : t('inventory', 'deleteFailed', 'Delete failed.'));
     }
   };
 
@@ -81,26 +83,26 @@ export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService 
     <ContentCard>
       <PageNotifications error={error || undefined} />
       <div className={styles.inlineRow}>
-        <Field label="Scan label" className={styles.inlineField}>
-          <Input value={title} onChange={(_, d) => setTitle(d.value)} placeholder="e.g. Barcode or asset tag" />
+        <Field label={t('inventory', 'scanLabel', 'Scan label')} className={styles.inlineField}>
+          <Input value={title} onChange={(_, d) => setTitle(d.value)} placeholder={t('inventory', 'scanPlaceholder', 'e.g. Barcode or asset tag')} />
         </Field>
-        <Checkbox label="Asset found" checked={found} onChange={(_, d) => setFound(Boolean(d.checked))} />
+        <Checkbox label={t('inventory', 'assetFound', 'Asset found')} checked={found} onChange={(_, d) => setFound(Boolean(d.checked))} />
         <Button appearance="primary" icon={<AddRegular />} disabled={saving || !title.trim()} onClick={() => void handleAdd()}>
-          Record scan
+          {t('inventory', 'recordScan', 'Record scan')}
         </Button>
       </div>
       {loading ? (
-        <Spinner label="Loading inventory scans..." />
+        <Spinner label={t('inventory', 'loadingScans', 'Loading inventory scans...')} />
       ) : (
         <div className={DATA_TABLE_CLASS}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHeaderCell>Scan</TableHeaderCell>
-                <TableHeaderCell>Location</TableHeaderCell>
-                <TableHeaderCell>Asset</TableHeaderCell>
-                <TableHeaderCell>Date</TableHeaderCell>
-                <TableHeaderCell>Found</TableHeaderCell>
+                <TableHeaderCell>{t('inventory', 'scan', 'Scan')}</TableHeaderCell>
+                <TableHeaderCell>{t('inventory', 'location', 'Location')}</TableHeaderCell>
+                <TableHeaderCell>{t('inventory', 'asset', 'Asset')}</TableHeaderCell>
+                <TableHeaderCell>{t('inventory', 'date', 'Date')}</TableHeaderCell>
+                <TableHeaderCell>{t('inventory', 'found', 'Found')}</TableHeaderCell>
                 <TableHeaderCell />
               </TableRow>
             </TableHeader>
@@ -111,7 +113,7 @@ export const InventoryPage: React.FC<IInventoryPageProps> = ({ inventoryService 
                   <TableCell>{row.AM_Location?.Title || '—'}</TableCell>
                   <TableCell>{row.AM_Asset?.Title || '—'}</TableCell>
                   <TableCell>{row.AM_ScanDate || '—'}</TableCell>
-                  <TableCell>{row.AM_Found ? 'Yes' : 'No'}</TableCell>
+                  <TableCell>{row.AM_Found ? t('inventory', 'yes', 'Yes') : t('inventory', 'no', 'No')}</TableCell>
                   <TableCell>
                     <Button appearance="subtle" icon={<DeleteRegular />} onClick={() => void handleDelete(row.Id)} />
                   </TableCell>

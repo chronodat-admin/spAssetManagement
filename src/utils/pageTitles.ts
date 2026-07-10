@@ -1,5 +1,8 @@
 ﻿import type { AppPage } from '../models/IAssetApp';
+import type { TranslateFn } from './pageLabels';
+import { getLocalizedPageSubtitle, getLocalizedPageTitle } from './pageLabels';
 
+/** @deprecated Use getLocalizedPageTitle with useTranslation instead. */
 export const PAGE_SUBTITLES: Partial<Record<AppPage, string>> = {
   dashboard: 'Overview of assets, assignments, and value across your organization.',
   allAssets: 'Browse and manage every asset in the register.',
@@ -32,10 +35,17 @@ export const PAGE_SUBTITLES: Partial<Record<AppPage, string>> = {
   settings: 'Configure branding, dashboard, notifications, roles, and integrations.'
 };
 
-export function getPageSubtitle(page: AppPage, override?: string): string | undefined {
-  return override || PAGE_SUBTITLES[page];
+export function getPageSubtitle(
+  page: AppPage,
+  override?: string,
+  t?: TranslateFn
+): string | undefined {
+  if (override) return override;
+  if (t) return getLocalizedPageSubtitle(page, t, PAGE_SUBTITLES[page]);
+  return PAGE_SUBTITLES[page];
 }
 
+/** @deprecated Use getLocalizedPageTitle with useTranslation instead. */
 export const PAGE_TITLES: Record<AppPage, string> = {
   dashboard: 'Dashboard',
   allAssets: 'All Assets',
@@ -67,3 +77,8 @@ export const PAGE_TITLES: Record<AppPage, string> = {
   projects: 'Projects',
   settings: 'Settings'
 };
+
+export function getPageTitle(page: AppPage, t?: TranslateFn): string {
+  if (t) return getLocalizedPageTitle(page, t, PAGE_TITLES[page]);
+  return PAGE_TITLES[page];
+}

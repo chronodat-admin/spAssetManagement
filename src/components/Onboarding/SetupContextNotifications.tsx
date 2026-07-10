@@ -4,6 +4,7 @@ import { PlayRegular, SettingsRegular } from '@fluentui/react-icons';
 import { SITE_OWNER_REQUIRED_MESSAGE } from '../../utils/sitePermissions';
 import { AppMessageBar } from '../Layout/AppMessageBar';
 import { DedicatedSubsiteWarning } from './DedicatedSubsiteWarning';
+import { useTranslation } from '../../i18n/LocaleContext';
 
 const useStyles = makeStyles({
   stack: {
@@ -36,6 +37,7 @@ export const SetupContextNotifications: React.FC<ISetupContextNotificationsProps
   onOpenSettings
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
 
   return (
     <div className={styles.stack}>
@@ -43,25 +45,25 @@ export const SetupContextNotifications: React.FC<ISetupContextNotificationsProps
       {showSetupRequired ? (
         <AppMessageBar
           intent="warning"
-          title="Setup required"
+          title={t('onboarding', 'setupRequired')}
           actions={
             showSetupActions && (isSiteOwner || isAppAdministrator) ? (
               <>
                 {isSiteOwner && onCompleteSetup ? (
                   <Button appearance="primary" size="small" icon={<PlayRegular />} onClick={onCompleteSetup}>
-                    Complete Setup
+                    {t('onboarding', 'completeSetup')}
                   </Button>
                 ) : null}
                 {isAppAdministrator && onOpenSettings ? (
                   <Button appearance="secondary" size="small" icon={<SettingsRegular />} onClick={onOpenSettings}>
-                    View in Settings
+                    {t('onboarding', 'viewInSettings')}
                   </Button>
                 ) : null}
               </>
             ) : undefined
           }
         >
-          Setup is not complete yet. Run setup to prepare your workspace and load default data.
+          {t('onboarding', 'setupNotCompleteContext')}
           {!isSiteOwner && !isAppAdministrator ? (
             <> {ownerAccessMessage || SITE_OWNER_REQUIRED_MESSAGE}</>
           ) : null}

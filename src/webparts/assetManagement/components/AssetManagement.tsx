@@ -50,7 +50,8 @@ import { AssetRequestService } from '../../../services/AssetRequestService';
 import { ImportExportService } from '../../../services/ImportExportService';
 import { IntuneSyncService } from '../../../services/IntuneSyncService';
 import { RoleService } from '../../../services/RoleService';
-import { LocaleProvider } from '../../../i18n/LocaleContext';
+import { LocaleProvider, useTranslation } from '../../../i18n/LocaleContext';
+import { formatMessage } from '../../../i18n/formatMessage';
 import { useAppRoles } from '../../../hooks/useAppRoles';
 import { canAccessPage } from '../../../utils/rbac';
 import { removeAppLoadingState } from '../../../utils/loadAssetManagementStyles';
@@ -61,7 +62,7 @@ import {
   IProvisioningScope,
   markProvisioningComplete
 } from '../../../utils/onboardingStorage';
-import { getPageSubtitle, PAGE_TITLES } from '../../../utils/pageTitles';
+import { getPageSubtitle, getPageTitle } from '../../../utils/pageTitles';
 import { getDashboardSubtitle, getDashboardTitle } from '../../../utils/dashboardSettings';
 import {
   loadPortfolioFilters,
@@ -90,7 +91,13 @@ const LIST_PAGES: AppPage[] = [
   'deletedAssets'
 ];
 
-export const AssetManagement: React.FC<IAssetManagementProps> = ({
+export const AssetManagement: React.FC<IAssetManagementProps> = (props) => (
+  <LocaleProvider siteUrl={props.webUrl}>
+    <AssetManagementImpl {...props} />
+  </LocaleProvider>
+);
+
+const AssetManagementImpl: React.FC<IAssetManagementProps> = ({
   context,
   webUrl,
   siteTitle,
@@ -98,6 +105,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   isTeamsHost = false,
   subscriptionApiUrl
 }) => {
+  const { t } = useTranslation();
   React.useMemo(() => setUserPhotoBaseUrl(webUrl), [webUrl]);
 
   const [currentPage, setCurrentPage] = React.useState<AppPage>('dashboard');
@@ -459,11 +467,11 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   const pageTitle =
     currentPage === 'dashboard'
       ? getDashboardTitle(settings, portfolioFilters, categories, projects)
-      : PAGE_TITLES[currentPage];
+      : getPageTitle(currentPage, t);
   const pageSubtitle =
     currentPage === 'dashboard'
       ? getDashboardSubtitle(settings, portfolioFilters, categories, projects)
-      : getPageSubtitle(currentPage);
+      : getPageSubtitle(currentPage, undefined, t);
 
   const renderPageContent = (): React.ReactNode => {
     if (loading && currentPage !== 'settings') {
@@ -473,7 +481,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     if (!canAccessPage(currentPage, permissions, permissionRows)) {
       return (
         <AppMessageBar intent="warning">
-          You do not have permission to view this page.
+          {t('rbac', 'accessDenied', 'You do not have permission to view this page.')}
         </AppMessageBar>
       );
     }
@@ -498,7 +506,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
             />
           ) : null}
           <AppMessageBar intent="info">
-            Setup is not complete. Select <strong>Complete Setup</strong> in the sidebar or go to{' '}
+            {t('onboarding', 'setupIncomplete')}{' '}
             <Link
               href="#"
               onClick={(event) => {
@@ -506,9 +514,8 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
                 handleNavigate('settings');
               }}
             >
-              Settings
-            </Link>{' '}
-            to finish creating and repairing SharePoint lists.
+              {t('nav', 'settings', 'Settings')}
+            </Link>
           </AppMessageBar>
         </>
       );
@@ -669,7 +676,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
           return (
             <AssetList
               risks={filteredAssets}
-              title={PAGE_TITLES[currentPage]}
+              title={getPageTitle(currentPage, t)}
               subtitle={pageSubtitle}
               listKey={currentPage}
               settings={settings}
@@ -686,14 +693,16 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         return (
           <ContentCard>
             <Title3>{pageTitle}</Title3>
-            <Text>{pageSubtitle || `${appName} could not find a matching view for this page.`}</Text>
+            <Text>
+              {pageSubtitle ||
+                formatMessage(t('errors', 'pageNotFound'), { appName })}
+            </Text>
           </ContentCard>
         );
     }
   };
 
   return (
-    <LocaleProvider siteUrl={webUrl}>
     <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
       {showSetupWizard && (
         <ProvisioningOnboarding
@@ -762,6 +771,5 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         onEdit={() => setFormMode('edit')}
       />
     </AppearanceThemeProvider>
-    </LocaleProvider>
   );
 };

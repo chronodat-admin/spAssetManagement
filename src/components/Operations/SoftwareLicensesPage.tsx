@@ -45,8 +45,8 @@ import type { ISoftwareLicense } from '../../models/IAssetApp';
 import { DATA_TABLE_CLASS } from '../../lib/list-view/columnWidths';
 
 import { PageNotifications } from '../Layout/PageNotifications';
-
-
+import { useTranslation } from '../../i18n/LocaleContext';
+import { formatMessage } from '../../i18n/formatMessage';
 
 type PanelMode = 'view' | 'edit';
 
@@ -78,7 +78,17 @@ function toDateInputValue(value?: string): string {
 
 
 
-function ReadonlyField({ label, value }: { label: string; value?: string | number | boolean }): React.ReactElement {
+function ReadonlyField({
+  label,
+  value,
+  yesText,
+  noText
+}: {
+  label: string;
+  value?: string | number | boolean;
+  yesText: string;
+  noText: string;
+}): React.ReactElement {
 
   const styles = useFormStyles();
 
@@ -91,10 +101,8 @@ function ReadonlyField({ label, value }: { label: string; value?: string | numbe
       : typeof value === 'boolean'
 
         ? value
-
-          ? 'Yes'
-
-          : 'No'
+          ? yesText
+          : noText
 
         : String(value);
 
@@ -125,6 +133,7 @@ export interface ISoftwareLicensesPageProps {
 export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ softwareService }) => {
 
   const styles = useFormStyles();
+  const { t } = useTranslation();
 
   const [rows, setRows] = React.useState<ISoftwareLicense[]>([]);
 
@@ -160,7 +169,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
     } catch (err) {
 
-      setError(err instanceof Error ? err.message : 'Failed to load licenses.');
+      setError(err instanceof Error ? err.message : t('softwareLicenses', 'loadFailed', 'Failed to load licenses.'));
 
     } finally {
 
@@ -168,7 +177,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
     }
 
-  }, [softwareService]);
+  }, [softwareService, t]);
 
 
 
@@ -264,7 +273,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
     } catch (err) {
 
-      setError(err instanceof Error ? err.message : 'Create failed.');
+      setError(err instanceof Error ? err.message : t('softwareLicenses', 'createFailed', 'Create failed.'));
 
     } finally {
 
@@ -284,7 +293,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
     if (!productName) {
 
-      setError('Product name is required.');
+      setError(t('softwareLicenses', 'productRequired', 'Product name is required.'));
 
       return;
 
@@ -312,7 +321,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
     } catch (err) {
 
-      setError(err instanceof Error ? err.message : 'Save failed.');
+      setError(err instanceof Error ? err.message : t('softwareLicenses', 'saveFailed', 'Save failed.'));
 
     } finally {
 
@@ -340,7 +349,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
     } catch (err) {
 
-      setError(err instanceof Error ? err.message : 'Delete failed.');
+      setError(err instanceof Error ? err.message : t('softwareLicenses', 'deleteFailed', 'Delete failed.'));
 
     }
 
@@ -348,7 +357,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
 
 
-  const productName = selected?.AM_ProductName || selected?.Title || 'License';
+  const productName = selected?.AM_ProductName || selected?.Title || t('softwareLicenses', 'licenseDefault', 'License');
 
 
 
@@ -362,13 +371,13 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
         <div className={styles.inlineRow}>
 
-          <Field label="Product name" className={styles.inlineField}>
+          <Field label={t('softwareLicenses', 'productName', 'Product name')} className={styles.inlineField}>
 
-            <Input value={title} onChange={(_, d) => setTitle(d.value)} placeholder="e.g. Microsoft 365 E3" />
+            <Input value={title} onChange={(_, d) => setTitle(d.value)} placeholder={t('softwareLicenses', 'productPlaceholder', 'e.g. Microsoft 365 E3')} />
 
           </Field>
 
-          <Field label="Total seats" className={styles.inlineFieldNarrow}>
+          <Field label={t('softwareLicenses', 'totalSeats', 'Total seats')} className={styles.inlineFieldNarrow}>
 
             <Input type="number" value={seats} onChange={(_, d) => setSeats(d.value)} />
 
@@ -388,7 +397,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
             >
 
-              Add license
+              {t('softwareLicenses', 'addLicense', 'Add license')}
 
             </Button>
 
@@ -398,7 +407,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
         {loading ? (
 
-          <Spinner label="Loading licenses..." />
+          <Spinner label={t('softwareLicenses', 'loadingLicenses', 'Loading licenses...')} />
 
         ) : (
 
@@ -410,15 +419,15 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                 <TableRow>
 
-                  <TableHeaderCell>Product</TableHeaderCell>
+                  <TableHeaderCell>{t('softwareLicenses', 'product', 'Product')}</TableHeaderCell>
 
-                  <TableHeaderCell>Vendor</TableHeaderCell>
+                  <TableHeaderCell>{t('softwareLicenses', 'vendor', 'Vendor')}</TableHeaderCell>
 
-                  <TableHeaderCell>Seats</TableHeaderCell>
+                  <TableHeaderCell>{t('softwareLicenses', 'seats', 'Seats')}</TableHeaderCell>
 
-                  <TableHeaderCell>Expiry</TableHeaderCell>
+                  <TableHeaderCell>{t('softwareLicenses', 'expiry', 'Expiry')}</TableHeaderCell>
 
-                  <TableHeaderCell>Actions</TableHeaderCell>
+                  <TableHeaderCell>{t('listView', 'actions', 'Actions')}</TableHeaderCell>
 
                 </TableRow>
 
@@ -436,7 +445,10 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                     <TableCell>
 
-                      {row.AM_UsedSeats ?? 0}/{row.AM_TotalSeats ?? 0}
+                      {formatMessage(t('softwareLicenses', 'usedTotal', '{used} / {total}'), {
+                        used: row.AM_UsedSeats ?? 0,
+                        total: row.AM_TotalSeats ?? 0
+                      })}
 
                     </TableCell>
 
@@ -452,7 +464,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                           icon={<EyeRegular />}
 
-                          aria-label="View"
+                          aria-label={t('softwareLicenses', 'viewAria', 'View')}
 
                           onClick={() => openView(row)}
 
@@ -464,7 +476,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                           icon={<EditRegular />}
 
-                          aria-label="Edit"
+                          aria-label={t('softwareLicenses', 'editAria', 'Edit')}
 
                           onClick={() => openEdit(row)}
 
@@ -476,7 +488,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                           icon={<DeleteRegular />}
 
-                          aria-label="Delete"
+                          aria-label={t('softwareLicenses', 'deleteAria', 'Delete')}
 
                           onClick={() => void handleDelete(row.Id)}
 
@@ -506,9 +518,9 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
         open={panelOpen}
 
-        title={panelMode === 'edit' ? `Edit ${productName}` : productName}
+        title={panelMode === 'edit' ? formatMessage(t('softwareLicenses', 'editTitle', 'Edit {name}'), { name: productName }) : productName}
 
-        subtitle={panelMode === 'view' ? 'Software license details' : 'Update license pool and seat counts'}
+        subtitle={panelMode === 'view' ? t('softwareLicenses', 'detailsTitle', 'Software license details') : t('softwareLicenses', 'updateDesc', 'Update license pool and seat counts')}
 
         onClose={closePanel}
 
@@ -520,7 +532,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               <Button appearance="secondary" onClick={closePanel}>
 
-                Close
+                {t('common', 'close', 'Close')}
 
               </Button>
 
@@ -528,7 +540,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                 <Button appearance="primary" icon={<EditRegular />} onClick={() => selected && openEdit(selected)}>
 
-                  Edit
+                  {t('common', 'edit', 'Edit')}
 
                 </Button>
 
@@ -542,7 +554,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               <Button appearance="secondary" onClick={closePanel} disabled={saving}>
 
-                Cancel
+                {t('common', 'cancel', 'Cancel')}
 
               </Button>
 
@@ -558,7 +570,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               >
 
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? t('common', 'saving', 'Saving...') : t('common', 'save', 'Save')}
 
               </Button>
 
@@ -576,47 +588,74 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
             <div className={styles.form}>
 
-              <ReadonlyField label="Product name" value={selected.AM_ProductName || selected.Title} />
-
-              <ReadonlyField label="Vendor" value={selected.AM_Vendor?.Title} />
-
               <ReadonlyField
-
-                label="Seats"
-
-                value={`${selected.AM_UsedSeats ?? 0} used / ${selected.AM_TotalSeats ?? 0} total`}
-
+                label={t('softwareLicenses', 'productName', 'Product name')}
+                value={selected.AM_ProductName || selected.Title}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
               />
 
               <ReadonlyField
+                label={t('softwareLicenses', 'vendor', 'Vendor')}
+                value={selected.AM_Vendor?.Title}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
+              />
 
-                label="Available seats"
+              <ReadonlyField
+                label={t('softwareLicenses', 'seats', 'Seats')}
+                value={formatMessage(t('softwareLicenses', 'seatsDetail', '{used} used / {total} total'), {
+                  used: selected.AM_UsedSeats ?? 0,
+                  total: selected.AM_TotalSeats ?? 0
+                })}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
+              />
 
+              <ReadonlyField
+                label={t('softwareLicenses', 'availableSeats', 'Available seats')}
                 value={
-
                   selected.AM_AvailableSeats ??
-
                   Math.max(0, (selected.AM_TotalSeats ?? 0) - (selected.AM_UsedSeats ?? 0))
-
                 }
-
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
               />
-
-              <ReadonlyField label="Expiry date" value={formatDate(selected.AM_ExpiryDate)} />
 
               <ReadonlyField
-
-                label="Cost"
-
-                value={selected.AM_Cost !== undefined ? selected.AM_Cost.toLocaleString() : undefined}
-
+                label={t('softwareLicenses', 'expiryDate', 'Expiry date')}
+                value={formatDate(selected.AM_ExpiryDate)}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
               />
 
-              <ReadonlyField label="License key" value={selected.AM_LicenseKey} />
+              <ReadonlyField
+                label={t('softwareLicenses', 'cost', 'Cost')}
+                value={selected.AM_Cost !== undefined ? selected.AM_Cost.toLocaleString() : undefined}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
+              />
 
-              <ReadonlyField label="Active" value={selected.AM_IsActive ?? true} />
+              <ReadonlyField
+                label={t('softwareLicenses', 'licenseKey', 'License key')}
+                value={selected.AM_LicenseKey}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
+              />
 
-              <ReadonlyField label="Notes" value={selected.AM_Notes} />
+              <ReadonlyField
+                label={t('softwareLicenses', 'active', 'Active')}
+                value={selected.AM_IsActive ?? true}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
+              />
+
+              <ReadonlyField
+                label={t('softwareLicenses', 'notes', 'Notes')}
+                value={selected.AM_Notes}
+                yesText={t('softwareLicenses', 'yes', 'Yes')}
+                noText={t('softwareLicenses', 'no', 'No')}
+              />
 
             </div>
 
@@ -624,7 +663,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
             <div className={styles.form}>
 
-              <Field label="Product name" required>
+              <Field label={t('softwareLicenses', 'productName', 'Product name')} required>
 
                 <Input
 
@@ -636,7 +675,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               </Field>
 
-              <Field label="Vendor">
+              <Field label={t('softwareLicenses', 'vendor', 'Vendor')}>
 
                 <Text className={styles.readonlyValue}>{selected.AM_Vendor?.Title || '—'}</Text>
 
@@ -644,7 +683,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               <div className={styles.grid}>
 
-                <Field label="Total seats" required>
+                <Field label={t('softwareLicenses', 'totalSeats', 'Total seats')} required>
 
                   <Input
 
@@ -662,7 +701,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                 </Field>
 
-                <Field label="Used seats">
+                <Field label={t('softwareLicenses', 'usedSeats', 'Used seats')}>
 
                   <Input
 
@@ -684,7 +723,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               <div className={styles.grid}>
 
-                <Field label="Expiry date">
+                <Field label={t('softwareLicenses', 'expiryDate', 'Expiry date')}>
 
                   <Input
 
@@ -698,7 +737,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
                 </Field>
 
-                <Field label="Cost">
+                <Field label={t('softwareLicenses', 'cost', 'Cost')}>
 
                   <Input
 
@@ -714,7 +753,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               </div>
 
-              <Field label="License key">
+              <Field label={t('softwareLicenses', 'licenseKey', 'License key')}>
 
                 <Input
 
@@ -728,7 +767,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               <Checkbox
 
-                label="Active"
+                label={t('softwareLicenses', 'active', 'Active')}
 
                 checked={editForm.AM_IsActive ?? true}
 
@@ -736,7 +775,7 @@ export const SoftwareLicensesPage: React.FC<ISoftwareLicensesPageProps> = ({ sof
 
               />
 
-              <Field label="Notes">
+              <Field label={t('softwareLicenses', 'notes', 'Notes')}>
 
                 <Textarea
 

@@ -60,7 +60,7 @@ import {
   SETTINGS_SELF_SAVE_PAGES,
   SettingsPageId
 } from './SettingsSidebar';
-import { SETTINGS_PAGE_BY_ID, isSettingsLookupPage } from './settingsPageMeta';
+import { SETTINGS_PAGE_BY_ID as SETTINGS_PAGE_META, isSettingsLookupPage } from './settingsPageMeta';
 import { SettingsPageHeader } from './SettingsPageHeader';
 import { SampleDataSettingsSection } from './SampleDataSettingsSection';
 import { scrollAppContentToTop } from '../../utils/scrollAppContentToTop';
@@ -83,6 +83,11 @@ import {
 import { buildLegacyTicketPrefix } from '../../lib/workflow-settings/numberingEngine';
 import type { IWorkflowSettings } from '../../models/IWorkflowSettings';
 import type { FormSettings } from '../../lib/form-config/types';
+import { useTranslation } from '../../i18n/LocaleContext';
+import {
+  getLocalizedSettingsPageDescription,
+  getLocalizedSettingsPageLabel
+} from '../../i18n/pageLabels';
 
 const useStyles = makeStyles({
   card: {
@@ -240,6 +245,19 @@ export const Settings: React.FC<ISettingsProps> = ({
   adminEmails = []
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
+  const localizedSettingsPages = React.useMemo(() => {
+    const pages = {} as Record<SettingsTab, (typeof SETTINGS_PAGE_META)[SettingsTab]>;
+    (Object.keys(SETTINGS_PAGE_META) as SettingsTab[]).forEach((pageId) => {
+      const page = SETTINGS_PAGE_META[pageId];
+      pages[pageId] = {
+        ...page,
+        label: getLocalizedSettingsPageLabel(pageId, t, page.label),
+        description: getLocalizedSettingsPageDescription(pageId, t, page.description)
+      };
+    });
+    return pages;
+  }, [t]);
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(initialSettingsTab ?? 'general');
   const [setupStatusOpen, setSetupStatusOpen] = React.useState(false);
 
@@ -375,11 +393,11 @@ export const Settings: React.FC<ISettingsProps> = ({
       await riskService.syncAssetStatusChoices(workflowSettings);
       await riskService.syncAssetDropdownChoices(formSettings);
       setMessageIntent('success');
-      setMessage('Settings saved successfully.');
+      setMessage(t('onboarding', 'settingsSaved'));
       onSaved();
     } catch (err) {
       setMessageIntent('error');
-      setMessage(err instanceof Error ? err.message : 'Failed to save settings.');
+      setMessage(err instanceof Error ? err.message : t('errors', 'saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -420,25 +438,25 @@ export const Settings: React.FC<ISettingsProps> = ({
           style={{ marginBottom: tokens.spacingVerticalL }}
           actions={
             <Button appearance="secondary" icon={<SettingsRegular />} onClick={handleOpenSetupStatus}>
-              View setup status
+              {t('onboarding', 'viewSetupStatus')}
             </Button>
           }
         >
           {provisioningStatus.isComplete
-            ? 'All required SharePoint lists are ready.'
-            : 'Setup incomplete — some lists still need attention.'}
+            ? t('onboarding', 'listsReady')
+            : t('onboarding', 'listsIncomplete')}
         </AppMessageBar>
       )}
 
       {!settings && setupIncomplete && (
         <AppMessageBar intent="info" style={{ marginTop: tokens.spacingVerticalL }}>
-          Application settings will be available after setup creates the <strong>AppSettings</strong> list.
+          {t('onboarding', 'settingsAfterSetup')}
         </AppMessageBar>
       )}
 
       {!settings && !setupIncomplete && (
         <AppMessageBar intent="warning" style={{ marginTop: tokens.spacingVerticalL }}>
-          App settings not found. Run setup to create lists.
+          {t('onboarding', 'appSettingsNotFound')}
         </AppMessageBar>
       )}
 
@@ -461,7 +479,7 @@ export const Settings: React.FC<ISettingsProps> = ({
 
               {settings.Reviewed !== 'Yes' && (
                 <AppMessageBar intent="info">
-                  Review and save your settings to mark setup as reviewed.
+                  {t('onboarding', 'reviewAndSave')}
                 </AppMessageBar>
               )}
 
@@ -475,7 +493,7 @@ export const Settings: React.FC<ISettingsProps> = ({
                 activeTab !== 'language' &&
                 activeTab !== 'reminders' &&
                 (() => {
-                const pageMeta = SETTINGS_PAGE_BY_ID[activeTab];
+                const pageMeta = localizedSettingsPages[activeTab];
                 return pageMeta ? (
                   <SettingsPageHeader
                     title={pageMeta.label}
@@ -483,7 +501,7 @@ export const Settings: React.FC<ISettingsProps> = ({
                     icon={pageMeta.icon}
                   />
                 ) : (
-                  <SettingsPageHeader title="Settings" icon={SettingsRegular} />
+                  <SettingsPageHeader title={t('nav', 'settings', 'Settings')} icon={SettingsRegular} />
                 );
               })()}
 
@@ -672,9 +690,9 @@ export const Settings: React.FC<ISettingsProps> = ({
               {activeTab === 'appAdministrators' && (
                 <AppAdministratorsTab
                   riskService={riskService}
-                  pageTitle={SETTINGS_PAGE_BY_ID.appAdministrators.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.appAdministrators.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.appAdministrators.icon}
+                  pageTitle={localizedSettingsPages.appAdministrators.label}
+                  pageDescription={localizedSettingsPages.appAdministrators.description}
+                  pageIcon={localizedSettingsPages.appAdministrators.icon}
                 />
               )}
 
@@ -682,17 +700,17 @@ export const Settings: React.FC<ISettingsProps> = ({
                 <RolesAndPermissionsTab
                   roleService={roleService}
                   assetService={riskService}
-                  pageTitle={SETTINGS_PAGE_BY_ID.rolesAndPermissions.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.rolesAndPermissions.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.rolesAndPermissions.icon}
+                  pageTitle={localizedSettingsPages.rolesAndPermissions.label}
+                  pageDescription={localizedSettingsPages.rolesAndPermissions.description}
+                  pageIcon={localizedSettingsPages.rolesAndPermissions.icon}
                 />
               )}
 
               {activeTab === 'language' && (
                 <LanguageSettingsTab
-                  pageTitle={SETTINGS_PAGE_BY_ID.language.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.language.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.language.icon}
+                  pageTitle={localizedSettingsPages.language.label}
+                  pageDescription={localizedSettingsPages.language.description}
+                  pageIcon={localizedSettingsPages.language.icon}
                 />
               )}
 
@@ -700,18 +718,18 @@ export const Settings: React.FC<ISettingsProps> = ({
                 <IntuneSyncTab
                   aadHttpClientFactory={aadHttpClientFactory}
                   intuneSyncService={intuneSyncService}
-                  pageTitle={SETTINGS_PAGE_BY_ID.intuneSync.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.intuneSync.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.intuneSync.icon}
+                  pageTitle={localizedSettingsPages.intuneSync.label}
+                  pageDescription={localizedSettingsPages.intuneSync.description}
+                  pageIcon={localizedSettingsPages.intuneSync.icon}
                 />
               )}
 
               {activeTab === 'bulkImport' && importExportService && (
                 <BulkImportTab
                   importExportService={importExportService}
-                  pageTitle={SETTINGS_PAGE_BY_ID.bulkImport.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.bulkImport.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.bulkImport.icon}
+                  pageTitle={localizedSettingsPages.bulkImport.label}
+                  pageDescription={localizedSettingsPages.bulkImport.description}
+                  pageIcon={localizedSettingsPages.bulkImport.icon}
                   onImported={onLookupDataChanged}
                 />
               )}
@@ -727,9 +745,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                     softwareService={softwareService}
                     workflowSettings={workflowSettings}
                     adminEmails={adminEmails}
-                    pageTitle={SETTINGS_PAGE_BY_ID.reminders.label}
-                    pageDescription={SETTINGS_PAGE_BY_ID.reminders.description}
-                    pageIcon={SETTINGS_PAGE_BY_ID.reminders.icon}
+                    pageTitle={localizedSettingsPages.reminders.label}
+                    pageDescription={localizedSettingsPages.reminders.description}
+                    pageIcon={localizedSettingsPages.reminders.icon}
                   />
                 )}
 
@@ -740,9 +758,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupCategories.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupCategories.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupCategories.icon}
+                  pageTitle={localizedSettingsPages.lookupCategories.label}
+                  pageDescription={localizedSettingsPages.lookupCategories.description}
+                  pageIcon={localizedSettingsPages.lookupCategories.icon}
                 />
               )}
 
@@ -752,9 +770,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupSubCategories.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupSubCategories.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupSubCategories.icon}
+                  pageTitle={localizedSettingsPages.lookupSubCategories.label}
+                  pageDescription={localizedSettingsPages.lookupSubCategories.description}
+                  pageIcon={localizedSettingsPages.lookupSubCategories.icon}
                 />
               )}
 
@@ -767,9 +785,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupLikelihood.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupLikelihood.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupLikelihood.icon}
+                  pageTitle={localizedSettingsPages.lookupLikelihood.label}
+                  pageDescription={localizedSettingsPages.lookupLikelihood.description}
+                  pageIcon={localizedSettingsPages.lookupLikelihood.icon}
                 />
               )}
 
@@ -782,9 +800,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupConsequences.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupConsequences.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupConsequences.icon}
+                  pageTitle={localizedSettingsPages.lookupConsequences.label}
+                  pageDescription={localizedSettingsPages.lookupConsequences.description}
+                  pageIcon={localizedSettingsPages.lookupConsequences.icon}
                 />
               )}
 
@@ -795,9 +813,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupRiskProfile.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupRiskProfile.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupRiskProfile.icon}
+                  pageTitle={localizedSettingsPages.lookupRiskProfile.label}
+                  pageDescription={localizedSettingsPages.lookupRiskProfile.description}
+                  pageIcon={localizedSettingsPages.lookupRiskProfile.icon}
                 />
               )}
 
@@ -808,9 +826,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupRiskResponse.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupRiskResponse.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupRiskResponse.icon}
+                  pageTitle={localizedSettingsPages.lookupRiskResponse.label}
+                  pageDescription={localizedSettingsPages.lookupRiskResponse.description}
+                  pageIcon={localizedSettingsPages.lookupRiskResponse.icon}
                 />
               )}
 
@@ -821,9 +839,9 @@ export const Settings: React.FC<ISettingsProps> = ({
                   riskService={riskService}
                   settings={settings}
                   onChanged={() => onLookupDataChanged?.()}
-                  pageTitle={SETTINGS_PAGE_BY_ID.lookupRiskStrategy.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.lookupRiskStrategy.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.lookupRiskStrategy.icon}
+                  pageTitle={localizedSettingsPages.lookupRiskStrategy.label}
+                  pageDescription={localizedSettingsPages.lookupRiskStrategy.description}
+                  pageIcon={localizedSettingsPages.lookupRiskStrategy.icon}
                 />
               )}
             </div>
@@ -836,7 +854,7 @@ export const Settings: React.FC<ISettingsProps> = ({
                 disabled={saving}
                 icon={saving ? <Spinner size="tiny" /> : <SaveRegular />}
               >
-                {saving ? 'Saving...' : 'Save settings'}
+                {saving ? t('onboarding', 'saving') : t('onboarding', 'saveSettings')}
               </Button>
             </CardFooter>
             )}
@@ -849,17 +867,17 @@ export const Settings: React.FC<ISettingsProps> = ({
         <RightDetailPanel
           open={setupStatusOpen}
           wide
-          title="Setup Status"
+          title={t('onboarding', 'setupStatus')}
           subtitle={
             provisioningStatus.isComplete
-              ? 'All lists are ready'
-              : 'Some lists need setup'
+              ? t('onboarding', 'allListsReady')
+              : t('onboarding', 'someListsNeedSetup')
           }
           onClose={handleCloseSetupStatus}
           footer={
             <>
               <Button appearance="secondary" onClick={handleCloseSetupStatus}>
-                Close
+                {t('onboarding', 'close')}
               </Button>
               {onRefreshSetupStatus && (
                 <Button
@@ -868,12 +886,12 @@ export const Settings: React.FC<ISettingsProps> = ({
                   disabled={refreshingSetupStatus}
                   onClick={onRefreshSetupStatus}
                 >
-                  Refresh
+                  {t('onboarding', 'refresh')}
                 </Button>
               )}
               {!provisioningStatus.isComplete && onRunSetup && (
                 <Button appearance="primary" icon={<PlayRegular />} onClick={handleRunSetupFromPanel}>
-                  Complete Setup
+                  {t('onboarding', 'completeSetup')}
                 </Button>
               )}
             </>

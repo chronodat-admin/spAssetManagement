@@ -8,6 +8,7 @@ import {
 } from '@fluentui/react-components';
 import { DismissRegular, SearchRegular } from '@fluentui/react-icons';
 import { AppDropdown } from '../Dropdown/AppDropdown';
+import { useTranslation } from '../../i18n/LocaleContext';
 
 const useStyles = makeStyles({
   root: {
@@ -74,6 +75,8 @@ export const ListFiltersBar: React.FC<IListFiltersBarProps> = ({
   showClear = false
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('listView', 'searchPlaceholder', 'Search...');
 
   return (
     <div className={styles.root}>
@@ -82,9 +85,9 @@ export const ListFiltersBar: React.FC<IListFiltersBarProps> = ({
           className={styles.searchInput}
           value={searchValue}
           onChange={(_, data) => onSearchChange(data.value)}
-          placeholder={searchPlaceholder}
+          placeholder={resolvedSearchPlaceholder}
           contentBefore={<SearchRegular />}
-          aria-label="Search list"
+          aria-label={t('listView', 'searchAria', 'Search list')}
         />
       </div>
 
@@ -114,7 +117,7 @@ export const ListFiltersBar: React.FC<IListFiltersBarProps> = ({
           disabled={!showClear}
           onClick={onClear}
         >
-          Clear filters
+          {t('listView', 'clearFilters', 'Clear filters')}
         </Button>
       )}
     </div>
