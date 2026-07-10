@@ -156,7 +156,7 @@ export const LookupListManager: React.FC<ILookupListManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [listTitle, riskService]);
+  }, [listTitle, riskService, t]);
 
   React.useEffect(() => {
     void loadItems();
