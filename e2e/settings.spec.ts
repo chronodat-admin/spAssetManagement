@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { appRoot, bootstrapApp, expectPageHeading, navigateSidebar } from './helpers/app';
+import { appRoot, bootstrapApp, expectPageHeading, navigateSettingsTab, navigateSidebar } from './helpers/app';
 import { createSharedPage, disposeSharedPage, type SharedPageSuite } from './helpers/sharedPage';
 
 const SETTINGS_TABS: Array<{ label: string; heading: string; assertion: string | RegExp }> = [
@@ -51,8 +51,8 @@ test.describe('Settings tabs', () => {
     test(`opens ${tab.label}`, async () => {
       const page = suite!.page;
       const root = appRoot(page);
-      await root.getByRole('button', { name: tab.label, exact: true }).click();
-      await expect(root.getByRole('heading', { name: tab.heading })).toBeVisible();
+      await navigateSettingsTab(page, tab.label);
+      await expect(root.getByRole('heading', { name: tab.heading, level: 2 })).toBeVisible();
       await expect(root.getByText(tab.assertion)).toBeVisible();
     });
   }

@@ -20,7 +20,11 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "website" / "marketing"
 SCREENSHOTS = ROOT / "docs" / "user-guide" / "images"
 BRAND = ROOT / "assets" / "brand"
-ICON = ROOT / "sharepoint" / "assets" / "asset-management-icon-96.png"
+ICON = BRAND / "app-icon.png"
+
+APP_NAME = "Asset Management Hub"
+APP_SUBTITLE = "Hardware & software tracking for SharePoint and Teams"
+FOOTER_PRODUCT = "Asset Management Hub for SharePoint and Teams"
 
 FEATURE_SHEET = (2400, 1600)
 SHOWCASE_SHEET = (2400, 1350)
@@ -43,6 +47,11 @@ FOOTER_TRUST_PILLS = [
     "Your data stays in your tenant",
     "One license per site collection",
     "14-day free trial",
+]
+
+PLATFORM_BADGES: list[tuple[str, tuple[int, int, int]]] = [
+    ("SharePoint Online", BRAND_BLUE),
+    ("Microsoft Teams", ACCENT_PURPLE),
 ]
 
 
@@ -169,7 +178,7 @@ def draw_footer_bar(canvas: Image.Image, w: int, h: int) -> None:
     draw.rectangle((0, y0, w, h), fill=WHITE)
     draw.line((0, y0, w, y0), fill=BORDER, width=2)
     paste_app_icon(canvas, (48, y0 + 16, 88, y0 + 56))
-    draw.text((100, y0 + 18), "Asset Management for Microsoft 365", fill=TEXT, font=FONT_MD)
+    draw.text((100, y0 + 18), FOOTER_PRODUCT, fill=TEXT, font=FONT_MD)
     draw.text((100, y0 + 44), "One license per site collection  ·  no per-seat fees", fill=MUTED, font=FONT_XS)
     pill_colors = [BRAND_BLUE, ACCENT_TEAL, ACCENT_PURPLE, ACCENT_GREEN]
     gap = 12
@@ -180,6 +189,15 @@ def draw_footer_bar(canvas: Image.Image, w: int, h: int) -> None:
     for label, color, pw in zip(FOOTER_TRUST_PILLS, pill_colors, widths):
         draw_outlined_pill(draw, x, py, label, color)
         x += pw + gap
+
+
+def draw_platform_badges(draw: ImageDraw.ImageDraw, w: int, y: int = 96) -> None:
+    x = w - 48
+    for label, color in reversed(PLATFORM_BADGES):
+        tw = draw_text_width(label, FONT_BADGE) + 24
+        x -= tw
+        draw_badge(draw, x, y, label, color)
+        x -= 12
 
 
 def draw_badge(draw: ImageDraw.ImageDraw, x: int, y: int, label: str, fill: tuple[int, int, int]) -> None:
@@ -205,22 +223,22 @@ def paste_screenshot(canvas: Image.Image, name: str, box: tuple[int, int, int, i
 
 
 FEATURES: list[tuple[str, str, tuple[int, int, int]]] = [
-    ("Dashboard & KPIs", "Open, in-progress, and critical risk counts at a glance.", BRAND_BLUE),
-    ("Risk heatmap", "5×5 inherent and residual matrices with drill-down.", ACCENT_TEAL),
-    ("Financial exposure", "Total potential cost across assessed risks.", BRAND_NAVY),
-    ("Portfolio filters", "Filter dashboard and lists by business or project.", ACCENT_PURPLE),
-    ("All risks list", "Search, sort, and manage the full risk register.", BRAND_BLUE),
-    ("Status views", "Open, In Progress, Closed, Overdue, and due-date views.", ACCENT_TEAL),
-    ("Risk forms", "Create and edit risks with dynamic SPFx forms.", BRAND_NAVY),
-    ("Form customizer", "Enhanced native SharePoint Risks list forms.", ACCENT_GREEN),
-    ("Compliance frameworks", "ISO 27001, SOC 2, NIST CSF, and custom frameworks.", ACCENT_TEAL),
-    ("Assessments", "Track evidence, scoring, and assessment progress.", BRAND_BLUE),
+    ("Dashboard & KPIs", "Total, assigned, available, and overdue asset counts at a glance.", BRAND_BLUE),
+    ("Status charts", "Distribution by status, category, and location.", ACCENT_TEAL),
+    ("Asset register", "Search, filter, and manage hardware and software assets.", BRAND_NAVY),
+    ("Lifecycle views", "Assigned, available, in repair, retired, and deleted views.", ACCENT_PURPLE),
+    ("Assign assets", "Assign custodians with notes and optional due dates.", BRAND_BLUE),
+    ("Book & request", "Reserve assets and submit or approve equipment requests.", ACCENT_TEAL),
+    ("Return assets", "Confirm return condition and restore availability.", BRAND_NAVY),
+    ("Scan & inventory", "Barcode/QR lookup and physical inventory cycles.", ACCENT_GREEN),
+    ("Software licenses", "Track seats, vendors, and renewal dates.", ACCENT_TEAL),
+    ("Maintenance", "Log repairs, inspections, and service schedules.", BRAND_BLUE),
     ("Report builder", "Pick columns and export CSV from any list.", ACCENT_PURPLE),
-    ("Workflow email", "Configurable notifications via Microsoft Graph Mail.Send.", BRAND_NAVY),
-    ("Settings & lookups", "Categories, scales, tags, and form templates.", ACCENT_TEAL),
-    ("Setup wizard", "Provision 13+ SharePoint lists in one click.", BRAND_BLUE),
-    ("Teams tabs", "Channel tab and personal app in Microsoft Teams.", ACCENT_PURPLE),
-    ("Per-site license", "Subscription check with 14-day trial.", ACCENT_GREEN),
+    ("Depreciation", "Review depreciation schedules on asset financials.", BRAND_NAVY),
+    ("Audit log", "Search create, update, and delete actions.", ACCENT_TEAL),
+    ("Lookup lists", "Categories, vendors, locations, and projects.", BRAND_BLUE),
+    ("Settings & forms", "Appearance, tags, roles, and field visibility.", ACCENT_PURPLE),
+    ("SharePoint & Teams", "Web part, form customizer, and Teams tabs.", ACCENT_GREEN),
 ]
 
 ALL_FEATURES: list[tuple[str, tuple[int, int, int], list[tuple[str, str, str, tuple[int, int, int]]]]] = [
@@ -228,50 +246,50 @@ ALL_FEATURES: list[tuple[str, tuple[int, int, int], list[tuple[str, str, str, tu
         "Dashboard",
         BRAND_BLUE,
         [
-            ("KPI cards", "Open, in progress, closed, and critical counts.", BRAND_BLUE),
-            ("Heatmap", "Inherent likelihood × impact matrix.", ACCENT_TEAL),
-            ("Financial exposure", "Top risks by potential cost.", BRAND_NAVY),
-            ("Portfolio filters", "Scope by business or project.", ACCENT_PURPLE),
+            ("KPI cards", "Total, assigned, available, and overdue counts.", BRAND_BLUE),
+            ("Status charts", "Breakdown by status and category.", ACCENT_TEAL),
+            ("Location charts", "See where assets are deployed.", BRAND_NAVY),
+            ("Drill-down", "Click cards to open matching lists.", ACCENT_PURPLE),
         ],
     ),
     (
-        "Risk register",
+        "Asset register",
         ACCENT_TEAL,
         [
-            ("All risks", "Search, filter, and bulk actions.", ACCENT_TEAL),
-            ("Status views", "Open, overdue, due today, due this week.", BRAND_BLUE),
-            ("Assignments", "Owner, due dates, and priority.", BRAND_NAVY),
-            ("Attachments", "Files linked to each risk item.", ACCENT_GREEN),
+            ("All assets", "Search, sort, table/list/card views.", ACCENT_TEAL),
+            ("Create & edit", "Tabs for general, financial, assignment, maintenance.", BRAND_BLUE),
+            ("Filtered views", "Assigned to me, available, repair, retired.", BRAND_NAVY),
+            ("Attachments", "Files linked to each asset record.", ACCENT_GREEN),
+        ],
+    ),
+    (
+        "Operations",
+        BRAND_NAVY,
+        [
+            ("Assign & return", "Custodian workflows with condition notes.", BRAND_NAVY),
+            ("Book & request", "Reservations and approval queues.", BRAND_BLUE),
+            ("Scan asset", "Locate items by barcode or QR label.", ACCENT_TEAL),
+            ("Inventory", "Record scans during inventory cycles.", ACCENT_PURPLE),
         ],
     ),
     (
         "Analysis",
-        BRAND_NAVY,
-        [
-            ("Risk rating", "Inherent and residual side by side.", BRAND_NAVY),
-            ("Report builder", "Custom columns and CSV export.", BRAND_BLUE),
-            ("Risk age", "Average days open across portfolio.", ACCENT_TEAL),
-            ("Latest risks", "Recently updated register items.", ACCENT_PURPLE),
-        ],
-    ),
-    (
-        "Compliance",
         ACCENT_GREEN,
         [
-            ("Frameworks", "Built-in and custom GRC frameworks.", ACCENT_GREEN),
-            ("Assessments", "Evidence, scoring, and due dates.", ACCENT_TEAL),
-            ("Dashboard", "Posture, progress, and print view.", BRAND_BLUE),
-            ("Control mapping", "Link risks to compliance controls.", BRAND_NAVY),
+            ("Report builder", "Custom columns and CSV export.", ACCENT_GREEN),
+            ("Depreciation", "Schedules on asset financial tab.", BRAND_BLUE),
+            ("Audit log", "Administrator action history.", ACCENT_TEAL),
+            ("Software licenses", "Seat usage and renewals.", BRAND_NAVY),
         ],
     ),
     (
         "Administration",
         ACCENT_PURPLE,
         [
-            ("Workflows", "Email rules for create, assign, update.", ACCENT_PURPLE),
-            ("Templates", "Customizable notification content.", BRAND_BLUE),
-            ("Appearance", "Themes, accent bar, and branding.", ACCENT_TEAL),
-            ("Lookups", "Categories, scales, businesses, projects.", BRAND_NAVY),
+            ("Settings", "General, appearance, forms, tags, subscription.", ACCENT_PURPLE),
+            ("Roles", "App administrators and UI permissions.", BRAND_BLUE),
+            ("Lookups", "Categories, vendors, locations, projects.", ACCENT_TEAL),
+            ("Workflows", "Email notifications via Graph Mail.Send.", BRAND_NAVY),
         ],
     ),
     (
@@ -279,9 +297,9 @@ ALL_FEATURES: list[tuple[str, tuple[int, int, int], list[tuple[str, str, str, tu
         BRAND_BLUE,
         [
             ("SharePoint", "Modern full-width pages and App Catalog.", BRAND_BLUE),
-            ("Microsoft Teams", "Sync from catalog to Teams tabs.", ACCENT_PURPLE),
-            ("Native forms", "SPFx form customizer on Risks list.", ACCENT_TEAL),
-            ("Mail.Send", "One-time tenant API access approval.", ACCENT_GREEN),
+            ("Microsoft Teams", "Channel tab and personal app.", ACCENT_PURPLE),
+            ("Native forms", "Form customizer on Assets list.", ACCENT_TEAL),
+            ("Setup wizard", "Provision SharePoint lists in one click.", ACCENT_GREEN),
         ],
     ),
 ]
@@ -294,13 +312,11 @@ def build_feature_grid_sheet() -> Image.Image:
     draw_triangle_pattern(draw, (w, h))
     draw_header_bar(draw, w)
     paste_app_icon(canvas, (48, 28, 108, 88))
-    draw.text((120, 34), "Asset Management", fill=TEXT, font=FONT_XL)
-    draw.text((120, 78), "Risk register & GRC for Microsoft 365", fill=MUTED, font=FONT_MD)
+    draw.text((120, 34), APP_NAME, fill=TEXT, font=FONT_XL)
+    draw.text((120, 78), APP_SUBTITLE, fill=MUTED, font=FONT_MD)
     place_chronodat_logo_header(canvas)
-    draw_badge(draw, w - 420, 96, "Microsoft 365", BRAND_BLUE)
-    draw_badge(draw, w - 280, 96, "SharePoint SPFx", ACCENT_TEAL)
-    draw_badge(draw, w - 130, 96, "Teams app", ACCENT_PURPLE)
-    draw.text((48, 148), "Manage risks, compliance, and reporting in one SharePoint-native hub", fill=TEXT, font=FONT_XXL)
+    draw_platform_badges(draw, w)
+    draw.text((48, 148), "Track assets, assignments, and operations in one SharePoint-native hub", fill=TEXT, font=FONT_XXL)
 
     grid_x, grid_y, col_w, row_h = 48, 240, 280, 200
     for idx, (title, body, color) in enumerate(FEATURES):
@@ -313,7 +329,7 @@ def build_feature_grid_sheet() -> Image.Image:
         draw_multiline(draw, (x + 16, y + 58), body, FONT_FEATURE_BODY, MUTED, col_w - 32)
 
     paste_screenshot(canvas, "01-dashboard.png", (1280, 280, 2280, 980))
-    paste_screenshot(canvas, "02-all-risks.png", (1780, 420, 2280, 920))
+    paste_screenshot(canvas, "02-all-assets.png", (1780, 420, 2280, 920))
     draw_footer_bar(canvas, w, h)
     return canvas
 
@@ -325,12 +341,12 @@ def build_showcase_sheet(headline: str, screenshot: str, panel_title: str, panel
     draw_triangle_pattern(draw, (w, h))
     draw_header_bar(draw, w)
     paste_app_icon(canvas, (48, 28, 108, 88))
-    draw.text((120, 34), "Asset Management", fill=TEXT, font=FONT_XL)
-    draw.text((120, 78), "Risk register & GRC for Microsoft 365", fill=MUTED, font=FONT_MD)
+    draw.text((120, 34), APP_NAME, fill=TEXT, font=FONT_XL)
+    draw.text((120, 78), APP_SUBTITLE, fill=MUTED, font=FONT_MD)
     place_chronodat_logo_header(canvas)
     draw.text((w // 2, 160), headline, fill=TEXT, font=FONT_XL, anchor="mt")
 
-    stats = [("11", "Open"), ("6", "In progress"), ("2", "Critical"), ("17", "Assessed")]
+    stats = [("142", "Total"), ("89", "Assigned"), ("38", "Available"), ("6", "Overdue")]
     sx = 48
     for value, label in stats:
         draw.rounded_rectangle((sx, 240, sx + 140, 340), radius=10, fill=WHITE, outline=BORDER)
@@ -360,9 +376,9 @@ def build_all_features_infographic() -> Image.Image:
     draw_triangle_pattern(draw, (w, h))
     draw_header_bar(draw, w)
     paste_app_icon(canvas, (48, 28, 108, 88))
-    draw.text((120, 34), "Asset Management", fill=TEXT, font=FONT_XL)
+    draw.text((120, 34), APP_NAME, fill=TEXT, font=FONT_XL)
     place_chronodat_logo_header(canvas)
-    draw.text((48, 148), "All Asset Management features — risk register, GRC, and admin", fill=TEXT, font=FONT_XXL)
+    draw.text((48, 148), "All Asset Management Hub features — register, operations, and admin", fill=TEXT, font=FONT_XXL)
 
     y = 240
     card_w, card_h, gap = 640, 250, 24
@@ -389,11 +405,11 @@ def build_surfaces_showcase() -> Image.Image:
     draw_triangle_pattern(draw, (w, h))
     draw_header_bar(draw, w)
     paste_app_icon(canvas, (48, 28, 108, 88))
-    draw.text((120, 34), "Asset Management", fill=TEXT, font=FONT_XL)
+    draw.text((120, 34), APP_NAME, fill=TEXT, font=FONT_XL)
     place_chronodat_logo_header(canvas)
     draw.text(
         (w // 2, 160),
-        "One risk & compliance hub across SharePoint, Teams, and native list forms",
+        "One asset hub across SharePoint, Teams, and native list forms",
         fill=TEXT,
         font=FONT_XL,
         anchor="mt",
@@ -401,8 +417,8 @@ def build_surfaces_showcase() -> Image.Image:
 
     columns = [
         (ACCENT_TEAL, "SharePoint Online", "01-dashboard.png", ["Modern full-width pages", "Tenant App Catalog", "Setup wizard"]),
-        (ACCENT_PURPLE, "Microsoft Teams", "01-dashboard.png", ["Channel & personal tabs", "Same navigation", "Create risks"]),
-        (BRAND_BLUE, "Native Risks list", "12-create-risk-form.png", ["SPFx form customizer", "Enhanced panels", "Same data model"]),
+        (ACCENT_PURPLE, "Microsoft Teams", "01-dashboard.png", ["Channel & personal tabs", "Same navigation", "Assign assets"]),
+        (BRAND_BLUE, "Native Assets list", "02-all-assets.png", ["Form customizer", "Enhanced create/edit panel", "Same data model"]),
     ]
     col_w = (w - 96 - 48) // 3
     for i, (color, title, shot, bullets) in enumerate(columns):
@@ -422,26 +438,26 @@ def build_surfaces_showcase() -> Image.Image:
 
 
 def main() -> None:
-    print("Asset Management marketing one-pagers (programmatic):")
+    print("Asset Management Hub marketing one-pagers (programmatic):")
     outputs = {
         "asset-management-feature-grid.png": build_feature_grid_sheet(),
         "asset-management-dashboard-showcase.png": build_showcase_sheet(
-            "Portfolio visibility with dashboards, heat maps, and financial exposure",
+            "Portfolio visibility with dashboards, KPI cards, and status charts",
             "01-dashboard.png",
             "Dashboard highlights",
-            ["KPI cards and latest risks", "Inherent risk heatmap", "Financial exposure summary", "Print-ready layout"],
+            ["KPI cards for total and assigned assets", "Status and category charts", "Location distribution", "Print-ready layout"],
         ),
         "asset-management-compliance-showcase.png": build_showcase_sheet(
-            "GRC assessments against ISO, SOC 2, NIST, and custom frameworks",
-            "04-compliance-dashboard.png",
-            "Compliance module",
-            ["Framework library", "Assessment tracking", "Compliance dashboard", "First-visit seeding"],
+            "Governed SharePoint lists with audit log and administrator controls",
+            "15-audit-log.png",
+            "Governance & audit",
+            ["Provisioned list schema", "Audit log search", "Role-based settings", "Subscription licensing"],
         ),
         "asset-management-analysis-showcase.png": build_showcase_sheet(
-            "Inherent and residual risk matrices with report builder and CSV export",
-            "03-risk-rating.png",
+            "Report builder, depreciation schedules, and CSV export",
+            "13-reports.png",
             "Analysis tools",
-            ["5×5 risk matrices", "Inherent vs residual", "Report builder", "CSV export"],
+            ["Custom column picker", "Filter by list source", "CSV download", "Depreciation views"],
         ),
         "asset-management-all-features-infographic.png": build_all_features_infographic(),
         "asset-management-surfaces-showcase.png": build_surfaces_showcase(),

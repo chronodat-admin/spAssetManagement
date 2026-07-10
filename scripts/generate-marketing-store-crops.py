@@ -44,7 +44,7 @@ SHEETS = {
 
 FALLBACK_FRAMES = {
     "dashboard-1366x768.png": (
-        "Asset Management Dashboard",
+        "Asset Management Hub Dashboard",
         ["Portfolio KPIs", "Status and category charts", "Assignment and warranty visibility"],
     ),
     "feature-grid-1366x768.png": (
@@ -53,15 +53,15 @@ FALLBACK_FRAMES = {
     ),
     "compliance-1366x768.png": (
         "Governed SharePoint Lists",
-        ["Provisioned list schema", "Audit log and administrator controls", "Microsoft Graph mail approval flow"],
+        ["Provisioned list schema", "Audit log and administrator controls", "Role-based permissions"],
     ),
     "analysis-1366x768.png": (
         "Operations and Reporting",
         ["Depreciation schedules", "Inventory scans", "Report builder exports"],
     ),
     "all-features-1366x768.png": (
-        "Asset Management for Microsoft 365",
-        ["SharePoint Framework app", "Teams and M365 manifests", "Store-ready packaging checks"],
+        "Asset Management Hub",
+        ["SharePoint web part", "Microsoft Teams tabs", "Store-ready packaging checks"],
     ),
 }
 

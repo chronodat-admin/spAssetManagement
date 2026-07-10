@@ -345,7 +345,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     } finally {
       setIsProvisioning(false);
     }
-  }, [provisioningService, provisioningScope, refreshProvisioningStatus, loadData]);
+  }, [provisioningService, provisioningScope, refreshProvisioningStatus, loadData, assetService]);
 
   const handleCreateAsset = React.useCallback((): void => {
     if (!provisioningStatus?.isComplete) {

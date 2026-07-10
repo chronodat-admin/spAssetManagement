@@ -6,7 +6,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+import numpy as np
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 LOGO = ROOT / "assets" / "brand" / "chronodat-logo.png"
@@ -93,24 +94,22 @@ def draw_frosted_backing(
     *,
     radius: int = 10,
 ) -> Image.Image:
-    """Soft white-teal frosted pill behind the wordmark for diagram blending."""
+    """Optional soft backing — skipped on light backgrounds to avoid visible boxes."""
     x0, y0, x1, y1 = box
+    lum = zone_luminance(canvas, x0, y0, x1, y1)
+    if lum > 170:
+        return canvas
+
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
-
-    shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-    shadow_draw = ImageDraw.Draw(shadow)
-    shadow_draw.rounded_rectangle(
-        (x0 + 1, y0 + 3, x1 + 1, y1 + 3),
-        radius=radius,
-        fill=(15, 23, 42, 36),
-    )
-    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=3))
-    canvas = Image.alpha_composite(canvas, shadow)
-
-    draw.rounded_rectangle(box, radius=radius, fill=(255, 255, 255, 168))
-    draw.rounded_rectangle(box, radius=radius, outline=(0, 128, 128, 48), width=1)
+    draw.rounded_rectangle(box, radius=radius, fill=(8, 24, 56, 72))
     return Image.alpha_composite(canvas, layer)
+
+
+def zone_luminance(img: Image.Image, x0: int, y0: int, x1: int, y1: int) -> float:
+    crop = img.crop((x0, y0, x1, y1)).convert("RGB")
+    arr = np.array(crop, dtype=np.float32)
+    return float(np.mean(0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]))
 
 
 def embed_logo(

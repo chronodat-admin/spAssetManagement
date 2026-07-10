@@ -55,8 +55,74 @@ export async function navigateSidebar(page: Page, label: string): Promise<void> 
   await sidebarNav(page).getByRole('button', { name: label, exact: true }).click();
 }
 
+export function settingsAside(page: Page): Locator {
+  return appRoot(page).locator('aside').filter({
+    has: page.getByRole('button', { name: 'Preferences', exact: true })
+  });
+}
+
+export async function navigateSettingsTab(page: Page, tab: string): Promise<void> {
+  await navigateSidebar(page, 'Settings');
+  await expectPageHeading(page, 'Settings');
+  await settingsAside(page).getByRole('button', { name: tab, exact: true }).last().click();
+}
+
+export async function dismissTrialBannerIfVisible(page: Page): Promise<void> {
+  const root = appRoot(page);
+  const dismiss = root.getByRole('button', { name: 'Dismiss trial notice' });
+  if (await dismiss.isVisible().catch(() => false)) {
+    await dismiss.click();
+    await dismiss.waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => undefined);
+  }
+}
+
+export async function waitForDashboardReady(page: Page): Promise<void> {
+  const root = appRoot(page);
+  const content = root.locator('main').last();
+  await dismissTrialBannerIfVisible(page);
+  await content.getByRole('heading', { name: 'Latest Assets', level: 2 }).waitFor({ state: 'visible', timeout: 90_000 });
+  await content
+    .getByRole('table', { name: /Latest assets/i })
+    .waitFor({ state: 'visible', timeout: 90_000 })
+    .catch(() => undefined);
+
+  await expect
+    .poll(
+      async () => {
+        const progressbars = await content.getByRole('progressbar').count();
+        const chartLoading = await content.getByText('Loading chart…').isVisible().catch(() => false);
+        const skeleton = await root.locator('[class*="Skeleton"]').first().isVisible().catch(() => false);
+        return progressbars === 0 && !chartLoading && !skeleton;
+      },
+      { timeout: 90_000, intervals: [500] }
+    )
+    .toBe(true);
+
+  await page.waitForTimeout(1000);
+}
+
+export async function preparePageForScreenshot(page: Page): Promise<void> {
+  const root = appRoot(page);
+  await dismissTrialBannerIfVisible(page);
+  await page
+    .locator('#asset-mgmt-fullscreen-loader')
+    .waitFor({ state: 'detached', timeout: 30_000 })
+    .catch(() => undefined);
+  await expect
+    .poll(
+      async () => {
+        const progressbars = await root.getByRole('progressbar').count();
+        const chartLoading = await root.getByText('Loading chart…').isVisible().catch(() => false);
+        return progressbars === 0 && !chartLoading;
+      },
+      { timeout: 30_000, intervals: [250] }
+    )
+    .toBe(true);
+  await page.waitForTimeout(500);
+}
+
 export async function expectPageHeading(page: Page, heading: string | RegExp): Promise<void> {
-  await expect(appRoot(page).getByRole('heading', { name: heading })).toBeVisible({
+  await expect(appRoot(page).getByRole('heading', { name: heading, level: 1 })).toBeVisible({
     timeout: 60_000
   });
 }

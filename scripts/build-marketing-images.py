@@ -14,19 +14,22 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-PEOPLE_HUB_BRAND = Path(r"C:\spEmployeeDirectory\assets\brand")
+BRAND = ROOT / "assets" / "brand"
 SCREENSHOTS = ROOT / "docs" / "user-guide" / "images"
-ICON = ROOT / "sharepoint" / "assets" / "asset-management-icon-96.png"
-CHRONODAT_MARK = PEOPLE_HUB_BRAND / "chronodat-footer-mark.png"
+ICON = BRAND / "app-icon.png"
+CHRONODAT_MARK = BRAND / "chronodat-footer-mark.png"
+
+APP_NAME_LINE1 = "Asset Management"
+APP_NAME_LINE2 = "Hub"
 OUT_MARKETING = ROOT / "sharepoint" / "assets" / "marketing"
 OUT_WEBSITE = ROOT / "assets" / "website"
 
 # Measured from user-guide screenshots — removes trial/subscribe MessageBar band.
 CROP_OVERRIDES: dict[str, int] = {
-    "01-dashboard.png": 268,
-    "02-all-risks.png": 228,
-    "03-risk-rating.png": 228,
-    "08-report-builder.png": 228,
+    "01-dashboard.png": 155,
+    "02-all-assets.png": 155,
+    "13-reports.png": 155,
+    "05-assign-asset.png": 155,
 }
 
 # Match People Hub hero-banner.png exactly
@@ -51,9 +54,27 @@ LEFT_PANEL_W = 480
 ICON_SIZE = 56
 TITLE_X = 152
 
-# Window boxes measured from People Hub hero-banner.png (1536x1024)
-BACK_WINDOW = (510, 72, 1500, 632)
-FRONT_WINDOW = (840, 418, 1520, 982)
+# Window boxes — shifted right so screenshots never cover the left marketing copy.
+BACK_WINDOW = (620, 80, 1510, 640)
+FRONT_WINDOW = (920, 430, 1520, 970)
+
+# Tight crops on sparse pages (x0, y0, x1, y1 on full screenshot pixels).
+SCREENSHOT_CROPS: dict[str, tuple[int, int, int, int]] = {
+    "05-assign-asset.png": (0, 155, 1920, 620),
+    "01-dashboard.png": (0, 155, 1920, 980),
+    "13-reports.png": (0, 155, 1920, 900),
+    "02-all-assets.png": (0, 155, 1920, 900),
+    "04-available-assets.png": (0, 155, 1920, 900),
+}
+
+# Horizontal anchor when fit-cover would crop into empty page margins.
+SCREENSHOT_ANCHOR_X: dict[str, str] = {
+    "05-assign-asset.png": "left",
+    "02-all-assets.png": "left",
+    "04-available-assets.png": "left",
+    "13-reports.png": "left",
+    "01-dashboard.png": "left",
+}
 
 
 def s(value: int) -> int:
@@ -99,6 +120,8 @@ def detect_trial_banner_bottom(img: Image.Image) -> int:
 
 def prepare_screenshot(path: Path, *, crop_top: int | None = None, crop_box: tuple[int, int, int, int] | None = None) -> Image.Image:
     img = Image.open(path).convert("RGBA")
+    if crop_box is None and path.name in SCREENSHOT_CROPS:
+        crop_box = SCREENSHOT_CROPS[path.name]
     if crop_box:
         img = img.crop(crop_box)
     else:
@@ -110,14 +133,31 @@ def prepare_screenshot(path: Path, *, crop_top: int | None = None, crop_box: tup
     return img
 
 
-def fit_cover(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
-    """Scale to fill the frame; anchor top-center (matches People Hub screenshots)."""
+def fit_cover(
+    img: Image.Image,
+    target_w: int,
+    target_h: int,
+    *,
+    anchor_x: str = "center",
+    anchor_y: str = "top",
+) -> Image.Image:
+    """Scale to fill the frame."""
     scale = max(target_w / img.width, target_h / img.height)
     new_w = max(1, int(img.width * scale))
     new_h = max(1, int(img.height * scale))
     resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-    left = max(0, (new_w - target_w) // 2)
-    top = 0
+    if anchor_x == "left":
+        left = 0
+    elif anchor_x == "right":
+        left = max(0, new_w - target_w)
+    else:
+        left = max(0, (new_w - target_w) // 2)
+    if anchor_y == "bottom":
+        top = max(0, new_h - target_h)
+    elif anchor_y == "center":
+        top = max(0, (new_h - target_h) // 2)
+    else:
+        top = 0
     return resized.crop((left, top, left + target_w, top + target_h))
 
 
@@ -148,13 +188,15 @@ def place_screenshot(
     radius: int = 12,
     crop_top: int | None = None,
     crop_box: tuple[int, int, int, int] | None = None,
+    anchor_x: str | None = None,
 ) -> None:
     img = prepare_screenshot(path, crop_top=crop_top, crop_box=crop_box)
     x0, y0, x1, y1 = (s(v) for v in box)
     target_w = x1 - x0
     target_h = y1 - y0
 
-    fitted = fit_cover(img, target_w, target_h)
+    ax = anchor_x or SCREENSHOT_ANCHOR_X.get(path.name, "center")
+    fitted = fit_cover(img, target_w, target_h, anchor_x=ax)
     frame = Image.new("RGBA", (target_w, target_h), (255, 255, 255, 255))
     frame.paste(fitted, (0, 0), fitted if fitted.mode == "RGBA" else None)
 
@@ -277,6 +319,20 @@ def draw_feature_icon(draw: ImageDraw.ImageDraw, cx: int, cy: int, kind: str) ->
         draw.rectangle((cx, cy, cx + half, cy + half), fill=(255, 185, 0))
 
 
+def draw_left_panel_backing(canvas: Image.Image) -> None:
+    """Opaque-to-transparent backing so UI screenshots never obscure marketing copy."""
+    backing = Image.new("RGBA", (s(CANVAS_W), s(CANVAS_H)), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(backing)
+    solid_edge = s(580)
+    fade_edge = s(700)
+    draw.rectangle((0, 0, solid_edge, s(CANVAS_H)), fill=(255, 255, 255, 252))
+    for x in range(solid_edge, fade_edge):
+        t = (x - solid_edge) / max(fade_edge - solid_edge, 1)
+        alpha = int(252 * (1 - t))
+        draw.line([(x, 0), (x, s(CANVAS_H))], fill=(255, 255, 255, alpha))
+    canvas.alpha_composite(backing)
+
+
 def draw_left_panel(
     canvas: Image.Image,
     *,
@@ -285,8 +341,8 @@ def draw_left_panel(
     features: list[tuple[str, str, str]],
 ) -> None:
     draw = ImageDraw.Draw(canvas)
-    title_font = load_font(FONT_BOLD, 46)
-    title_line2_font = load_font(FONT_BOLD, 46)
+    title_font = load_font(FONT_BOLD, 38)
+    title_line2_font = load_font(FONT_BOLD, 38)
     subtitle_font = load_font(FONT_REG, 24)
     feat_title_font = load_font(FONT_SEMI, 24)
     feat_body_font = load_font(FONT_REG, 18)
@@ -295,8 +351,8 @@ def draw_left_panel(
         icon = Image.open(ICON).convert("RGBA").resize((s(ICON_SIZE), s(ICON_SIZE)), Image.Resampling.LANCZOS)
         canvas.alpha_composite(icon, (s(LEFT_X), s(92)))
 
-    draw.text((s(TITLE_X), s(94)), "Asset", fill=TITLE_COLOR, font=title_font)
-    draw.text((s(TITLE_X), s(148)), "Management", fill=TITLE_COLOR, font=title_line2_font)
+    draw.text((s(TITLE_X), s(94)), APP_NAME_LINE1, fill=TITLE_COLOR, font=title_font)
+    draw.text((s(TITLE_X), s(148)), APP_NAME_LINE2, fill=TITLE_COLOR, font=title_line2_font)
     draw_wrapped_text(
         draw,
         (s(LEFT_X), s(206)),
@@ -341,58 +397,55 @@ def finalize(canvas: Image.Image) -> Image.Image:
 
 def build_hero_dashboard() -> Image.Image:
     canvas = draw_background()
+    place_screenshot(canvas, SCREENSHOTS / "01-dashboard.png", BACK_WINDOW)
+    place_screenshot(canvas, SCREENSHOTS / "02-all-assets.png", FRONT_WINDOW)
+    draw_left_panel_backing(canvas)
     draw_left_panel(
         canvas,
-        title="Asset Management",
-        subtitle="Risk Register & Compliance for Microsoft 365",
+        title="Asset Management Hub",
+        subtitle="Hardware & Software Tracking for SharePoint and Teams",
         features=[
-            ("dashboard", "See the big picture.", "Dashboards, heat maps, and financial exposure at a glance."),
-            ("matrix", "Assess and prioritize.", "Inherent and residual risk matrices for your full register."),
-            ("m365", "Built for Microsoft 365.", "SharePoint-native lists, Teams tabs, and Graph notifications."),
+            ("dashboard", "See the big picture.", "Dashboards, KPI cards, and status charts at a glance."),
+            ("matrix", "Track every asset.", "Search, filter, and manage your full asset register."),
+            ("register", "Built for SharePoint and Teams.", "SharePoint lists, Teams tabs, and email notifications."),
         ],
     )
-    place_screenshot(canvas, SCREENSHOTS / "01-dashboard.png", BACK_WINDOW)
-    place_screenshot(canvas, SCREENSHOTS / "03-risk-rating.png", FRONT_WINDOW)
     return finalize(canvas)
 
 
 def build_hero_register() -> Image.Image:
     canvas = draw_background()
+    place_screenshot(canvas, SCREENSHOTS / "02-all-assets.png", BACK_WINDOW)
+    place_screenshot(canvas, SCREENSHOTS / "05-assign-asset.png", FRONT_WINDOW)
+    draw_left_panel_backing(canvas)
     draw_left_panel(
         canvas,
-        title="Asset Management",
-        subtitle="Enterprise Risk Register for SharePoint Online",
+        title="Asset Management Hub",
+        subtitle="Enterprise Asset Register for SharePoint Online",
         features=[
-            ("register", "Track every risk.", "Search, filter, and manage risks across business units and projects."),
-            ("dashboard", "Workflow built in.", "Status, priority, assignments, and due-date tracking out of the box."),
-            ("compliance", "Compliance ready.", "Framework assessments and audit-ready reporting."),
+            ("register", "Track every asset.", "Search, filter, and manage hardware and software across locations."),
+            ("dashboard", "Operations built in.", "Assign, return, book, and request workflows out of the box."),
+            ("compliance", "Governance ready.", "Audit log, roles, and administrator controls."),
         ],
-    )
-    place_screenshot(canvas, SCREENSHOTS / "02-all-risks.png", BACK_WINDOW)
-    # Crop to the right-hand form panel only (avoids double-stacked dashboards).
-    place_screenshot(
-        canvas,
-        SCREENSHOTS / "12-create-risk-form.png",
-        FRONT_WINDOW,
-        crop_box=(640, 0, 1280, 672),
     )
     return finalize(canvas)
 
 
 def build_hero_analysis() -> Image.Image:
     canvas = draw_background()
+    place_screenshot(canvas, SCREENSHOTS / "13-reports.png", BACK_WINDOW)
+    place_screenshot(canvas, SCREENSHOTS / "04-available-assets.png", FRONT_WINDOW)
+    draw_left_panel_backing(canvas)
     draw_left_panel(
         canvas,
-        title="Asset Management",
-        subtitle="Analysis, Reporting & GRC for Microsoft 365",
+        title="Asset Management Hub",
+        subtitle="Reporting & Analysis for SharePoint and Teams",
         features=[
-            ("matrix", "Rate with confidence.", "5×5 inherent and residual matrices with drill-down."),
             ("report", "Build custom reports.", "Pick columns, export CSV, and share insights."),
-            ("m365", "Native to SharePoint.", "Data stays in your tenant — no external database required."),
+            ("matrix", "Financial visibility.", "Depreciation schedules and license tracking."),
+            ("register", "Native to SharePoint.", "Data stays in your tenant — no external database required."),
         ],
     )
-    place_screenshot(canvas, SCREENSHOTS / "03-risk-rating.png", BACK_WINDOW)
-    place_screenshot(canvas, SCREENSHOTS / "08-report-builder.png", FRONT_WINDOW)
     return finalize(canvas)
 
 

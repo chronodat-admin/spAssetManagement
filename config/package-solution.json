@@ -5,7 +5,7 @@
     "title": "Asset Management",
     "iconPath": "app-icon.png",
     "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
-    "version": "1.0.0.15",
+    "version": "1.0.0.16",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
@@ -47,7 +47,7 @@
         "title": "Asset Management Feature",
         "description": "Deploys the Asset Management web part and form customizer for the AM_Assets list.",
         "id": "cbc74d6d-aa77-4c02-b177-05d8a3c5a702",
-        "version": "1.0.0.15",
+        "version": "1.0.0.16",
         "componentIds": [
           "4fa4ca04-c98a-4723-8671-f69956f65f26",
           "013cb786-7445-49dc-aebd-9c4e8706fd98"
