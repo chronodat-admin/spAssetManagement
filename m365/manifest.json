@@ -4,12 +4,12 @@
   "version": "1.0.17",
   "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
   "name": {
-    "short": "Asset Management",
-    "full": "Asset Management"
+    "short": "Asset Management Hub",
+    "full": "Asset Management Hub"
   },
   "description": {
     "short": "Asset management for Microsoft 365",
-    "full": "Asset Management provides a SharePoint-backed asset register, assignments, inventory, and reporting experience across Microsoft 365."
+    "full": "Asset Management Hub provides a SharePoint-backed asset register, assignments, inventory, and reporting experience across Microsoft 365."
   },
   "developer": {
     "name": "Chronodat",
@@ -25,7 +25,7 @@
   "staticTabs": [
     {
       "entityId": "assetManagement",
-      "name": "Asset Management",
+      "name": "Asset Management Hub",
       "contentUrl": "https://{teamSiteDomain}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest=/_layouts/15/teamshostedapp.aspx%3Fteams%26personal%26componentId=4fa4ca04-c98a-4723-8671-f69956f65f26%26forceLocale={locale}",
       "scopes": [
         "personal"

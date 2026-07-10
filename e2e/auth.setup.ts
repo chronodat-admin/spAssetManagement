@@ -15,7 +15,7 @@ const useEdgeProfile = process.env.PLAYWRIGHT_USE_EDGE_PROFILE === '1';
 test('authenticate against SharePoint-hosted app', async ({ page }) => {
   if (useEdgeProfile) {
     console.log(
-      '[auth] Using Edge profile — close all Edge windows first. Waiting for Asset Management to load...'
+      '[auth] Using Edge profile — close all Edge windows first. Waiting for Asset Management Hub to load...'
     );
   } else {
     console.log(

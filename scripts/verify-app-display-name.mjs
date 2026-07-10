@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from './lib/readAppVersion.mjs';
 
-const DISPLAY_NAME = 'Asset Management';
+const DISPLAY_NAME = 'Asset Management Hub';
 const PRODUCT_SLUG = 'asset-management';
 const errors = [];
 
@@ -35,7 +35,7 @@ expectContains(
 );
 expectMatch(
   'src/constants/spfxComponents.ts',
-  /export const DEFAULT_APP_TITLE = 'Asset Management';/,
+  /export const DEFAULT_APP_TITLE = 'Asset Management Hub';/,
   'DEFAULT_APP_TITLE constant'
 );
 

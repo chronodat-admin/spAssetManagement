@@ -22,7 +22,7 @@ test.describe('Analysis pages', () => {
     const page = suite!.page;
     const main = appRoot(page).locator('main').last();
     await navigateSidebar(page, 'Dashboard');
-    await expectPageHeading(page, /Asset Management|Dashboard/);
+    await expectPageHeading(page, /Asset Management Hub|Dashboard/);
     await expect(main.getByText('Total Assets', { exact: true }).first()).toBeVisible();
     await expect(main.getByText('Available', { exact: true }).first()).toBeVisible();
     await expect(main.getByText('Assigned', { exact: true }).first()).toBeVisible();

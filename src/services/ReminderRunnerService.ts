@@ -2,6 +2,7 @@ import type { AadHttpClientFactory } from '@microsoft/sp-http';
 import type { IAsset, ISoftwareLicense } from '../models/IAsset';
 import type { IWorkflowSettings } from '../models/IWorkflowSettings';
 import { sendMailViaMicrosoftGraph } from './GraphEmailService';
+import { DEFAULT_APP_TITLE } from '../constants/spfxComponents';
 
 export interface IReminderItem {
   type: 'warranty' | 'license' | 'return';
@@ -95,11 +96,11 @@ export class ReminderRunnerService {
     }
 
     const lines = items.map((item) => `• [${item.type}] ${item.title}: ${item.detail}`);
-    const body = `Asset Management reminders:\n\n${lines.join('\n')}`;
+    const body = `${DEFAULT_APP_TITLE} reminders:\n\n${lines.join('\n')}`;
     await sendMailViaMicrosoftGraph(
       aadHttpClientFactory,
       recipients,
-      `Asset Management — ${items.length} reminder(s)`,
+      `${DEFAULT_APP_TITLE} — ${items.length} reminder(s)`,
       body
     );
     return recipients.length;

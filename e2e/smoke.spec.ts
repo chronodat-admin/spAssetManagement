@@ -27,7 +27,7 @@ test.describe('Smoke', () => {
   test('loads dashboard', { tag: '@smoke' }, async () => {
     const page = suite!.page;
     await navigateSidebar(page, 'Dashboard');
-    await expectPageHeading(page, /Asset Management|Dashboard/);
+    await expectPageHeading(page, /Asset Management Hub|Dashboard/);
   });
 
   test('opens All Assets list', { tag: '@smoke' }, async () => {

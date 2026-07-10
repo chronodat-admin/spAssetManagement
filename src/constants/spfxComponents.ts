@@ -2,7 +2,7 @@
 export const ASSET_MANAGEMENT_WEB_PART_ID = '4fa4ca04-c98a-4723-8671-f69956f65f26';
 export const ASSET_FORM_CUSTOMIZER_ID = '013cb786-7445-49dc-aebd-9c4e8706fd98';
 
-export const DEFAULT_APP_TITLE = 'Asset Management';
+export const DEFAULT_APP_TITLE = 'Asset Management Hub';
 
 /** Legal entity shown in the app shell footer. */
 export const APP_COPYRIGHT_HOLDER = 'Chronodat';

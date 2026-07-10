@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
     "name": "asset-management-client-side-solution",
-    "title": "Asset Management",
+    "title": "Asset Management Hub",
     "iconPath": "app-icon.png",
     "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
     "version": "1.0.0.17",
@@ -21,7 +21,7 @@
         "default": "Asset management for Microsoft 365 SharePoint Online"
       },
       "longDescription": {
-        "default": "Asset Management is a SharePoint Framework (SPFx) solution for SharePoint Online and Microsoft 365. Track hardware, software licenses, assignments, maintenance, depreciation, and inventory with dashboard analytics, bulk operations, report builder, and configurable forms. Includes an SPFx form customizer for native AM_Assets list forms. Requires SharePoint Online."
+        "default": "Asset Management Hub is a SharePoint Framework (SPFx) solution for SharePoint Online and Microsoft 365. Track hardware, software licenses, assignments, maintenance, depreciation, and inventory with dashboard analytics, bulk operations, report builder, and configurable forms. Includes an SPFx form customizer for native AM_Assets list forms. Requires SharePoint Online."
       },
       "videoUrl": "",
       "categories": [
@@ -44,8 +44,8 @@
     ],
     "features": [
       {
-        "title": "Asset Management Feature",
-        "description": "Deploys the Asset Management web part and form customizer for the AM_Assets list.",
+        "title": "Asset Management Hub Feature",
+        "description": "Deploys the Asset Management Hub web part and form customizer for the AM_Assets list.",
         "id": "cbc74d6d-aa77-4c02-b177-05d8a3c5a702",
         "version": "1.0.0.17",
         "componentIds": [

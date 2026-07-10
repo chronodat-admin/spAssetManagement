@@ -6,6 +6,7 @@ import {
   ASSET_MANAGEMENT_BRAND_ICON_URL,
   ASSET_MANAGEMENT_NAV_ICON_URL
 } from '../../constants/brandAssets';
+import { DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
 
 const useStyles = makeStyles({
   root: {
@@ -52,7 +53,7 @@ export const AppBrandIcon: React.FC<AppBrandIconProps> = ({
   return (
     <img
       src={src}
-      alt={decorative ? '' : 'Asset Management'}
+      alt={decorative ? '' : DEFAULT_APP_TITLE}
       className={mergeClasses(styles.root, styles[variant], className)}
       aria-hidden={decorative || undefined}
     />

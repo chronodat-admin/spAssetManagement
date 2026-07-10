@@ -27,7 +27,7 @@ type CaptureStep = {
 };
 
 const CAPTURES: CaptureStep[] = [
-  { file: '01-dashboard.png', nav: 'Dashboard', heading: /Asset Management|Dashboard/, caption: 'Dashboard — asset KPIs and charts' },
+  { file: '01-dashboard.png', nav: 'Dashboard', heading: /Asset Management Hub|Dashboard/, caption: 'Dashboard — asset KPIs and charts' },
   { file: '02-all-assets.png', nav: 'All Assets', heading: 'All Assets', caption: 'All Assets register with search and filters' },
   { file: '03-assigned-to-me.png', nav: 'Assigned To Me', heading: 'Assigned To Me', caption: 'Assets assigned to the signed-in user' },
   { file: '04-available-assets.png', nav: 'Available', heading: 'Available Assets', caption: 'Assets available for assignment' },
@@ -233,7 +233,7 @@ test.describe('User guide screenshots', () => {
     suite = await createSharedPage(browser);
     await bootstrapApp(suite.page);
     await navigateSidebar(suite.page, 'Dashboard');
-    await expectPageHeading(suite.page, /Asset Management|Dashboard/);
+    await expectPageHeading(suite.page, /Asset Management Hub|Dashboard/);
     await waitForDashboardReady(suite.page);
   });
 

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-const DEFAULT_NAVIGATION_ARIA_LABEL = 'Asset Management navigation';
+const DEFAULT_NAVIGATION_ARIA_LABEL = 'Asset Management Hub navigation';
 
 export function requireBaseUrl(): string | undefined {
   return process.env.PLAYWRIGHT_BASE_URL;

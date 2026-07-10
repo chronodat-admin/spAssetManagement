@@ -3,7 +3,7 @@ import { bootstrapApp, expectPageHeading, navigateSidebar, appRoot } from './hel
 import { createSharedPage, disposeSharedPage, type SharedPageSuite } from './helpers/sharedPage';
 
 const NAV_PAGES: Array<{ label: string; heading: string | RegExp }> = [
-  { label: 'Dashboard', heading: /Asset Management|Dashboard/ },
+  { label: 'Dashboard', heading: /Asset Management Hub|Dashboard/ },
   { label: 'All Assets', heading: 'All Assets' },
   { label: 'Assigned To Me', heading: 'Assigned To Me' },
   { label: 'Available', heading: 'Available Assets' },
