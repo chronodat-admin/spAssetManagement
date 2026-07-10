@@ -7,8 +7,8 @@ import {
   Title3,
   tokens
 } from '@fluentui/react-components';
-import { PuzzlePieceRegular } from '@fluentui/react-icons';
 import { DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
+import { AppBrandIcon } from '../Layout/AppBrandIcon';
 import { DedicatedSubsiteWarning } from './DedicatedSubsiteWarning';
 
 const useStyles = makeStyles({
@@ -22,6 +22,11 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground2,
     borderRadius: tokens.borderRadiusLarge,
     border: `1px dashed ${tokens.colorNeutralStroke2}`
+  },
+  titleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS
   },
   panel: {
     ...shorthands.borderRadius(tokens.borderRadiusLarge),
@@ -48,9 +53,10 @@ export const EditModePlaceholder: React.FC<IEditModePlaceholderProps> = ({ isTea
   return (
     <div className={styles.root} style={{ minHeight: 320, width: '100%' }}>
       <Card className={styles.panel}>
-        <Title3 as="h2">
-          <PuzzlePieceRegular /> {DEFAULT_APP_TITLE}
-        </Title3>
+        <div className={styles.titleRow}>
+          <AppBrandIcon variant="title" decorative />
+          <Title3 as="h2">{DEFAULT_APP_TITLE}</Title3>
+        </div>
         <Text style={{ color: tokens.colorNeutralForeground3, lineHeight: 1.6 }}>
           This web part is ready. Publish the page to start the one-time setup wizard that creates
           your SharePoint lists and default asset data.

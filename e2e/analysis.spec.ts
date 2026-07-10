@@ -2,9 +2,8 @@ import { test, expect } from '@playwright/test';
 import { appRoot, bootstrapApp, expectPageHeading, navigateSidebar } from './helpers/app';
 import { createSharedPage, disposeSharedPage, type SharedPageSuite } from './helpers/sharedPage';
 
-const describeE2e = process.env.PLAYWRIGHT_BASE_URL ? test.describe : test.describe.skip;
-
-describeE2e('Analysis pages', () => {
+test.describe('Analysis pages', () => {
+  test.skip(!process.env.PLAYWRIGHT_BASE_URL, 'Set PLAYWRIGHT_BASE_URL to run E2E tests.');
   test.describe.configure({ mode: 'serial' });
 
   let suite: SharedPageSuite | undefined;

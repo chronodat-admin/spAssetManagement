@@ -14,7 +14,7 @@ export function resolveAppDisplayName(title?: string, fallback = DEFAULT_APP_TIT
 }
 
 /** Hosted subscription API base URL. Empty string disables subscription gate. */
-export const DEFAULT_SUBSCRIPTION_API_URL = '';
+export const DEFAULT_SUBSCRIPTION_API_URL = 'https://subscription.chronodat.com';
 
 /** Product identifier for per-site licensing on the subscription API. */
 export const SUBSCRIPTION_PRODUCT_SLUG = 'asset-management';

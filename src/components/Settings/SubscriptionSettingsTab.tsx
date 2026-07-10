@@ -113,6 +113,7 @@ export const SubscriptionSettingsTab: React.FC = () => {
     error,
     status,
     hasAccess,
+    usingCachedStatus,
     spfxContext,
     refresh,
     startCheckout,
@@ -154,8 +155,9 @@ export const SubscriptionSettingsTab: React.FC = () => {
           icon={PaymentRegular}
         />
         <AppMessageBar intent="info">
-          Subscription checking is not configured for this web part. Ask your administrator to set the{' '}
-          <strong>Subscription API URL</strong> in the web part properties.
+          Subscription checking is disabled for this site (development bypass). Remove{' '}
+          <strong>skipSubscriptionCheck</strong> from the web part properties to enable the 14-day
+          free trial and yearly subscription.
         </AppMessageBar>
       </div>
     );
@@ -175,6 +177,12 @@ export const SubscriptionSettingsTab: React.FC = () => {
 
       {error ? (
         <AppMessageBar intent="warning">{error}</AppMessageBar>
+      ) : null}
+
+      {usingCachedStatus ? (
+        <AppMessageBar intent="warning">
+          Showing the last known subscription status while the licensing service is unreachable.
+        </AppMessageBar>
       ) : null}
 
       <Card className={styles.card}>

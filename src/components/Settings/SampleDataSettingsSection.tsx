@@ -116,7 +116,7 @@ export const SampleDataSettingsSection: React.FC<ISampleDataSettingsSectionProps
         <div className={settingCopyClassName}>
           <strong>Sample data</strong>
           <div style={{ color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 }}>
-            Manage demo assets, software licenses, and lookup rows that were seeded during setup.
+            Manage demo assets, software licenses, tags, and lookup rows that were seeded during setup.
             Your own records are not deleted when clearing sample data.
           </div>
         </div>

@@ -68,6 +68,11 @@ import { applyTitleFromFormValues, buildListFormPayload } from '../lib/list-form
 import type { IWorkflowSettings, NumberingEntityType } from '../models/IWorkflowSettings';
 import { getRiskStatusOptionNames } from '../lib/workflow-settings/utils';
 import {
+  SAMPLE_TAG_SEED_DATA,
+  SAMPLE_TAG_SEED_IDS,
+  SAMPLE_TAG_SEED_NAMES
+} from '../constants/sampleTagSeedData';
+import {
   buildChoiceFieldFilter,
   buildLookupIdFilter,
   getLookupChoiceReferenceDefinitions,
@@ -936,6 +941,50 @@ export class AssetService {
       WorkflowSettings: serializeWorkflowSettings(workflowSettings)
     });
     await this.syncAssetStatusChoices(workflowSettings);
+  }
+
+  /** Seed demo tags into WorkflowSettings when none exist yet (onboarding sample data). */
+  public async seedSampleTags(): Promise<number> {
+    const settings = await this.getAppSettings();
+    if (!settings?.Id) {
+      return 0;
+    }
+
+    const workflow = parseWorkflowSettings(settings);
+    if (workflow.tags.length > 0) {
+      return 0;
+    }
+
+    await this.saveWorkflowSettings(settings, {
+      ...workflow,
+      tags: SAMPLE_TAG_SEED_DATA.map((tag) => ({ ...tag }))
+    });
+    return SAMPLE_TAG_SEED_DATA.length;
+  }
+
+  /** Remove onboarding demo tags while keeping administrator-created tags. */
+  public async clearSampleTags(): Promise<number> {
+    const settings = await this.getAppSettings();
+    if (!settings?.Id) {
+      return 0;
+    }
+
+    const workflow = parseWorkflowSettings(settings);
+    const before = workflow.tags.length;
+    const nextTags = workflow.tags.filter(
+      (tag) =>
+        !SAMPLE_TAG_SEED_IDS.has(tag.id) &&
+        !SAMPLE_TAG_SEED_NAMES.has(tag.name.trim().toLowerCase())
+    );
+    if (nextTags.length === before) {
+      return 0;
+    }
+
+    await this.saveWorkflowSettings(settings, {
+      ...workflow,
+      tags: nextTags
+    });
+    return before - nextTags.length;
   }
 
   public async syncAssetStatusChoices(workflowSettings: IWorkflowSettings): Promise<void> {
@@ -1988,6 +2037,17 @@ export class AssetService {
         this.listPermissionsCache.delete(key);
       }
     }
+  }
+
+  /** Reset list/permission caches after first-time setup so create/edit forms see new lists. */
+  public resetListAccessCaches(listTitle?: string): void {
+    this.clearListPermissionsCache(listTitle);
+    if (listTitle) {
+      this.rest.clearMissingListTitle(listTitle);
+      this.rest.resetListTitleProbe(listTitle);
+      return;
+    }
+    this.rest.clearAllListExistenceCache();
   }
 
   public getRiskAttachments(itemId: number): Promise<ISharePointAttachment[]> {

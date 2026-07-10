@@ -1,9 +1,10 @@
-export { getListProgressLabel } from './provisioningListLabels';
+export { getListProgressLabel } from './provisioningListLabels.js';
 
 export const PROVISIONING_PROGRESS = {
   checkingAccess: 'Verifying setup access…',
   seedingLookups: 'Adding default picklists and templates…',
-  seedingSamples: 'Adding demo assets and licenses…',
+  seedingSamples: 'Adding demo assets, licenses, and tags…',
+  seedingTags: 'Adding sample tags…',
   sampleAssetsProgress: (current: number, total: number): string =>
     `Adding demo assets (${Math.min(current, total)} of ${total})`,
   samplesAlreadyPresent: 'Demo content already in place',

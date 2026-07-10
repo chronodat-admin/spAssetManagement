@@ -25,12 +25,12 @@ import {
   FlowchartRegular,
   ListRegular,
   LockClosedRegular,
-  PlayRegular,
-  SettingsRegular
+  PlayRegular
 } from '@fluentui/react-icons';
 import { IProvisioningStep } from '../../models/IAssetApp';
 import { SpfxFluentProvider } from '../SpfxFluentProvider/SpfxFluentProvider';
 import { DEFAULT_SETUP_TITLE } from '../../constants/spfxComponents';
+import { AppBrandIcon } from '../Layout/AppBrandIcon';
 import { getListProgressLabel } from '../../utils/provisioningListLabels';
 import { SetupContextNotifications } from './SetupContextNotifications';
 import { MailSendApprovalPanel } from './MailSendApprovalPanel';
@@ -139,6 +139,12 @@ const useStyles = makeStyles({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: tokens.spacingHorizontalS
+  },
+  titleBrandRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    minWidth: 0
   },
   overview: {
     display: 'flex',
@@ -280,9 +286,12 @@ export const ProvisioningOnboarding: React.FC<IProvisioningOnboardingProps> = ({
     <Card className={styles.panel}>
       <div className={styles.panelContent}>
         <div className={styles.headerRow}>
-          <Title3 as="h2" id="asset-mgmt-setup-title">
-            <SettingsRegular /> {DEFAULT_SETUP_TITLE}
-          </Title3>
+          <div className={styles.titleBrandRow}>
+            <AppBrandIcon variant="title" decorative />
+            <Title3 as="h2" id="asset-mgmt-setup-title">
+              {DEFAULT_SETUP_TITLE}
+            </Title3>
+          </div>
           {variant === 'modal' && onClose && !isRunning && (
             <Button appearance="subtle" icon={<DismissRegular />} aria-label="Close" onClick={onClose} />
           )}

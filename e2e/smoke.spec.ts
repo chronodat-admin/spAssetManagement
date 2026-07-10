@@ -8,9 +8,8 @@ import {
 } from './helpers/app';
 import { createSharedPage, disposeSharedPage, type SharedPageSuite } from './helpers/sharedPage';
 
-const describeE2e = process.env.PLAYWRIGHT_BASE_URL ? test.describe : test.describe.skip;
-
-describeE2e('Smoke', () => {
+test.describe('Smoke', () => {
+  test.skip(!process.env.PLAYWRIGHT_BASE_URL, 'Set PLAYWRIGHT_BASE_URL to run E2E tests.');
   test.describe.configure({ mode: 'serial' });
 
   let suite: SharedPageSuite | undefined;

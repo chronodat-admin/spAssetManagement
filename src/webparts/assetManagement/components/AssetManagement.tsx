@@ -122,6 +122,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   const [isProvisioning, setIsProvisioning] = React.useState(false);
   const [provisioningError, setProvisioningError] = React.useState('');
   const [bootstrapped, setBootstrapped] = React.useState(false);
+  const [openSubscriptionTab, setOpenSubscriptionTab] = React.useState(false);
 
   const subscription = useSubscription();
   const appName = resolveAppDisplayName(settings?.Title || siteTitle);
@@ -303,6 +304,11 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     setCurrentPage(page);
   }, []);
 
+  const handleOpenSubscriptionSettings = React.useCallback((): void => {
+    setOpenSubscriptionTab(true);
+    setCurrentPage('settings');
+  }, []);
+
   const setupNotificationProps = React.useMemo(
     () => ({
       isSiteOwner: permissions.canAccessSettings,
@@ -330,6 +336,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         return;
       }
       markProvisioningComplete(provisioningScope);
+      assetService.resetListAccessCaches();
       await refreshProvisioningStatus();
       setShowSetupWizard(false);
       await loadData();
@@ -416,7 +423,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
     return (
       <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
         <SubscriptionConnectivityError
-          onOpenSubscriptionSettings={() => setCurrentPage('settings')}
+          onOpenSubscriptionSettings={handleOpenSubscriptionSettings}
         />
       </AppearanceThemeProvider>
     );
@@ -425,7 +432,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
   if (subscriptionBlocked && !subscription.connectivityError && currentPage !== 'settings') {
     return (
       <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
-        <SubscriptionPaywall onOpenSubscriptionSettings={() => setCurrentPage('settings')} />
+        <SubscriptionPaywall onOpenSubscriptionSettings={handleOpenSubscriptionSettings} />
       </AppearanceThemeProvider>
     );
   }
@@ -653,6 +660,8 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
             onRefreshMailSendStatus={refreshMailSendStatus}
             refreshingMailSendStatus={refreshingMailSendStatus}
             subscriptionApiConfigured={subscription.configured}
+            openSubscriptionTab={openSubscriptionTab}
+            onSubscriptionTabOpened={() => setOpenSubscriptionTab(false)}
           />
         );
       default:
@@ -724,7 +733,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
       >
         <SubscriptionTrialBanner
           isAppAdministrator={isAppAdministrator}
-          onOpenSubscriptionSettings={() => handleNavigate('settings')}
+          onOpenSubscriptionSettings={handleOpenSubscriptionSettings}
         />
         {provisioningStatus?.isComplete ? (
           <MailSendPromptBanner status={mailSendStatus} adminUrl={mailSendAdminUrl} />
@@ -736,6 +745,7 @@ export const AssetManagement: React.FC<IAssetManagementProps> = ({
         mode={formMode}
         risk={editingAsset}
         riskService={assetService}
+        provisioningComplete={provisioningStatus?.isComplete}
         settings={settings}
         categories={categories}
         subCategories={[]}

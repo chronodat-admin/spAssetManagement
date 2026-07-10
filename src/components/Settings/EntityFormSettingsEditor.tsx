@@ -39,7 +39,9 @@ import {
   customFieldTypeUsesLookupList,
   customFieldTypeUsesOptions,
   getCustomFieldTypeOption,
-  normalizeCustomFieldType
+  normalizeCustomFieldType,
+  normalizeLookupListTitle,
+  resolveLookupListOptionLabel
 } from '../../constants/customFieldTypes';
 import {
   addTab,
@@ -775,14 +777,8 @@ export const EntityFormSettingsEditor: React.FC<IEntityFormSettingsEditorProps> 
                   {customFieldTypeUsesLookupList(field.type) ? (
                     <Field label="Lookup list">
                       <AppDropdown
-                        value={
-                          CUSTOM_FIELD_LOOKUP_LIST_OPTIONS.find(
-                            (option) => option.value === field.lookupListTitle
-                          )?.label ||
-                          field.lookupListTitle ||
-                          'Select list'
-                        }
-                        selectedOptions={[field.lookupListTitle || '']}
+                        value={resolveLookupListOptionLabel(field.lookupListTitle)}
+                        selectedOptions={[normalizeLookupListTitle(field.lookupListTitle) || '']}
                         onOptionSelect={(_, data) => {
                           if (data.optionValue) {
                             updateCustomField(index, {

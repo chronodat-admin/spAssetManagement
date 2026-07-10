@@ -31,6 +31,9 @@ import { AssetImageSection, IAssetImageDraft } from './AssetImageSection';
 import { FormTemplateFields } from './FormTemplateFields';
 import { PeoplePickerField } from '../PeoplePicker/PeoplePickerField';
 import { UserCell } from '../PeoplePicker/UserAvatar';
+import { AssetActivityTab } from '../Assets/AssetActivityTab';
+
+const ASSET_ACTIVITY_TAB_KEY = 'activity';
 
 export interface ISharePointDynamicFormProps {
   listTitle: string;
@@ -212,6 +215,7 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [historyRefreshKey, setHistoryRefreshKey] = React.useState(0);
   const onValuesOverrideChangeRef = React.useRef(onValuesOverrideChange);
   const useControlledValues = valuesOverride !== undefined;
   const readOnly = mode === 'view';
@@ -401,18 +405,33 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
   }, [formConfig?.tabs, formConfig?.entity, fieldsByKey, includeFields]);
 
   const displayTabs = React.useMemo(() => {
-    if (!activeTemplate) {
-      return configuredTabs;
-    }
-    return [
-      ...configuredTabs,
-      {
-        key: templateTabKey(activeTemplate),
-        label: activeTemplate.name,
-        fields: [] as string[]
+    const tabs = (() => {
+      if (!activeTemplate) {
+        return configuredTabs;
       }
-    ];
-  }, [configuredTabs, activeTemplate]);
+      return [
+        ...configuredTabs,
+        {
+          key: templateTabKey(activeTemplate),
+          label: activeTemplate.name,
+          fields: [] as string[]
+        }
+      ];
+    })();
+
+    if (listTitle === ASSETS_LIST_TITLE && itemId) {
+      return [
+        ...tabs,
+        {
+          key: ASSET_ACTIVITY_TAB_KEY,
+          label: 'Activity',
+          fields: [] as string[]
+        }
+      ];
+    }
+
+    return tabs;
+  }, [configuredTabs, activeTemplate, listTitle, itemId]);
 
   const [activeTab, setActiveTab] = React.useState(displayTabs[0]?.key || 'general');
 
@@ -423,9 +442,11 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
   }, [displayTabs, activeTab]);
 
   const showingTemplateTab = isTemplateTabKey(activeTab) && Boolean(activeTemplate);
+  const showingActivityTab =
+    activeTab === ASSET_ACTIVITY_TAB_KEY && listTitle === ASSETS_LIST_TITLE && Boolean(itemId);
 
   const orderedFields = React.useMemo(() => {
-    if (showingTemplateTab) {
+    if (showingTemplateTab || showingActivityTab) {
       return [];
     }
     if (displayTabs.length > 0) {
@@ -447,7 +468,7 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     }
 
     return fields;
-  }, [showingTemplateTab, displayTabs, activeTab, fieldsByKey, formConfig?.orderedKeys, fields]);
+  }, [showingTemplateTab, showingActivityTab, displayTabs, activeTab, fieldsByKey, formConfig?.orderedKeys, fields]);
 
   const visibleOrderedFields = React.useMemo(
     () =>
@@ -529,6 +550,9 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
       }
 
       onSaved(savedItemId);
+      if (listTitle === ASSETS_LIST_TITLE && savedItemId) {
+        setHistoryRefreshKey((key) => key + 1);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save item.');
     } finally {
@@ -541,7 +565,7 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     return <Spinner label="Loading form..." />;
   }
 
-  if (!showingTemplateTab && visibleOrderedFields.length === 0) {
+  if (!showingTemplateTab && !showingActivityTab && visibleOrderedFields.length === 0) {
     return contentOnly ? null : (
       <Text style={{ color: tokens.colorNeutralForeground3 }}>
         {readOnly ? 'No fields available to display.' : 'No editable fields available.'}
@@ -780,6 +804,13 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
             onDraftChange={setAttachmentDraft}
           />
         </div>
+      ) : showingActivityTab && itemId ? (
+        <AssetActivityTab
+          riskId={itemId}
+          riskService={riskService}
+          formConfig={formConfig}
+          refreshKey={historyRefreshKey}
+        />
       ) : (
         <div className={styles.formGrid} role="tabpanel">
           {visibleOrderedFields.map((field) => renderField(field))}

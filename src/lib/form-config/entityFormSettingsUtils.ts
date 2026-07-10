@@ -1,4 +1,4 @@
-﻿import { DEFAULT_FORM_SETTINGS } from './defaults';
+﻿import { DEFAULT_FORM_SETTINGS } from './defaults.js';
 import type {
   EntityFormSettings,
   EntityKey,
@@ -14,40 +14,55 @@ export type BuiltInFieldRow = FieldRule & {
   defaultLabel: string;
 };
 
-export { CUSTOM_FIELD_TYPE_OPTIONS } from '../../constants/customFieldTypes';
+export { CUSTOM_FIELD_TYPE_OPTIONS } from '../../constants/customFieldTypes.js';
 
-export const PRIMARY_FORM_ENTITIES: Array<{ key: EntityKey; label: string; description: string }> =
-  [
-    {
-      key: 'risks',
-      label: 'AM_Assets',
-      description: 'Tabs, built-in fields, and custom fields on asset create/edit forms.'
-    },
-    {
-      key: 'business',
-      label: 'Business',
-      description: 'Configure business list forms.'
-    },
-    {
-      key: 'projects',
-      label: 'Projects',
-      description: 'Configure project list forms.'
-    }
-  ];
+export type FormEntityOption = {
+  /** Unique dropdown value (multiple lists may share the same entity settings key). */
+  id: string;
+  entity: EntityKey;
+  label: string;
+  description: string;
+};
 
-export const SECONDARY_FORM_ENTITIES: Array<{ key: EntityKey; label: string; description: string }> =
-  [
-    {
-      key: 'lookups',
-      label: 'Lookup lists',
-      description: 'Categories, vendors, locations, and other lookup lists.'
-    },
-    {
-      key: 'subCategories',
-      label: 'Sub-categories',
-      description: 'Sub-category list forms.'
-    }
-  ];
+/** Lists shown under Settings → Forms → Configure forms for. */
+export const FORM_ENTITY_OPTIONS: FormEntityOption[] = [
+  {
+    id: 'assets',
+    entity: 'risks',
+    label: 'AM_Assets',
+    description: 'Tabs, built-in fields, and custom fields on asset create/edit forms.'
+  },
+  {
+    id: 'categories',
+    entity: 'lookups',
+    label: 'AM_Categories',
+    description: 'Category lookup list create/edit forms.'
+  },
+  {
+    id: 'subCategories',
+    entity: 'subCategories',
+    label: 'AM_SubCategories',
+    description: 'Sub-category lookup list create/edit forms.'
+  },
+  {
+    id: 'vendors',
+    entity: 'lookups',
+    label: 'AM_Vendors',
+    description: 'Vendor lookup list create/edit forms.'
+  },
+  {
+    id: 'locations',
+    entity: 'lookups',
+    label: 'AM_Locations',
+    description: 'Location lookup list create/edit forms.'
+  },
+  {
+    id: 'projects',
+    entity: 'projects',
+    label: 'AM_Projects',
+    description: 'Project lookup list create/edit forms.'
+  }
+];
 
 export function cloneTabs(tabs: TabConfig[]): TabConfig[] {
   return tabs.map((tab) => ({ key: tab.key, label: tab.label, fields: [...tab.fields] }));

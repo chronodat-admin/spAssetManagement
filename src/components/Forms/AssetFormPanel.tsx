@@ -19,6 +19,8 @@ export interface IAssetFormPanelProps {
   mode: FormMode;
   risk?: import('../../models/IAssetApp').IAsset;
   riskService: AssetService;
+  /** Bumped after setup completes so permission checks refetch against newly created lists. */
+  provisioningComplete?: boolean;
   settings?: IAppSettings;
   categories: ILookupItem[];
   subCategories: ILookupItem[];
@@ -44,6 +46,7 @@ export const AssetFormPanel: React.FC<IAssetFormPanelProps> = ({
   mode,
   risk,
   riskService,
+  provisioningComplete = false,
   settings,
   categories,
   subCategories,
@@ -63,7 +66,9 @@ export const AssetFormPanel: React.FC<IAssetFormPanelProps> = ({
   const { permissions, loading: permissionsLoading, error: permissionsError } = useListPermissions(
     riskService,
     'AM_Assets',
-    mode === 'create' ? undefined : risk?.Id
+    mode === 'create' ? undefined : risk?.Id,
+    provisioningComplete,
+    { enabled: open }
   );
 
   const formSettings = React.useMemo(() => parseFormSettings(settings), [settings]);

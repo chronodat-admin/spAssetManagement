@@ -1,5 +1,6 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
-import { DEFAULT_NAVIGATION_ARIA_LABEL } from '../../src/constants/spfxComponents';
+import { expect, type Locator, type Page } from '@playwright/test';
+
+const DEFAULT_NAVIGATION_ARIA_LABEL = 'Asset Management navigation';
 
 export function requireBaseUrl(): string | undefined {
   return process.env.PLAYWRIGHT_BASE_URL;
@@ -33,17 +34,17 @@ export async function waitForApp(page: Page): Promise<void> {
   await expect(appRoot(page)).toBeVisible({ timeout: 120_000 });
 }
 
-export async function skipIfSetupRequired(page: Page): Promise<void> {
+export async function isSetupRequired(page: Page): Promise<boolean> {
   const setupButton = page.getByRole('button', { name: 'Complete Setup' });
-  if (await setupButton.isVisible().catch(() => false)) {
-    test.skip(true, 'Complete site setup before running E2E tests.');
-  }
+  return setupButton.isVisible().catch(() => false);
 }
 
 export async function bootstrapApp(page: Page): Promise<void> {
   await gotoApp(page);
   await waitForApp(page);
-  await skipIfSetupRequired(page);
+  if (await isSetupRequired(page)) {
+    throw new Error('Complete site setup before running E2E tests.');
+  }
 }
 
 export function sidebarNav(page: Page): Locator {

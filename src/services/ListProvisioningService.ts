@@ -886,6 +886,9 @@ export class ListProvisioningService {
         this.updateStep(steps, 'seed', 'running', onStepUpdate, getListProgressLabel(def.title));
         await this.seedListData(def, onStepUpdate, steps);
       }
+
+      this.updateStep(steps, 'seed', 'running', onStepUpdate, PROVISIONING_PROGRESS.seedingTags);
+      await this.getAssetService().seedSampleTags();
     });
 
   }
@@ -913,6 +916,7 @@ export class ListProvisioningService {
       }
       added += await this.seedListData(def);
     }
+    await this.getAssetService().seedSampleTags();
     await this.markSampleDataSeeded();
     return added;
   }
@@ -1931,6 +1935,8 @@ export class ListProvisioningService {
     for (const def of simpleLists) {
       await this.clearSeedItemsForListDef(def, result);
     }
+
+    await this.getAssetService().clearSampleTags();
 
     await this.resetSampleDataSeededFlag();
     return result;

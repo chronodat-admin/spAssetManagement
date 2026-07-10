@@ -35,9 +35,10 @@ import { SettingsPageHeader } from './SettingsPageHeader';
 
 export interface IRolePermissionsTabProps {
   roleService: RoleService;
-  pageTitle: string;
+  pageTitle?: string;
   pageDescription?: string;
   pageIcon?: React.ElementType;
+  hideHeader?: boolean;
 }
 
 type RoleFilter = 'all' | (typeof ASSET_ROLE_CHOICES)[number];
@@ -46,7 +47,8 @@ export const RolePermissionsTab: React.FC<IRolePermissionsTabProps> = ({
   roleService,
   pageTitle,
   pageDescription,
-  pageIcon
+  pageIcon,
+  hideHeader = false
 }) => {
   const [permissions, setPermissions] = React.useState<IRolePermission[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -143,7 +145,13 @@ export const RolePermissionsTab: React.FC<IRolePermissionsTabProps> = ({
 
   return (
     <>
-      <SettingsPageHeader title={pageTitle} description={pageDescription} icon={pageIcon} />
+      {!hideHeader ? (
+        <SettingsPageHeader
+          title={pageTitle || 'Role Permissions'}
+          description={pageDescription}
+          icon={pageIcon}
+        />
+      ) : null}
       <PageNotifications error={error || undefined} success={success || undefined} />
 
       <ContentCard

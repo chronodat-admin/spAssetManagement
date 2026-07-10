@@ -182,6 +182,29 @@ export const useWorkflowSettingsStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: tokens.spacingHorizontalM
+  },
+  sectionSubtitle: {
+    display: 'block',
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground1,
+    fontSize: tokens.fontSizeBase300,
+    marginTop: tokens.spacingVerticalM
+  },
+  bulletList: {
+    margin: 0,
+    paddingLeft: tokens.spacingHorizontalL,
+    color: tokens.colorNeutralForeground2,
+    fontSize: tokens.fontSizeBase300,
+    fontFamily: tokens.fontFamilyBase,
+    lineHeight: tokens.lineHeightBase300
+  },
+  numberedList: {
+    margin: 0,
+    paddingLeft: tokens.spacingHorizontalL,
+    color: tokens.colorNeutralForeground2,
+    fontSize: tokens.fontSizeBase300,
+    fontFamily: tokens.fontFamilyBase,
+    lineHeight: tokens.lineHeightBase300
   }
 });
 

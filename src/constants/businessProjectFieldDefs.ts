@@ -1,4 +1,5 @@
-import type { IListFieldDefinition } from '../models/IListDefinitions';
+import type { IListFieldDefinition } from '../models/IListDefinitions.js';
+import { CATEGORIES_LIST_TITLE } from '../models/IListDefinitions.js';
 
 export const BUSINESS_CRITICALITY_CHOICES = ['High', 'Medium', 'Low'] as const;
 export const RISK_APPETITE_CHOICES = ['Conservative', 'Moderate', 'Aggressive'] as const;
@@ -74,7 +75,7 @@ export const PROJECT_LIST_FIELDS: IListFieldDefinition[] = [
     internalName: 'Business',
     displayName: 'Business',
     type: 'Lookup',
-    lookupListTitle: 'lstBusiness',
+    lookupListTitle: CATEGORIES_LIST_TITLE,
     lookupField: 'Title',
     optional: true
   },

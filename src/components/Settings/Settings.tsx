@@ -49,8 +49,7 @@ import { ScheduledReportsTab } from './ScheduledReportsTab';
 import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 import { AuditLogTab } from './AuditLogTab';
 import { AppAdministratorsTab } from './AppAdministratorsTab';
-import { UserRolesTab } from './UserRolesTab';
-import { RolePermissionsTab } from './RolePermissionsTab';
+import { RolesAndPermissionsTab } from './RolesAndPermissionsTab';
 import { IntuneSyncTab } from './IntuneSyncTab';
 import { BulkImportTab } from './BulkImportTab';
 import { LanguageSettingsTab } from './LanguageSettingsTab';
@@ -470,8 +469,7 @@ export const Settings: React.FC<ISettingsProps> = ({
                 activeTab !== 'auditLog' &&
                 activeTab !== 'subscription' &&
                 activeTab !== 'appAdministrators' &&
-                activeTab !== 'userRoles' &&
-                activeTab !== 'rolePermissions' &&
+                activeTab !== 'rolesAndPermissions' &&
                 activeTab !== 'intuneSync' &&
                 activeTab !== 'bulkImport' &&
                 activeTab !== 'language' &&
@@ -680,22 +678,13 @@ export const Settings: React.FC<ISettingsProps> = ({
                 />
               )}
 
-              {activeTab === 'userRoles' && roleService && (
-                <UserRolesTab
+              {activeTab === 'rolesAndPermissions' && roleService && (
+                <RolesAndPermissionsTab
                   roleService={roleService}
                   assetService={riskService}
-                  pageTitle={SETTINGS_PAGE_BY_ID.userRoles.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.userRoles.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.userRoles.icon}
-                />
-              )}
-
-              {activeTab === 'rolePermissions' && roleService && (
-                <RolePermissionsTab
-                  roleService={roleService}
-                  pageTitle={SETTINGS_PAGE_BY_ID.rolePermissions.label}
-                  pageDescription={SETTINGS_PAGE_BY_ID.rolePermissions.description}
-                  pageIcon={SETTINGS_PAGE_BY_ID.rolePermissions.icon}
+                  pageTitle={SETTINGS_PAGE_BY_ID.rolesAndPermissions.label}
+                  pageDescription={SETTINGS_PAGE_BY_ID.rolesAndPermissions.description}
+                  pageIcon={SETTINGS_PAGE_BY_ID.rolesAndPermissions.icon}
                 />
               )}
 

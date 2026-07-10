@@ -146,7 +146,7 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
         {mailSendStatus === 'unavailable'
           ? 'Deploy the app package to a SharePoint or Teams site, then return here to approve Mail.Send.'
           : `Graph email delivery needs a one-time tenant admin approval of the ${GRAPH_MAIL_SEND_SCOPE} permission.`}
-        <ol style={{ margin: `${tokens.spacingVerticalS} 0 0`, paddingLeft: tokens.spacingHorizontalL }}>
+        <ol className={styles.numberedList} style={{ marginTop: tokens.spacingVerticalS }}>
           <li>Deploy the app package (.sppkg) to the tenant App Catalog.</li>
           <li>
             Open SharePoint Admin Center &rarr; <strong>Advanced</strong> &rarr; <strong>API access</strong>.
@@ -208,18 +208,18 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             simplest option &mdash; the endpoint is built into the app, so there is nothing to deploy,
             approve, or maintain in your tenant.
           </Text>
-          <Text weight="semibold" size={200} block style={{ marginBottom: tokens.spacingVerticalXS }}>
+          <Text weight="semibold" block className={styles.sectionSubtitle} style={{ marginTop: 0 }}>
             Why choose this
           </Text>
-          <ul style={{ margin: 0, paddingLeft: tokens.spacingHorizontalL, color: tokens.colorNeutralForeground2 }}>
+          <ul className={styles.bulletList}>
             <li>Zero configuration &mdash; no Exchange mailbox, admin consent, or flows.</li>
             <li>Works immediately for every recipient, including external addresses.</li>
             <li>Uses the subject, body, and recipients from your Notification Workflows and Email Templates.</li>
           </ul>
-          <Text weight="semibold" size={200} block style={{ margin: `${tokens.spacingVerticalM} 0 ${tokens.spacingVerticalXS}` }}>
+          <Text weight="semibold" block className={styles.sectionSubtitle}>
             Requirements
           </Text>
-          <ul style={{ margin: 0, paddingLeft: tokens.spacingHorizontalL, color: tokens.colorNeutralForeground2 }}>
+          <ul className={styles.bulletList}>
             <li>An active Chronodat subscription for this tenant.</li>
             <li>Outbound HTTPS access to the Chronodat notification service.</li>
           </ul>
@@ -260,7 +260,7 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             Microsoft Graph {GRAPH_MAIL_SEND_SCOPE} status
           </Text>
           {renderGraphStatus()}
-          <Text weight="semibold" size={200} block style={{ margin: `${tokens.spacingVerticalM} 0 ${tokens.spacingVerticalXS}` }}>
+          <Text weight="semibold" block className={styles.sectionSubtitle}>
             How it works
           </Text>
           <Text block className={styles.settingRowDescription}>
@@ -268,10 +268,10 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             user&rsquo;s Exchange Online mailbox. Emails therefore appear in that user&rsquo;s Sent Items and
             send under their identity.
           </Text>
-          <Text weight="semibold" size={200} block style={{ margin: `${tokens.spacingVerticalM} 0 ${tokens.spacingVerticalXS}` }}>
+          <Text weight="semibold" block className={styles.sectionSubtitle}>
             Requirements
           </Text>
-          <ul style={{ margin: 0, paddingLeft: tokens.spacingHorizontalL, color: tokens.colorNeutralForeground2 }}>
+          <ul className={styles.bulletList}>
             <li>The app package deployed to the tenant App Catalog.</li>
             <li>One-time tenant admin approval of the {GRAPH_MAIL_SEND_SCOPE} permission (SharePoint Admin Center &rarr; API access).</li>
             <li>Each sender needs an Exchange Online mailbox license.</li>
@@ -322,13 +322,13 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             point only. You are responsible for importing, connecting, testing, and maintaining the
             following flows in your own environment:
           </Text>
-          <ul style={{ margin: 0, paddingLeft: tokens.spacingHorizontalL, color: tokens.colorNeutralForeground2 }}>
+          <ul className={styles.bulletList}>
             <li>Asset lifecycle notifications (create, assign, status, update, comment)</li>
             <li>Overdue asset checker (scheduled recurrence)</li>
             <li>Scheduled reports (reads AppSettings WorkflowSettings JSON)</li>
             <li>Workflow rules engine (notify / assign actions from stored rules)</li>
           </ul>
-          <Text block size={200} style={{ marginTop: tokens.spacingVerticalM, color: tokens.colorNeutralForeground3 }}>
+          <Text block className={styles.settingRowDescription} style={{ marginTop: tokens.spacingVerticalM }}>
             See {POWER_AUTOMATE_DOCS_PATH} in the repo for reference. These guides are unsupported samples,
             not a turnkey feature.
           </Text>
@@ -341,7 +341,7 @@ export const EmailIntegrationTab: React.FC<IEmailIntegrationTabProps> = ({
             <MailRegular style={{ verticalAlign: 'middle', marginRight: 6 }} />
             High-level setup outline
           </Text>
-          <ol style={{ margin: 0, paddingLeft: tokens.spacingHorizontalL, color: tokens.colorNeutralForeground2 }}>
+          <ol className={styles.numberedList}>
             <li>Create a shared mailbox (for example noreply@yourcompany.com).</li>
             <li>Build/import flows and set the site URL to this site.</li>
             <li>Configure each flow to send from the shared mailbox connector.</li>

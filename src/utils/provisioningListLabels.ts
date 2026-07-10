@@ -22,7 +22,7 @@ import {
   SUB_CATEGORIES_LIST_TITLE,
   USER_ROLES_LIST_TITLE,
   VENDORS_LIST_TITLE
-} from '../models/IListDefinitions';
+} from '../models/IListDefinitions.js';
 
 /** Friendly labels for provisioning UI — internal SharePoint list titles are unchanged. */
 const PROVISIONING_LIST_DISPLAY_LABELS: Record<string, string> = {

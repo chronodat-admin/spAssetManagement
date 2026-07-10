@@ -2,19 +2,11 @@
 import { Field, Option, Text, tokens } from '@fluentui/react-components';
 import { AppDropdown } from '../Dropdown/AppDropdown';
 import { DEFAULT_FORM_SETTINGS } from '../../lib/form-config/defaults';
-import {
-  PRIMARY_FORM_ENTITIES,
-  SECONDARY_FORM_ENTITIES
-} from '../../lib/form-config/entityFormSettingsUtils';
+import { FORM_ENTITY_OPTIONS } from '../../lib/form-config/entityFormSettingsUtils';
 import { serializeFormSettings } from '../../lib/form-config/storage';
-import type { EntityKey, FormSettings } from '../../lib/form-config/types';
+import type { FormSettings } from '../../lib/form-config/types';
 import { IAppSettings } from '../../models/IAssetApp';
 import { EntityFormSettingsEditor } from './EntityFormSettingsEditor';
-
-const ALL_ENTITIES: Array<{ key: EntityKey; label: string; description: string }> = [
-  ...PRIMARY_FORM_ENTITIES,
-  ...SECONDARY_FORM_ENTITIES
-];
 
 export interface IFormSettingsTabProps {
   formSettings: FormSettings;
@@ -22,32 +14,35 @@ export interface IFormSettingsTabProps {
 }
 
 export const FormSettingsTab: React.FC<IFormSettingsTabProps> = ({ formSettings, onChange }) => {
-  const [entity, setEntity] = React.useState<EntityKey>('risks');
-  const selectedEntity = ALL_ENTITIES.find((item) => item.key === entity);
+  const [selectedEntityId, setSelectedEntityId] = React.useState('assets');
+  const selectedEntity =
+    FORM_ENTITY_OPTIONS.find((item) => item.id === selectedEntityId) || FORM_ENTITY_OPTIONS[0];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL }}>
       <Field label="Configure forms for">
         <AppDropdown
-          value={selectedEntity?.label || 'AM_Assets'}
-          selectedOptions={[entity]}
-          onOptionSelect={(_, data) => setEntity((data.optionValue as EntityKey) || 'risks')}
+          value={selectedEntity.label}
+          selectedOptions={[selectedEntityId]}
+          onOptionSelect={(_, data) => setSelectedEntityId(data.optionValue || 'assets')}
         >
-          {ALL_ENTITIES.map((item) => (
-            <Option key={item.key} value={item.key}>
+          {FORM_ENTITY_OPTIONS.map((item) => (
+            <Option key={item.id} value={item.id}>
               {item.label}
             </Option>
           ))}
         </AppDropdown>
       </Field>
 
-      {selectedEntity ? (
-        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-          {selectedEntity.description}
-        </Text>
-      ) : null}
+      <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+        {selectedEntity.description}
+      </Text>
 
-      <EntityFormSettingsEditor entity={entity} formSettings={formSettings} onChange={onChange} />
+      <EntityFormSettingsEditor
+        entity={selectedEntity.entity}
+        formSettings={formSettings}
+        onChange={onChange}
+      />
     </div>
   );
 };

@@ -137,12 +137,15 @@ export interface IAssetActivityTabProps {
   riskId: number;
   riskService: AssetService;
   formConfig?: BuiltFormConfig;
+  /** Increment after saves so the timeline refetches the latest versions. */
+  refreshKey?: number;
 }
 
 export const AssetActivityTab: React.FC<IAssetActivityTabProps> = ({
   riskId,
   riskService,
-  formConfig
+  formConfig,
+  refreshKey = 0
 }) => {
   const styles = useStyles();
   const [entries, setEntries] = React.useState<IAssetVersionHistoryEntry[]>([]);
@@ -177,7 +180,7 @@ export const AssetActivityTab: React.FC<IAssetActivityTabProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [riskId, riskService, formConfig]);
+  }, [riskId, riskService, formConfig, refreshKey]);
 
   if (loading) {
     return <Spinner label="Loading activity..." />;

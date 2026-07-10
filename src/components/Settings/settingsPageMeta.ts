@@ -19,7 +19,6 @@ import {
   NumberSymbolRegular,
   OrganizationRegular,
   PaymentRegular,
-  PeopleTeamRegular,
   PersonRegular,
   PlugConnectedRegular,
   SettingsRegular,
@@ -49,8 +48,7 @@ export type SettingsPageId =
   | 'scheduledReports'
   | 'auditLog'
   | 'appAdministrators'
-  | 'userRoles'
-  | 'rolePermissions'
+  | 'rolesAndPermissions'
   | 'intuneSync'
   | 'bulkImport'
   | 'language'
@@ -138,17 +136,10 @@ export const SETTINGS_PAGES: ISettingsPageMeta[] = [
     section: 'general'
   },
   {
-    id: 'userRoles',
-    label: 'User Roles',
-    description: 'Assign Admin, Asset Manager, User, or Read Only roles for RBAC across the app.',
-    icon: PeopleTeamRegular,
-    section: 'general'
-  },
-  {
-    id: 'rolePermissions',
-    label: 'Role Permissions',
+    id: 'rolesAndPermissions',
+    label: 'Roles & Permissions',
     description:
-      'Control what each application role can see and do in the UI. SharePoint list permissions remain the security boundary for data access.',
+      'Assign application roles to people and control what each role can see and do in the UI. SharePoint list permissions remain the security boundary for data access.',
     icon: ShieldLockRegular,
     section: 'general'
   },
@@ -316,8 +307,7 @@ export const SETTINGS_SELF_SAVE_PAGES: SettingsPageId[] = [
   'subscription',
   'auditLog',
   'appAdministrators',
-  'userRoles',
-  'rolePermissions',
+  'rolesAndPermissions',
   'intuneSync',
   'bulkImport',
   'language',

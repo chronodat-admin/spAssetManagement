@@ -14,6 +14,7 @@ import { COLOR_SCHEME_OPTIONS } from '../../utils/dashboardSettings';
 import { COLOR_SCHEME_SWATCHES, getColorSchemeSwatch } from '../../utils/appearanceTheme';
 import { DEFAULT_APPEARANCE_SETTINGS } from '../../models/IAppearanceSettings';
 import { DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
+import { AppBrandIcon } from '../Layout/AppBrandIcon';
 import { isTeamsHostEnvironment, syncSharePointLeftNavVisibility, syncSharePointPageBarVisibility, syncSharePointTopBarVisibility } from '../../utils/loadAssetManagementStyles';
 
 const THEME_MODE_OPTIONS = [
@@ -110,6 +111,12 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: tokens.spacingHorizontalM
+  },
+  previewBarBrand: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    minWidth: 0
   },
   previewSidebar: {
     marginTop: tokens.spacingVerticalS,
@@ -344,7 +351,10 @@ export const AppearanceSettingsTab: React.FC<IAppearanceSettingsTabProps> = ({ v
         </div>
       )}
       <div className={styles.previewBar} style={topNavPreviewStyle}>
-        <Text weight="semibold">{DEFAULT_APP_TITLE}</Text>
+        <div className={styles.previewBarBrand}>
+          <AppBrandIcon variant="nav" decorative />
+          <Text weight="semibold">{DEFAULT_APP_TITLE}</Text>
+        </div>
         <span className={styles.previewCtaButton} style={topNavCtaPreviewStyle}>
           + New Asset
         </span>

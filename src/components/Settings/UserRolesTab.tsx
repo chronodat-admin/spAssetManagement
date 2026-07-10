@@ -26,9 +26,10 @@ import { PageNotifications } from '../Layout/PageNotifications';
 export interface IUserRolesTabProps {
   roleService: RoleService;
   assetService: AssetService;
-  pageTitle: string;
+  pageTitle?: string;
   pageDescription?: string;
   pageIcon?: React.ElementType;
+  hideHeader?: boolean;
 }
 
 export const UserRolesTab: React.FC<IUserRolesTabProps> = ({
@@ -36,7 +37,8 @@ export const UserRolesTab: React.FC<IUserRolesTabProps> = ({
   assetService,
   pageTitle,
   pageDescription,
-  pageIcon
+  pageIcon,
+  hideHeader = false
 }) => {
   const { t } = useTranslation();
   const [assignments, setAssignments] = React.useState<
@@ -97,7 +99,9 @@ export const UserRolesTab: React.FC<IUserRolesTabProps> = ({
 
   return (
     <>
-      <SettingsPageHeader title={pageTitle} description={pageDescription} icon={pageIcon} />
+      {!hideHeader ? (
+        <SettingsPageHeader title={pageTitle || 'User Roles'} description={pageDescription} icon={pageIcon} />
+      ) : null}
       <PageNotifications error={error || undefined} />
       <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
         <Field label="User">

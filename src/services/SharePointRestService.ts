@@ -159,6 +159,13 @@ export class SharePointRestService {
     this.resolvedListTitleAliases.delete(primaryTitle);
   }
 
+  /** Clear cached list 404s after provisioning creates lists that were previously missing. */
+  public clearAllListExistenceCache(): void {
+    this.missingListTitles.clear();
+    this.listByTitleInflight.clear();
+    this.resolvedListTitleAliases.clear();
+  }
+
   /**
    * Resolve a list that may exist under a primary or legacy title (e.g. lstBusiness vs Business).
    * Caches the result for the session to avoid repeated 404 probes.

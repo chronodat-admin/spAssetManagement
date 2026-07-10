@@ -11,7 +11,7 @@ import {
   getSpfxTenantDisplayName,
   getSpfxUserEmail
 } from '../utils/spfxContext';
-import { SUBSCRIPTION_PRODUCT_SLUG } from '../constants/spfxComponents';
+import { SUBSCRIPTION_PRODUCT_SLUG, DEFAULT_SUBSCRIPTION_API_URL } from '../constants/spfxComponents';
 import {
   readCachedSubscriptionStatus,
   writeCachedSubscriptionStatus
@@ -52,8 +52,11 @@ export const SubscriptionProvider: React.FC<ISubscriptionProviderProps> = ({
   children
 }) => {
   const service = React.useMemo(
-    () => new SubscriptionService(subscriptionApiUrl?.trim() ?? ''),
-    [subscriptionApiUrl]
+    () =>
+      new SubscriptionService(subscriptionApiUrl?.trim() || DEFAULT_SUBSCRIPTION_API_URL, {
+        aadHttpClientFactory: context.aadHttpClientFactory
+      }),
+    [subscriptionApiUrl, context.aadHttpClientFactory]
   );
 
   const spfxContext = React.useMemo<ISubscriptionContext>(

@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.12",
+  "version": "1.0.0.15",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -12,10 +12,10 @@
     "serve": "gulp serve",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/listSchemaCoverageTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/assetSeedDataTests.mjs scripts/assetImageTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/numberingMigrationTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/depreciationTests.mjs scripts/depreciationFilterTests.mjs scripts/assetDropdownFieldsTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs scripts/assetValidationTests.mjs scripts/assetExportTests.mjs scripts/dashboardAnalyticsTests.mjs scripts/auditPayloadTests.mjs scripts/serviceCrudTests.mjs scripts/settingsStorageTests.mjs scripts/versionLookupCoverageTests.mjs scripts/reportBuilderTests.mjs scripts/tenantWorkflowContractTests.mjs scripts/utilityCoverageTests.mjs",
+    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/listSchemaCoverageTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/sampleTagSeedTests.mjs scripts/assetSeedDataTests.mjs scripts/assetImageTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/numberingMigrationTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/depreciationTests.mjs scripts/depreciationFilterTests.mjs scripts/assetDropdownFieldsTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs scripts/assetValidationTests.mjs scripts/assetExportTests.mjs scripts/dashboardAnalyticsTests.mjs scripts/auditPayloadTests.mjs scripts/serviceCrudTests.mjs scripts/settingsStorageTests.mjs scripts/versionLookupCoverageTests.mjs scripts/reportBuilderTests.mjs scripts/tenantWorkflowContractTests.mjs scripts/utilityCoverageTests.mjs scripts/formConfigCoverageTests.mjs scripts/subscriptionRolesCoverageTests.mjs scripts/moduleContractCoverageTests.mjs scripts/functionalityCoverageGateTests.mjs",
     "test:spfx": "gulp test",
-    "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test --grep @smoke",
+    "test:e2e": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts",
+    "test:e2e:smoke": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --grep @smoke",
     "sync:publisher": "node scripts/sync-publisher-manifests.mjs",
     "sync:version": "node scripts/sync-version.mjs",
     "sync:icon": "python scripts/sync-webpart-icon.py",
@@ -29,7 +29,7 @@
     "fix:sppkg-teams": "powershell -ExecutionPolicy Bypass -File scripts/fix-sppkg-teams.ps1",
     "docs:architecture": "python scripts/build-architecture-doc.py",
     "docs:user-guide": "python scripts/build-user-guide.py",
-    "docs:user-guide:capture": "playwright test e2e/screenshots/capture-user-guide.spec.ts",
+    "docs:user-guide:capture": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts e2e/screenshots/capture-user-guide.spec.ts",
     "docs:user-guide:all": "npm run docs:user-guide:capture && npm run docs:user-guide",
     "docs:adoption-guide": "python scripts/build-adoption-guide.py",
     "docs:word": "python scripts/build-architecture-doc.py && python scripts/build-user-guide.py && python scripts/build-adoption-guide.py",
@@ -40,9 +40,9 @@
     "assets:architecture": "node scripts/render-architecture.mjs && python scripts/embed-chronodat-logo.py",
     "assets:infographic": "python scripts/embed-chronodat-logo.py --ai",
     "test:e2e:install": "playwright install chromium",
-    "test:e2e:setup": "playwright test --project=setup --headed",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:setup": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --project=setup --headed",
+    "test:e2e:ui": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --ui",
+    "test:e2e:headed": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --headed",
     "ship": "node scripts/sync-publisher-manifests.mjs && node scripts/sync-version.mjs && npm run assets:icons && npm run teams:package:m365 && npm run assets:sppkg && node scripts/clean-release.mjs && gulp bundle --ship && gulp package-solution --ship && npm run fix:sppkg-teams"
   },
   "dependencies": {

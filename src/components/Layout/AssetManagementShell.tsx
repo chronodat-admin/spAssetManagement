@@ -26,7 +26,7 @@ import {
 
 } from '@fluentui/react-components';
 
-import { AddRegular, ArrowUpRegular, DocumentRegular, HomeRegular, NavigationRegular, BoxMultipleRegular } from '@fluentui/react-icons';
+import { AddRegular, ArrowUpRegular, DocumentRegular, HomeRegular, NavigationRegular } from '@fluentui/react-icons';
 
 import { AppPage } from '../../models/IAssetApp';
 
@@ -42,6 +42,7 @@ import { Sidebar, NAVIGATION_ITEMS } from './Sidebar';
 import type { IAppPermissions } from '../../utils/rbac';
 import type { IRolePermissionRow } from '../../lib/permissions/checkRolePermission';
 import { AppUserPill } from './AppUserPill';
+import { AppBrandIcon } from './AppBrandIcon';
 import { useAppearanceTheme } from '../../contexts/AppearanceThemeContext';
 import { isContentActionsLayoutEnabled } from '../../utils/contentActionsLayout';
 import { APP_COPYRIGHT_HOLDER, DEFAULT_APP_TITLE } from '../../constants/spfxComponents';
@@ -263,17 +264,19 @@ const useStyles = makeStyles({
 
   topAccentBarBrandIcon: {
 
-    display: 'inline-flex',
-
-    alignItems: 'center',
-
-    justifyContent: 'center',
+    display: 'block',
 
     flexShrink: 0,
 
-    fontSize: '20px',
+    width: '28px',
 
-    color: 'var(--asset-topnav-text)' },
+    height: '28px',
+
+    objectFit: 'contain',
+
+    backgroundColor: 'transparent'
+
+  },
 
   topAccentBarBrandName: {
 
@@ -848,7 +851,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
         <div className={styles.topAccentBarInner}>
           {appName && (
             <div className={styles.topAccentBarBrand} title={appName}>
-              <BoxMultipleRegular className={styles.topAccentBarBrandIcon} aria-hidden />
+              <AppBrandIcon variant="nav" className={styles.topAccentBarBrandIcon} />
               <Text as="span" className={styles.topAccentBarBrandName}>
                 {appName}
               </Text>

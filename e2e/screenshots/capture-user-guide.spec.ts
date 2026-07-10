@@ -18,9 +18,8 @@ async function capture(pageName: string, page: Parameters<typeof appRoot>[0]): P
   });
 }
 
-const describeScreenshots = process.env.PLAYWRIGHT_BASE_URL ? test.describe : test.describe.skip;
-
-describeScreenshots('User guide screenshots', () => {
+test.describe('User guide screenshots', () => {
+  test.skip(!process.env.PLAYWRIGHT_BASE_URL, 'Set PLAYWRIGHT_BASE_URL to run E2E tests.');
   test('captures primary app pages', async ({ page }) => {
     await bootstrapApp(page);
 
