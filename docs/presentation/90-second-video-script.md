@@ -13,9 +13,9 @@
 | Item | Guidance |
 |------|----------|
 | Format | 1920×1080, 16:9, 30 fps |
-| Music | Light corporate underscore; duck −12 dB under voice |
+| Music | Soft ambient pad, synthesized locally (royalty-free), auto-ducked under the voice; level via `--music-volume`, off via `--no-music` |
 | Voice | Clear, warm B2B narrator (male or female) |
-| Transitions | 0.4 s cross-dissolve between slides |
+| Transitions | 0.7 s cross-dissolve between slides (video + audio cross-faded together) |
 | Logo | Composit Chronodat wordmark after AI generation (`embed-marketing-chronodat-logo.py`) |
 | Product name | Always **Asset Management Hub** (never "Asset Management" alone) |
 | Platforms | **SharePoint Online** and **Microsoft Teams** only |
@@ -203,17 +203,18 @@ After branded slides exist in `assets/website/presentation/`:
 npm run assets:presentation-video
 ```
 
-Output: `assets/website/presentation/video/asset-management-hub-90s.mp4` (1920×1080, 30 fps, ~94 s).
+Output: `assets/website/presentation/video/asset-management-hub-90s.mp4` (1920×1080, 30 fps, ~122 s).
 
 The build script (`scripts/build-presentation-video.py`) assembles the eight slides from
-the timing table above with 0.4 s cross-dissolves and narrates the script with a **natural
-neural voice** (`en-US-JennyNeural` via `edge-tts`). If the neural voice can't be reached
-(offline/proxy), it automatically falls back to the Windows SAPI voice (Microsoft Zira).
+the timing table above with 0.7 s cross-dissolves, narrates the script with a **natural
+neural voice** (`en-US-JennyNeural` via `edge-tts`), and lays a **soft ambient music bed**
+underneath that automatically ducks when the voice is speaking. If the neural voice can't
+be reached (offline/proxy), it falls back to the Windows SAPI voice (Microsoft Zira).
 
 **One-time dependencies:**
 
 ```powershell
-pip install edge-tts truststore imageio-ffmpeg pillow
+pip install edge-tts truststore imageio-ffmpeg pillow numpy
 ```
 
 `truststore` lets Python use the OS certificate store, which fixes the corporate-proxy
@@ -224,6 +225,13 @@ Pick a different narrator:
 ```powershell
 python scripts/build-presentation-video.py --voice en-US-GuyNeural
 # other good options: en-US-AriaNeural, en-US-AndrewMultilingualNeural
+```
+
+Adjust or disable the background music:
+
+```powershell
+python scripts/build-presentation-video.py --music-volume 0.3   # louder bed
+python scripts/build-presentation-video.py --no-music           # no music
 ```
 
 Optional silent version (slides only, no voiceover):

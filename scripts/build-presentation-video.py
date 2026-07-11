@@ -104,12 +104,13 @@ SEGMENTS = [
 # Falls back to Windows SAPI if edge-tts/network is unavailable.
 VOICE = "en-US-JennyNeural"
 SAPI_FALLBACK_VOICE = "Microsoft Zira Desktop"
-CROSSFADE = 0.4
+CROSSFADE = 0.7  # slide cross-dissolve duration (also used for audio acrossfade)
 WIDTH = 1920
 HEIGHT = 1080
 FPS = 30
-LEAD_IN = 0.35   # silence before narration so words don't clip during the incoming crossfade
-TAIL = 0.9       # breathing room after narration before the next slide
+LEAD_IN = 0.4    # silence before narration so words don't clip during the incoming crossfade
+TAIL = 1.0       # breathing room after narration before the next slide
+MUSIC_VOLUME = 0.22  # background music level before ducking (0 = silent)
 
 _EDGE_READY: bool | None = None
 
@@ -291,6 +292,114 @@ def make_segment(clip_path: Path, audio_path: Path, out_path: Path) -> None:
     )
 
 
+def generate_music(duration: float, out_wav: Path, *, sr: int = 48000, bar: float = 4.0,
+                   xfade: float = 0.7, gain: float = 0.8) -> None:
+    """Synthesize a soft, royalty-free ambient pad (I–V–vi–IV progression) of `duration`
+    seconds. Locally generated, so there are no music licensing concerns."""
+    import numpy as np
+    import wave
+
+    # Triads (+ a sub-octave root) for C major: C – G – Am – F.
+    progression = [
+        [130.81, 261.63, 329.63, 392.00],
+        [98.00, 196.00, 246.94, 293.66],
+        [110.00, 220.00, 261.63, 329.63],
+        [87.31, 174.61, 220.00, 261.63],
+    ]
+
+    total_n = int((duration + bar) * sr)
+    left = np.zeros(total_n, dtype=np.float64)
+    right = np.zeros(total_n, dtype=np.float64)
+
+    seg_len = bar + xfade
+    seg_n = int(seg_len * sr)
+    t = np.arange(seg_n) / sr
+
+    # Constant-power window: cosine ramp on the two edges, flat sustain in the middle.
+    win = np.ones(seg_n)
+    f = int(xfade * sr)
+    if f > 0:
+        ramp = 0.5 * (1 - np.cos(np.linspace(0, np.pi, f)))
+        win[:f] = ramp
+        win[-f:] = ramp[::-1]
+
+    lfo = 1.0 + 0.08 * np.sin(2 * np.pi * 0.13 * t)  # gentle tremolo
+
+    start = 0
+    k = 0
+    while start < int(duration * sr):
+        chord = progression[k % len(progression)]
+        sig_l = np.zeros(seg_n)
+        sig_r = np.zeros(seg_n)
+        for j, freq in enumerate(chord):
+            amp = 0.7 if j == 0 else 1.0  # sub-octave slightly quieter
+            sig_l += amp * np.sin(2 * np.pi * freq * t)
+            sig_r += amp * np.sin(2 * np.pi * (freq * 1.003) * t)  # detune for stereo width
+        sig_l = sig_l / len(chord) * lfo * win
+        sig_r = sig_r / len(chord) * lfo * win
+        end = min(start + seg_n, total_n)
+        left[start:end] += sig_l[: end - start]
+        right[start:end] += sig_r[: end - start]
+        start += int(bar * sr)
+        k += 1
+
+    n = int(duration * sr)
+    L = left[:n]
+    R = right[:n]
+    peak = max(np.max(np.abs(L)), np.max(np.abs(R)), 1e-6)
+    L = L / peak * gain
+    R = R / peak * gain
+
+    fi = min(int(2.0 * sr), n)
+    fo = min(int(3.0 * sr), n)
+    L[:fi] *= np.linspace(0, 1, fi)
+    R[:fi] *= np.linspace(0, 1, fi)
+    L[-fo:] *= np.linspace(1, 0, fo)
+    R[-fo:] *= np.linspace(1, 0, fo)
+
+    stereo = np.stack([L, R], axis=1)
+    data = (np.clip(stereo, -1, 1) * 32767).astype("<i2")
+    with wave.open(str(out_wav), "w") as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(data.tobytes())
+
+
+def mix_music(video_in: Path, music_wav: Path, out_path: Path, *, volume: float,
+              total: float) -> None:
+    """Mix the music bed under the narration, ducking it when the voice is present."""
+    fade_out_start = max(0.0, total - 3.0)
+    filt = (
+        f"[1:a]volume={volume},afade=t=in:d=2,afade=t=out:st={fade_out_start:.2f}:d=3[mus];"
+        f"[mus][0:a]sidechaincompress=threshold=0.02:ratio=6:attack=15:release=350[duck];"
+        f"[0:a][duck]amix=inputs=2:duration=first:normalize=0[mix]"
+    )
+    run(
+        [
+            FFMPEG,
+            "-y",
+            "-i",
+            str(video_in),
+            "-i",
+            str(music_wav),
+            "-filter_complex",
+            filt,
+            "-map",
+            "0:v",
+            "-map",
+            "[mix]",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            str(out_path),
+        ]
+    )
+
+
 def combine_segments(segments: list[Path], durations: list[float], out_path: Path) -> None:
     """Chain per-segment mp4s with video xfade AND audio acrossfade (kept in sync)."""
     if len(segments) == 1:
@@ -345,7 +454,7 @@ def combine_segments(segments: list[Path], durations: list[float], out_path: Pat
     )
 
 
-async def build(*, skip_tts: bool = False) -> Path:
+async def build(*, skip_tts: bool = False, music_volume: float = MUSIC_VOLUME) -> Path:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="amh-video-", dir=OUT_DIR))
 
@@ -399,12 +508,24 @@ async def build(*, skip_tts: bool = False) -> Path:
             print(f"  [{i + 1}/{len(SEGMENTS)}] {seg['id']}: {seg_duration:.1f}s — {seg['slide']}")
 
         final = OUT_DIR / "asset-management-hub-90s.mp4"
-        combine_segments(segment_files, durations, final)
-
         total = sum(durations) - CROSSFADE * (len(durations) - 1)
+
+        if music_volume > 0:
+            narrated = work / "narrated.mp4"
+            combine_segments(segment_files, durations, narrated)
+            music_wav = work / "music.wav"
+            generate_music(total, music_wav)
+            mix_music(narrated, music_wav, final, volume=music_volume, total=total)
+        else:
+            combine_segments(segment_files, durations, final)
+
         voice_used = "silent" if skip_tts else (VOICE if edge_available() else SAPI_FALLBACK_VOICE)
+        music_note = f"music @ {music_volume:.2f}" if music_volume > 0 else "no music"
         print(f"\nVideo: {final}")
-        print(f"Duration: ~{total:.1f}s | {WIDTH}x{HEIGHT} @ {FPS}fps | voice: {voice_used}")
+        print(
+            f"Duration: ~{total:.1f}s | {WIDTH}x{HEIGHT} @ {FPS}fps | "
+            f"{CROSSFADE:.1f}s transitions | voice: {voice_used} | {music_note}"
+        )
 
         # clean intermediates on success (kept on failure for debugging)
         shutil.rmtree(work, ignore_errors=True)
@@ -423,10 +544,18 @@ def main() -> None:
         default=VOICE,
         help="edge-tts neural voice (e.g. en-US-JennyNeural, en-US-GuyNeural, en-US-AriaNeural)",
     )
+    parser.add_argument(
+        "--music-volume",
+        type=float,
+        default=MUSIC_VOLUME,
+        help="Background music level before ducking (0 disables music)",
+    )
+    parser.add_argument("--no-music", action="store_true", help="Disable background music")
     args = parser.parse_args()
     VOICE = args.voice
+    music_volume = 0.0 if args.no_music else args.music_volume
     print("Building 90-second presentation video...")
-    asyncio.run(build(skip_tts=args.skip_tts))
+    asyncio.run(build(skip_tts=args.skip_tts, music_volume=music_volume))
 
 
 if __name__ == "__main__":

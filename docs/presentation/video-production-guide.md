@@ -41,12 +41,13 @@ Each numbered step has a dedicated reference doc / script:
 ## One-time setup
 
 ```powershell
-pip install pillow imageio-ffmpeg edge-tts truststore
+pip install pillow imageio-ffmpeg edge-tts truststore numpy
 ```
 
 - **pillow** — image compositing (slides + thumbnail).
 - **imageio-ffmpeg** — bundles an `ffmpeg` binary, so no separate install is needed.
 - **edge-tts** — Microsoft neural voices (natural narration).
+- **numpy** — synthesizes the royalty-free ambient music bed.
 - **truststore** — lets Python use the OS certificate store; fixes the corporate-proxy
   SSL error edge-tts otherwise throws. If the neural voice still can't be reached, the
   build automatically falls back to the local Windows SAPI voice.
@@ -136,12 +137,16 @@ npm run assets:presentation-video     # -> assets/website/presentation/video/<ap
 - Narrates each segment with a **natural neural voice** (`en-US-JennyNeural` by default).
 - **Never time-stretches the voice** — each slide expands to fit its natural narration
   (with a short lead-in and tail), so nothing sounds sped-up.
-- Cross-dissolves video **and** cross-fades audio together (0.4 s) so A/V stays in sync.
+- Cross-dissolves video **and** cross-fades audio together (0.7 s) so A/V stays in sync.
+- Lays a **soft ambient music bed** (synthesized locally with numpy — royalty-free) that
+  automatically **ducks** under the voice via sidechain compression.
 
 Options:
 
 ```powershell
 python scripts/build-presentation-video.py --voice en-US-GuyNeural   # different narrator
+python scripts/build-presentation-video.py --music-volume 0.3        # louder music bed
+python scripts/build-presentation-video.py --no-music                # no music
 python scripts/build-presentation-video.py --skip-tts                # silent (slides only)
 ```
 
