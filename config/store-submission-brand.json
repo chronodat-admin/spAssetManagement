@@ -1,0 +1,20 @@
+{
+  "product_name": "Asset Management Hub",
+  "app_icon": "assets/brand/app-icon.png",
+  "logo": "assets/brand/chronodat-logo.png",
+  "raw_dir": "assets/store-submission/_raw",
+  "out_dir": "assets/store-submission",
+  "raw_glob": "store-raw-*.png",
+  "raw_prefix": "store-raw-",
+  "out_template": "asset-management-{slug}.png",
+  "title_slides": [],
+  "output_size": [1366, 768],
+  "colors": {
+    "name": [15, 35, 75],
+    "title": [15, 35, 75],
+    "hairline": [15, 35, 75, 28]
+  },
+  "geometry": {
+    "logo_h_ratio": 0.0304
+  }
+}

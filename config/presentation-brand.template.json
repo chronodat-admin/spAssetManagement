@@ -1,0 +1,41 @@
+{
+  "_comment": "Copy to config/presentation-brand.json in another app and edit. Paths are relative to this file's folder (or set base_dir). Only keys you set override the built-in defaults in scripts/embed-presentation-brand.py.",
+
+  "product_name": "My App Name",
+  "app_icon": "assets/brand/app-icon.png",
+  "logo": "assets/brand/company-logo.png",
+
+  "raw_dir": "assets/website/presentation/_raw",
+  "out_dir": "assets/website/presentation",
+  "raw_glob": "pres-raw-*.png",
+  "raw_prefix": "pres-raw-",
+  "out_template": "presentation-slide-{slug}-ai.png",
+
+  "title_slides": ["00-welcome", "07-thankyou"],
+
+  "draw_hairline": true,
+  "draw_product_name": true,
+
+  "colors": {
+    "name": [15, 35, 75],
+    "title": [15, 35, 75],
+    "hairline": [15, 35, 75, 28]
+  },
+
+  "fonts": {
+    "semibold": ["C:/Windows/Fonts/seguisb.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"],
+    "bold": ["C:/Windows/Fonts/segoeuib.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+  },
+
+  "geometry": {
+    "header_h_ratio": 0.115,
+    "pad_x_ratio": 0.028,
+    "icon_h_ratio": 0.070,
+    "logo_h_ratio": 0.0304,
+    "name_size_ratio": 0.55,
+    "icon_corner_ratio": 0.22,
+    "name_gap_ratio": 0.30,
+    "title_size_ratio": 0.10,
+    "title_y_ratio": 0.40
+  }
+}

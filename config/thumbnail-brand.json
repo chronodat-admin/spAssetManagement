@@ -1,0 +1,26 @@
+{
+  "app_icon_file": "assets/brand/app-icon.png",
+  "logo_file": "assets/brand/chronodat-logo.png",
+  "logo_tint": [255, 255, 255],
+  "raw": "assets/website/presentation/_raw/thumb-raw-asset-management-hub.png",
+  "out": "assets/website/presentation/asset-management-hub-thumbnail.png",
+  "output_size": [1280, 720],
+  "cover_boxes": [
+    { "box": [0.006, 0.012, 0.215, 0.12], "from_dy_ratio": 0.14 }
+  ],
+  "icon": {
+    "cx_ratio": 0.078,
+    "cy_ratio": 0.125,
+    "height_ratio": 0.175,
+    "shadow": true
+  },
+  "logo": {
+    "cx_ratio": 0.8,
+    "cy_ratio": 0.94,
+    "height_ratio": 0.043,
+    "scrim": true,
+    "scrim_color": [10, 22, 46, 150],
+    "scrim_pad_x_ratio": 0.9,
+    "scrim_pad_y_ratio": 0.6
+  }
+}

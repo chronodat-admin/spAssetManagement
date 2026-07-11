@@ -2,6 +2,8 @@
 
 SharePoint Framework 1.21.1 client-side solution for **Asset Management** — track hardware, software licenses, assignments, maintenance, depreciation, and inventory on SharePoint Online and Microsoft Teams.
 
+> **Reusing this as a Chronodat app template?** See [`docs/chronodat-app-template.md`](docs/chronodat-app-template.md) for the tech stack, subsystems (provisioning, settings, RBAC, i18n, subscription/trial), and the step-by-step fork checklist for new app ideas (risk management, time & billing, etc.).
+
 ## Requirements
 
 | Requirement | Detail |

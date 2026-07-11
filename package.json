@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.17",
+  "version": "1.0.0.18",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -38,6 +38,10 @@
     "assets:marketing:crops": "python scripts/generate-marketing-store-crops.py",
     "assets:marketing:all": "npm run docs:marketing && npm run assets:marketing && npm run assets:marketing:crops",
     "prompts:marketing": "python scripts/print-amh-prompts.py",
+    "prompts:presentation": "python scripts/print-amh-prompts.py --presentation",
+    "assets:presentation-brand": "python scripts/embed-presentation-brand.py",
+    "assets:presentation-video": "python scripts/build-presentation-video.py",
+    "assets:presentation-thumbnail": "python scripts/embed-thumbnail-brand.py",
     "prompts:export": "python scripts/print-amh-prompts.py --export-md",
     "assets:architecture": "node scripts/render-architecture.mjs && python scripts/embed-chronodat-logo.py",
     "assets:infographic": "python scripts/embed-chronodat-logo.py --ai",

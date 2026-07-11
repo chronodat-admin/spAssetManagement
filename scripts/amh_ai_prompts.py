@@ -38,13 +38,21 @@ class ImagePrompt:
     aspect_ratio: str = "16:9"
     canvas: str = "1536×1024"
     notes: str = ""
-    kind: str = "marketing"  # marketing | infographic
+    kind: str = "marketing"  # marketing | infographic | presentation
 
     def negative_prompt(self) -> str:
-        return INFOGRAPHIC_NEGATIVE if self.kind == "infographic" else SHARED_NEGATIVE
+        if self.kind == "infographic":
+            return INFOGRAPHIC_NEGATIVE
+        if self.kind == "presentation":
+            return PRESENTATION_NEGATIVE
+        return SHARED_NEGATIVE
 
     def brand_rules(self) -> str:
-        return INFOGRAPHIC_SUFFIX if self.kind == "infographic" else SHARED_BRAND_RULES
+        if self.kind == "infographic":
+            return INFOGRAPHIC_SUFFIX
+        if self.kind == "presentation":
+            return PRESENTATION_SUFFIX
+        return SHARED_BRAND_RULES
 
     def full_prompt(self) -> str:
         lines = [
@@ -106,6 +114,27 @@ Vector infographic quality, no people, no photos, ultra-sharp text.
 INFOGRAPHIC_NEGATIVE = """
 Chronodat wordmark, logo, white logo box, logo border, M365, SPFx, Microsoft 365 badge,
 blurry text, stock photos, cluttered layout, wrong product name
+""".strip()
+
+PRESENTATION_SUFFIX = """
+Video presentation slide, 16:9 landscape (1920×1080). Large bold headline readable on screen.
+Soft light gray-teal gradient #F5F7FA with faint Fluent geometric shapes in corners. Microsoft Fluent flat design.
+Teal #008080, Microsoft blue #0078D4, navy #0F234B accents. Bold clean Segoe-UI-style typography.
+Product name always Asset Management Hub (full name). Platforms: SharePoint Online and Microsoft Teams only.
+RESERVED: leave the entire TOP 12% of the slide as a clean empty header band — no text, no icons, no logos there.
+Do NOT draw any app icon, product-name wordmark, box/QR/barcode logo, or company logo anywhere in the image
+(the real app icon, "Asset Management Hub" header, and Chronodat logo are composited afterward by
+scripts/embed-presentation-brand.py). Where the layout shows app UI, attach and faithfully reproduce the real
+docs/user-guide screenshots rather than inventing UI.
+Minimal on-slide text (headline + 3–5 short bullets max). No website URL, no price tag.
+Ultra-sharp vector infographic, no people photos, no stock photography.
+""".strip()
+
+PRESENTATION_NEGATIVE = """
+Chronodat, CHRONODAT, CHRC, wordmark, logo box, app icon, product name in header,
+box/QR/barcode app icon, M365, SPFx, Microsoft 365 badge,
+tiny illegible text, dense paragraph blocks, blurry text, cluttered layout,
+Asset Management without Hub, website URL, price tag, loading spinner, gibberish UI
 """.strip()
 
 MARKETING_REFERENCES = (
@@ -322,6 +351,10 @@ def _info(**kwargs) -> ImagePrompt:
     return ImagePrompt(kind="infographic", **kwargs)
 
 
+def _pres(**kwargs) -> ImagePrompt:
+    return ImagePrompt(kind="presentation", **kwargs)
+
+
 INFOGRAPHIC_PROMPTS: tuple[ImagePrompt, ...] = (
     _info(
         section="A1",
@@ -437,8 +470,167 @@ INFOGRAPHIC_PROMPTS: tuple[ImagePrompt, ...] = (
 )
 
 
+PRESENTATION_REFERENCES = MARKETING_REFERENCES
+
+PRESENTATION_PROMPTS: tuple[ImagePrompt, ...] = (
+    _pres(
+        section="V1",
+        output_file="presentation-slide-01-hook-ai.png",
+        title="Opening hook",
+        headline="Stop tracking assets in spreadsheets",
+        references=PRESENTATION_REFERENCES,
+        canvas="1920×1080",
+        zones=(
+            PromptZone(
+                "Layout",
+                "Split slide. Left: bold navy headline Stop tracking assets in spreadsheets with 3 red X icons "
+                "beside pain points: Lost visibility, Manual updates, No audit trail. "
+                "Right: faded spreadsheet grid morphing into clean SharePoint list UI silhouette.",
+            ),
+            PromptZone(
+                "Footer strip",
+                "Thin teal bar: Asset Management Hub · SharePoint Online · Microsoft Teams. Bottom-right empty.",
+            ),
+        ),
+        notes="Video segment 0:00–0:15. Keep headline under 8 words.",
+    ),
+    _pres(
+        section="V2",
+        output_file="presentation-slide-02-intro-ai.png",
+        title="Product introduction",
+        headline="Meet Asset Management Hub",
+        references=PRESENTATION_REFERENCES + ("assets/brand/app-icon.png",),
+        canvas="1920×1080",
+        zones=(
+            PromptZone(
+                "Layout",
+                "Center hero: large app icon + Meet Asset Management Hub headline + subtitle "
+                "Hardware & software tracking for SharePoint and Teams. "
+                "Below: hub-and-spoke mini diagram — center Asset Management Hub, four spokes: "
+                "SharePoint Pages, Teams Tab, Teams Personal App, Native List Forms.",
+            ),
+            PromptZone(
+                "Callout",
+                "Teal pill: One hub · Your tenant · Your data.",
+            ),
+            PromptZone(
+                "Logo zone",
+                "Bottom-right empty for Chronodat compositing.",
+            ),
+        ),
+        notes="Video segment 0:15–0:30. Pair with dashboard narration.",
+    ),
+    _pres(
+        section="V3",
+        output_file="presentation-slide-03-dashboard-ai.png",
+        title="Dashboard visibility",
+        headline="See your entire portfolio at a glance",
+        references=PRESENTATION_REFERENCES + ("docs/user-guide/images/01-dashboard.png",),
+        canvas="1920×1080",
+        zones=(
+            PromptZone(
+                "Layout",
+                "Left third: headline + 4 bullets with icons — Real-time KPIs, Status charts, "
+                "Latest assets table, Category breakdown. "
+                "Right two-thirds: laptop mockup showing dashboard from 01-dashboard.png — "
+                "Total, Available, Assigned, In Repair cards, donut chart, no spinners.",
+            ),
+            PromptZone(
+                "Logo zone",
+                "Bottom-right empty.",
+            ),
+        ),
+        notes="Video segment 0:15–0:30.",
+    ),
+    _pres(
+        section="V4",
+        output_file="presentation-slide-04-operations-ai.png",
+        title="Day-to-day operations",
+        headline="Assign, return, book, and scan — in one flow",
+        references=PRESENTATION_REFERENCES
+        + (
+            "docs/user-guide/images/05-assign-asset.png",
+            "docs/user-guide/images/09-scan-asset.png",
+        ),
+        canvas="1920×1080",
+        zones=(
+            PromptZone(
+                "Layout",
+                "Horizontal 5-step workflow with numbered teal circles and arrows: "
+                "1 Assign · 2 Return · 3 Book · 4 Request · 5 Scan. "
+                "Below each step: small UI panel silhouette. "
+                "Center bottom: tablet showing scan/barcode screen style from 09-scan-asset.png.",
+            ),
+            PromptZone(
+                "Subtitle",
+                "Every action updates governed SharePoint lists instantly.",
+            ),
+            PromptZone(
+                "Logo zone",
+                "Bottom-right empty.",
+            ),
+        ),
+        notes="Video segment 0:30–0:45.",
+    ),
+    _pres(
+        section="V5",
+        output_file="presentation-slide-05-governance-ai.png",
+        title="Reporting and governance",
+        headline="Reports, depreciation, and a full audit trail",
+        references=PRESENTATION_REFERENCES
+        + (
+            "docs/user-guide/images/13-reports.png",
+            "docs/user-guide/images/15-audit-log.png",
+        ),
+        canvas="1920×1080",
+        zones=(
+            PromptZone(
+                "Layout",
+                "Three equal cards with teal top bars: "
+                "Report Builder (laptop with 13-reports.png), "
+                "Depreciation schedules (simple chart icon), "
+                "Audit Log (15-audit-log.png columns When/User/Action). "
+                "Navy header band: Governance you can prove.",
+            ),
+            PromptZone(
+                "Bullets",
+                "Under cards: CSV export · Administrator controls · Filter and review.",
+            ),
+            PromptZone(
+                "Logo zone",
+                "Bottom-right empty.",
+            ),
+        ),
+        notes="Video segment 0:45–1:00.",
+    ),
+    _pres(
+        section="V6",
+        output_file="presentation-slide-06-cta-ai.png",
+        title="Deploy and get started",
+        headline="Deploy everywhere. Start your free trial.",
+        references=PRESENTATION_REFERENCES + ("docs/user-guide/images/02-all-assets.png",),
+        canvas="1920×1080",
+        zones=(
+            PromptZone(
+                "Layout",
+                "Left: bold CTA headline Deploy everywhere. Start your free trial. "
+                "Three trust bullets with checkmarks: Your data stays in your tenant, "
+                "One license per site collection, 14-day free trial. "
+                "Right: three device frames — SharePoint page, Teams tab, list form — "
+                "each titled Asset Management Hub.",
+            ),
+            PromptZone(
+                "Footer",
+                "Full-width navy bar: Asset Management Hub for SharePoint and Teams. Bottom-right empty.",
+            ),
+        ),
+        notes="Video segment 1:00–1:30. Hold 3 seconds on final frame.",
+    ),
+)
+
+
 def prompt_by_output(filename: str) -> ImagePrompt | None:
-    for p in (*MARKETING_PROMPTS, *INFOGRAPHIC_PROMPTS):
+    for p in (*MARKETING_PROMPTS, *INFOGRAPHIC_PROMPTS, *PRESENTATION_PROMPTS):
         if p.output_file == filename:
             return p
     return None

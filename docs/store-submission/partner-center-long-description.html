@@ -1,0 +1,100 @@
+<!--
+  Microsoft Partner Center — SharePoint solution offer
+  Paste into: Marketplace offers → [your offer] → Offer setup → Properties → Description
+  Supported HTML: https://learn.microsoft.com/en-us/partner-center/marketplace-offers/supported-html-tags
+  Policy 1170.1: declare all SPFx component types (client-side web part, full-page app, form customizer).
+  Use Preview in Partner Center before publish. Inline styles with !important (as used on
+  certified SharePoint solution listings) render as button-style links in the store UI.
+-->
+
+<p><b>Asset Management Hub</b> is a <b>SharePoint Framework (SPFx) solution</b> for <b>SharePoint Online</b> that helps organizations track hardware and software assets, manage assignments and bookings, run maintenance and depreciation, and generate reports directly within Microsoft 365.</p>
+
+<p>Deploy the solution once to your SharePoint Online tenant app catalog, add the web part to any modern SharePoint page or publish it as a full-page app, and use the built-in setup wizard to automatically provision the required SharePoint lists. Asset Management Hub provides dashboards, a complete asset register, assignments and returns, equipment booking and requests, barcode scanning, software license and inventory tracking, maintenance, depreciation, a report builder, and an audit log — while keeping all data securely within your Microsoft 365 tenant.</p>
+
+<p><b>Ideal for</b><br>
+IT departments, managed service providers, schools and universities, healthcare and manufacturing teams, facilities and operations groups, and any organization that needs to track equipment, software licenses, and asset assignments on Microsoft 365.</p>
+
+<p><b>Key Features</b></p>
+<ul>
+<li>Complete asset register for hardware and software, with rich detail views and status tracking</li>
+<li>Role-based dashboards with KPI cards and charts (totals, availability, assignments, warranty, value by location)</li>
+<li>Assign and return assets to people, including bulk assign and bulk return operations</li>
+<li>Book shared equipment, manage booking details, and handle asset requests with approval queues</li>
+<li>Barcode / QR code scanning to quickly find and update assets</li>
+<li>Software license tracking and inventory management</li>
+<li>Maintenance scheduling and depreciation schedules</li>
+<li>Report builder with utilization, register, depreciation, and audit reports (CSV export)</li>
+<li>Warranty, license, and return-date reminders with email digests</li>
+<li>Import managed devices from Microsoft Intune and bulk import assets from CSV</li>
+<li>Organization setup: categories, sub-categories, vendors, locations, and projects</li>
+<li>Configurable roles, permissions, forms, form templates, numbering, tags, workflows, and appearance settings</li>
+<li>Audit log of create, update, and delete activity across assets, lookups, and settings</li>
+</ul>
+
+<p><b>Microsoft Teams Integration</b><br>
+After deployment, administrators can use <b>Sync to Teams</b> from the SharePoint App Catalog to make the solution available in Microsoft Teams as a personal app or channel tab. Users access the same asset register, assignments, scanning, and reports directly within Teams — while SharePoint Online remains the system of record.</p>
+
+<p><b>Email Notifications</b></p>
+<p>Asset Management Hub supports flexible workflow email delivery. Choose the option that best fits your environment in <b>Settings → Email Integration</b>:</p>
+<ul>
+<li><b>Microsoft Graph (tenant-resident, default):</b> Notifications are sent from the signed-in user's Exchange Online mailbox. A tenant administrator approves Microsoft Graph <b>Mail.Send</b> once in SharePoint Admin Center → API access. Mail never leaves your Microsoft 365 tenant.</li>
+<li><b>Chronodat Mail API (optional):</b> Chronodat's hosted mail service sends notifications with zero tenant configuration. Requires an active Chronodat subscription. When enabled, notification recipients, subject, and message body are transmitted to the Chronodat mail service.</li>
+<li><b>Power Automate (advanced):</b> Not shipped with the product. You build and configure your own flows. No Mail.Send approval is required in this mode.</li>
+</ul>
+<p>The app installs and runs without configuring email; only workflow notifications require a delivery option.</p>
+
+<p><b>Microsoft Intune Sync (optional)</b><br>
+Administrators can import managed devices from Microsoft Intune into the asset register. This uses the Microsoft Graph <b>DeviceManagementManagedDevices.Read.All</b> permission, approved once by a tenant administrator in SharePoint Admin Center → API access. Intune sync is optional; the app runs fully without it.</p>
+
+<p><b>Security &amp; Data Residency</b></p>
+<ul>
+<li><b>100% tenant-resident:</b> All asset, assignment, license, maintenance, and depreciation data is stored in standard SharePoint lists inside your Microsoft 365 tenant</li>
+<li><b>No external data transfer by default:</b> Default Microsoft Graph delivery keeps notification email inside your tenant</li>
+<li><b>Microsoft 365 security inherited:</b> Uses SharePoint permissions, Microsoft Entra ID authentication, conditional access, and DLP policies</li>
+<li><b>Audit trail:</b> Actions are captured through the built-in audit log, SharePoint version history, and Microsoft 365 audit logs</li>
+<li><b>You own the data:</b> Uninstalling leaves your SharePoint lists and data intact</li>
+</ul>
+
+<p><b>Component Information</b> (SPFx component types in this package — policy 1170.1)</p>
+<ul>
+<li><b>Client-side web part</b> — &quot;Asset Management Hub&quot; — for modern SharePoint pages and (via Sync to Teams) Microsoft Teams channel tabs and personal apps</li>
+<li><b>Full-page app</b> — the same &quot;Asset Management Hub&quot; web part published as a SharePoint full-page application (SharePointFullPage host) for a dedicated full-width asset management workspace</li>
+<li><b>Form customizer extension</b> — customizes the native new, edit, and display forms of the provisioned &quot;AM_Assets&quot; SharePoint list (SharePointForm host)</li>
+</ul>
+
+<p><b>Prerequisites</b></p>
+<ul>
+<li>Microsoft 365 with SharePoint Online (SharePoint Server / on-premises is not supported)</li>
+<li>Tenant administrator permissions to deploy SPFx solutions to the app catalog</li>
+<li>Modern SharePoint sites</li>
+<li>Microsoft Exchange Online mailboxes (for Microsoft Graph workflow email notifications)</li>
+<li>Microsoft Intune (optional) for managed-device import</li>
+<li>Microsoft Teams (optional) for Teams integration</li>
+</ul>
+
+<p><b>Limitations &amp; Out of Scope</b></p>
+<ul>
+<li><b>SharePoint Online only</b> — not supported on SharePoint Server or on-premises farms</li>
+<li><b>One license per site collection</b> — data and configuration are scoped to the licensed site collection</li>
+<li><b>Setup wizard required</b> — a site owner or administrator must run first-time list provisioning before most features are available</li>
+<li><b>No native mobile app</b> — runs in supported desktop browsers and Microsoft Teams; barcode scanning uses the device browser camera or manual code entry</li>
+<li><b>No built-in ERP or CMDB integration</b> — asset data is exported via CSV; you connect downstream systems yourself</li>
+<li><b>Workflow rules and scheduled reports</b> — require Power Automate or a backend runner to execute; the app stores the configuration</li>
+<li><b>Role-based data visibility</b> — members see scoped records; managers and administrators see broader or organization-wide data</li>
+</ul>
+
+<p><b>Recommended Browsers</b></p>
+<ul>
+<li>Microsoft Edge</li>
+<li>Google Chrome</li>
+</ul>
+
+<p><b>Licensing</b><br>
+One license is required per SharePoint site collection. The free trial can be converted to a full version by purchasing a license from our website.</p>
+
+<p><b>Get Started</b><br>
+Click <b>Get it now</b> to start your fully featured <b>14-day free trial</b>. Deploy the solution to your Microsoft 365 tenant App Catalog, add the web part to a SharePoint page (or publish as a full-page app), and launch the built-in setup wizard. After the trial period, the subscription is <b>$999 per site collection per year</b>, with <b>unlimited users</b> in the licensed site collection.</p>
+
+<p><b>Help &amp; Support</b></p>
+<p><a href="https://www.chronodat.com/asset-management-hub" target="_blank" style="float: left !important; margin-right: 10px !important; font-size: 14px !important; font-weight: 600 !important; color: #0F234B !important; background: #FFB900 !important; padding: 8px 14px !important; border-radius: 5px !important; text-decoration: none !important; border: 1px solid #E6A800 !important;" title="Asset Management Hub product page">Product page</a><a href="https://www.chronodat.com/wiki/asset-management-hub" target="_blank" style="float: left !important; margin-right: 10px !important; font-size: 14px !important; font-weight: 600 !important; color: #0F234B !important; background: #FFB900 !important; padding: 8px 14px !important; border-radius: 5px !important; text-decoration: none !important; border: 1px solid #E6A800 !important;" title="Knowledge base and documentation">Knowledge base</a><a href="https://www.chronodat.com/contact" target="_blank" style="float: left !important; font-size: 14px !important; font-weight: 600 !important; color: #0F234B !important; background: #FFB900 !important; padding: 8px 14px !important; border-radius: 5px !important; text-decoration: none !important; border: 1px solid #E6A800 !important;" title="Support and contact">Support</a></p>
+<p><br></p>
