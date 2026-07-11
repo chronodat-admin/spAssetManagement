@@ -21,7 +21,7 @@ import {
   DEFAULT_NOTIFICATION_WORKFLOWS
 } from '../lib/workflow-settings/defaults';
 import { resolveEmailDeliveryMode, shouldAppDeliverEmail } from '../lib/workflow-settings/emailIntegration';
-import { hydrateNotificationWorkflowsFromAppSettings } from '../lib/workflow-settings/storage';
+import { parseWorkflowSettings } from '../lib/workflow-settings/storage';
 import { filterValidEmailRecipients } from '../lib/workflow-settings/notificationLogic';
 import { SharePointRestService } from './SharePointRestService';
 import { ADMINISTRATORS_LIST_TITLE } from '../models/IListDefinitions';
@@ -212,7 +212,7 @@ export class NotificationService {
 
   private async loadWorkflowSettings(): Promise<IWorkflowSettings> {
     const appSettings = await this.getAppSettings();
-    return hydrateNotificationWorkflowsFromAppSettings(appSettings);
+    return parseWorkflowSettings(appSettings);
   }
 
   private getWorkflowTemplate(

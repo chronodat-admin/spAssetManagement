@@ -274,25 +274,7 @@ export interface IIntuneDeviceMapping {
   serialNumber?: string;
 }
 
-export interface IEmailNotificationSettings {
-  OpenNote?: string;
-  OpenEmailSubject?: string;
-  OpenEmailBody?: string;
-  IncompleteNote?: string;
-  IncompleteEmailSubject?: string;
-  IncompleteEmailBody?: string;
-  ClosedNote?: string;
-  ClosedEmailSubject?: string;
-  ClosedEmailBody?: string;
-  OnHoldNote?: string;
-  OnHoldEmailSubject?: string;
-  OnHoldEmailBody?: string;
-  AssignedToNote?: string;
-  AssignedToEmailSubject?: string;
-  AssignedToEmailBody?: string;
-}
-
-export interface IAppSettings extends IEmailNotificationSettings {
+export interface IAppSettings {
   Id: number;
   Title: string;
   AM_SupportEmail?: string;

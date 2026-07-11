@@ -9,7 +9,6 @@ import {
   CUSTOM_COLUMN_DEFS_LIST_TITLE,
   INVENTORY_LIST_TITLE,
   ASSET_REQUESTS_LIST_TITLE,
-  LEGACY_BUSINESS_LIST_TITLE,
   LICENSES_LIST_TITLE,
   LOCATIONS_LIST_TITLE,
   MAINTENANCE_LIST_TITLE,
@@ -47,8 +46,7 @@ const PROVISIONING_LIST_DISPLAY_LABELS: Record<string, string> = {
   [SOFTWARE_LICENSES_LIST_TITLE]: 'Software licenses',
   [MAINTENANCE_LIST_TITLE]: 'Maintenance',
   [INVENTORY_LIST_TITLE]: 'Inventory',
-  [ASSET_REQUESTS_LIST_TITLE]: 'Asset requests',
-  [LEGACY_BUSINESS_LIST_TITLE]: 'Categories'
+  [ASSET_REQUESTS_LIST_TITLE]: 'Asset requests'
 };
 
 /** Maps a SharePoint list title to a user-facing label in setup/status views. */

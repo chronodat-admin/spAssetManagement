@@ -65,7 +65,7 @@ function listFieldMap() {
 
 function parseAppSettingsSelectFields() {
   const source = readSource('src/services/AssetService.ts');
-  const match = source.match(/getItems<IAppSettings>\(\s*'AppSettings',\s*'([^']+)'/);
+  const match = source.match(/getItems<IAppSettings>\(\s*SETTINGS_LIST_TITLE,\s*'([^']+)'/);
   assert.ok(match, 'AppSettings getItems $select not found in AssetService');
   return match[1]
     .split(',')

@@ -57,7 +57,7 @@ export const VENDORS_LIST_TITLE = 'AM_Vendors';
 export const MODEL_NUMBERS_LIST_TITLE = 'AM_ModelNumbers';
 export const LOCATIONS_LIST_TITLE = 'AM_Locations';
 export const PROJECTS_LIST_TITLE = 'AM_Projects';
-export const SETTINGS_LIST_TITLE = 'AppSettings';
+export const SETTINGS_LIST_TITLE = 'AM_AppSettings';
 export const AUDIT_LOG_LIST_TITLE = 'AM_AuditLog';
 export const ROLES_LIST_TITLE = 'AM_Roles';
 export const USER_ROLES_LIST_TITLE = 'AM_UserRoles';
@@ -83,9 +83,14 @@ export const RISK_CONTROL_LINK_TYPE_CHOICES = [
   'Monitors'
 ];
 
-/** Legacy aliases used by lookup delete references and settings. */
+/**
+ * The categories list is the Asset Management equivalent of the legacy "Business" lookup
+ * from the Risk fork. Both aliases resolve to the AM_-namespaced `AM_Categories` title so the
+ * app never binds to a foreign generic "Business" list that may already exist on a shared site
+ * (which previously caused `AM_Categories` to be skipped during setup and fail at the seed step).
+ */
 export const BUSINESS_LIST_TITLE = CATEGORIES_LIST_TITLE;
-export const LEGACY_BUSINESS_LIST_TITLE = 'Business';
+export const LEGACY_BUSINESS_LIST_TITLE = CATEGORIES_LIST_TITLE;
 
 export const REQUIRED_LIST_TITLES = [
   CATEGORIES_LIST_TITLE,
@@ -346,7 +351,7 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
     ]
   },
   {
-    // The app reads/writes application settings from a list named "AppSettings" using flat
+    // The app reads/writes application settings from a list named "AM_AppSettings" using flat
     // columns (see AssetService.getAppSettings/updateAppSettings and Settings.tsx). These internal
     // names must match those queries exactly, otherwise setup gets a 404 (list) or 400 (fields).
     title: SETTINGS_LIST_TITLE,
@@ -367,22 +372,7 @@ export const ASSET_MANAGEMENT_LISTS: IListDefinition[] = [
       { internalName: 'RequestFormTabs', displayName: 'Request Form Tabs', type: 'Note', optional: true },
       { internalName: 'RequestNewFormFields', displayName: 'Request New Form Fields', type: 'Note', optional: true },
       { internalName: 'WorkflowSettings', displayName: 'Workflow Settings', type: 'Note', optional: true },
-      { internalName: 'SampleDataSeeded', displayName: 'Sample Data Seeded', type: 'Text', optional: true, hidden: true },
-      { internalName: 'OpenNote', displayName: 'Open Note', type: 'Text', optional: true },
-      { internalName: 'OpenEmailSubject', displayName: 'Open Email Subject', type: 'Text', optional: true },
-      { internalName: 'OpenEmailBody', displayName: 'Open Email Body', type: 'Note', optional: true },
-      { internalName: 'IncompleteNote', displayName: 'Incomplete Note', type: 'Text', optional: true },
-      { internalName: 'IncompleteEmailSubject', displayName: 'Incomplete Email Subject', type: 'Text', optional: true },
-      { internalName: 'IncompleteEmailBody', displayName: 'Incomplete Email Body', type: 'Note', optional: true },
-      { internalName: 'ClosedNote', displayName: 'Closed Note', type: 'Text', optional: true },
-      { internalName: 'ClosedEmailSubject', displayName: 'Closed Email Subject', type: 'Text', optional: true },
-      { internalName: 'ClosedEmailBody', displayName: 'Closed Email Body', type: 'Note', optional: true },
-      { internalName: 'OnHoldNote', displayName: 'On Hold Note', type: 'Text', optional: true },
-      { internalName: 'OnHoldEmailSubject', displayName: 'On Hold Email Subject', type: 'Text', optional: true },
-      { internalName: 'OnHoldEmailBody', displayName: 'On Hold Email Body', type: 'Note', optional: true },
-      { internalName: 'AssignedToNote', displayName: 'Assigned To Note', type: 'Text', optional: true },
-      { internalName: 'AssignedToEmailSubject', displayName: 'Assigned To Email Subject', type: 'Text', optional: true },
-      { internalName: 'AssignedToEmailBody', displayName: 'Assigned To Email Body', type: 'Note', optional: true }
+      { internalName: 'SampleDataSeeded', displayName: 'Sample Data Seeded', type: 'Text', optional: true, hidden: true }
     ],
     seedData: [{ Title: DEFAULT_APP_TITLE, SampleDataSeeded: 'No' }]
   },

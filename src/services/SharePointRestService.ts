@@ -66,6 +66,15 @@ export class SharePointRestService {
   private readonly resolvedListTitleAliases: Map<string, string>;
   private readonly siteUserCache = new Map<number, { Id: number; Title: string; Email?: string }>();
 
+  /**
+   * Serializes and paces write requests so bulk operations (e.g. seeding hundreds of
+   * lookup/role-permission rows during setup) don't burst past SharePoint's per-user
+   * write rate limit and trigger HTTP 429. Reads are unaffected.
+   */
+  private writePacingChain: Promise<void> = Promise.resolve();
+  private lastWriteStartedAt = 0;
+  private static readonly MIN_WRITE_GAP_MS = 120;
+
   constructor(
     private readonly spHttpClient: SPHttpClient,
     private readonly webUrl: string
@@ -85,39 +94,96 @@ export class SharePointRestService {
     return this.requestWithRetry(() => this.spHttpClient.get(url, configuration, options));
   }
 
-  /** POST wrapper that transparently retries on SharePoint throttling (429/503). */
+  /**
+   * POST wrapper that paces writes (to avoid tripping throttling) and transparently
+   * retries on SharePoint throttling (429/503).
+   */
   private async spPost(
     url: string,
     configuration: Parameters<SPHttpClient['post']>[1],
     options: Parameters<SPHttpClient['post']>[2]
   ): Promise<SPHttpClientResponse> {
+    await this.acquireWritePacing();
     return this.requestWithRetry(() => this.spHttpClient.post(url, configuration, options));
   }
 
   /**
-   * Sends a request and retries on throttling responses (HTTP 429/503),
-   * honoring the `Retry-After` header when present and otherwise backing off
-   * exponentially. Other statuses (including 4xx/5xx) are returned unchanged so
-   * existing callers keep their error handling.
+   * Enforces a minimum gap between the *starts* of consecutive write requests. Callers
+   * queue on a shared promise chain so bursts (e.g. a seed loop firing hundreds of POSTs)
+   * are spread out just enough to stay under SharePoint's write rate limit.
+   */
+  private acquireWritePacing(): Promise<void> {
+    const run = this.writePacingChain.then(async () => {
+      const elapsed = Date.now() - this.lastWriteStartedAt;
+      const wait = SharePointRestService.MIN_WRITE_GAP_MS - elapsed;
+      if (wait > 0) {
+        await this.delay(wait);
+      }
+      this.lastWriteStartedAt = Date.now();
+    });
+    this.writePacingChain = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  }
+
+  /**
+   * Sends a request and retries on transient responses — SharePoint throttling
+   * (HTTP 429/503) or an HTTP 200 HTML error/login page — honoring the `Retry-After`
+   * header when present and otherwise backing off exponentially with jitter. Other
+   * statuses (including non-throttling 4xx/5xx) are returned unchanged so existing
+   * callers keep their error handling.
    */
   private async requestWithRetry(
     send: () => Promise<SPHttpClientResponse>,
-    maxRetries = 3
+    maxRetries = 7
   ): Promise<SPHttpClientResponse> {
     let attempt = 0;
     let response = await send();
-    while ((response.status === 429 || response.status === 503) && attempt < maxRetries) {
-      const retryAfterHeader = response.headers.get('Retry-After');
-      const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN;
-      const delayMs =
-        Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
-          ? Math.min(retryAfterSeconds * 1000, 30000)
-          : Math.min(500 * Math.pow(2, attempt), 8000);
-      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    while (attempt < maxRetries && this.isTransientResponse(response)) {
+      await this.delay(this.getRetryDelayMs(response, attempt));
       attempt += 1;
       response = await send();
     }
     return response;
+  }
+
+  /**
+   * Computes how long to wait before the next retry. Always prefers SharePoint's
+   * `Retry-After` hint; otherwise uses capped exponential backoff plus a little jitter
+   * so many parallel/queued requests don't all retry in lockstep and re-trigger throttling.
+   */
+  private getRetryDelayMs(response: SPHttpClientResponse, attempt: number): number {
+    const retryAfterHeader = response.headers.get('Retry-After');
+    const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN;
+    if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+      return Math.min(retryAfterSeconds * 1000, 30000);
+    }
+    const base = Math.min(750 * Math.pow(2, attempt), 20000);
+    const jitter = Math.floor(Math.random() * 400);
+    return base + jitter;
+  }
+
+  /**
+   * A response is treated as transient (worth retrying) when SharePoint throttles
+   * (429/503) or when it returns an HTTP 200 whose body is an HTML error/login page
+   * instead of JSON. The latter happens intermittently under throttling or while the
+   * auth session is being refreshed, and previously surfaced as a confusing
+   * "non-JSON response" error that aborted setup. These REST endpoints always return
+   * JSON on success, so an HTML content-type at 200 reliably indicates a transient page.
+   */
+  private isTransientResponse(response: SPHttpClientResponse): boolean {
+    if (response.status === 429 || response.status === 503) {
+      return true;
+    }
+    if (response.ok) {
+      const contentType = response.headers.get('Content-Type') || '';
+      if (/text\/html/i.test(contentType)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static async readJsonBody<T>(
@@ -901,18 +967,24 @@ export class SharePointRestService {
   public async waitForFields(
     listId: string,
     internalNames: string[],
-    options?: { attempts?: number; delayMs?: number; listTitle?: string }
+    options?: { attempts?: number; delayMs?: number; maxDelayMs?: number; listTitle?: string }
   ): Promise<void> {
     const uniqueNames = Array.from(new Set(internalNames.filter((name) => name !== 'Id' && name !== 'Title')));
-    const attempts = options?.attempts ?? 20;
-    const delayMs = options?.delayMs ?? 500;
+    // Newly created SharePoint columns can take a while to become queryable on busy
+    // tenants. We poll with a capped exponential backoff so fast tenants return almost
+    // immediately while slow ones get a generous patience budget (~80s at defaults)
+    // before surfacing a false "missing fields" error.
+    const attempts = Math.max(1, options?.attempts ?? 40);
+    const baseDelayMs = options?.delayMs ?? 750;
+    const maxDelayMs = options?.maxDelayMs ?? 3000;
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const missing = await this.getMissingFields(listId, uniqueNames);
       if (missing.length === 0) {
         return;
       }
-      await this.delay(delayMs);
+      const backoff = Math.min(maxDelayMs, Math.round(baseDelayMs * Math.pow(1.25, attempt)));
+      await this.delay(backoff);
     }
 
     const missing = await this.getMissingFields(listId, uniqueNames);

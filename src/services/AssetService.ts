@@ -1,6 +1,6 @@
 ﻿import { SPHttpClient } from '@microsoft/sp-http';
 
-import { BUSINESS_LIST_TITLE, CATEGORIES_LIST_TITLE, ASSET_TYPES_LIST_TITLE, ASSET_STATUSES_LIST_TITLE, VENDORS_LIST_TITLE, LOCATIONS_LIST_TITLE, FORM_TEMPLATES_LIST_TITLE, LEGACY_BUSINESS_LIST_TITLE, PROJECTS_LIST_TITLE, SUB_CATEGORIES_LIST_TITLE, ADMINISTRATORS_LIST_TITLE } from '../models/IListDefinitions';
+import { BUSINESS_LIST_TITLE, CATEGORIES_LIST_TITLE, ASSET_TYPES_LIST_TITLE, ASSET_STATUSES_LIST_TITLE, VENDORS_LIST_TITLE, LOCATIONS_LIST_TITLE, FORM_TEMPLATES_LIST_TITLE, LEGACY_BUSINESS_LIST_TITLE, PROJECTS_LIST_TITLE, SUB_CATEGORIES_LIST_TITLE, ADMINISTRATORS_LIST_TITLE, SETTINGS_LIST_TITLE } from '../models/IListDefinitions';
 import {
   BUSINESS_ITEM_EXPAND,
   BUSINESS_ITEM_SELECT,
@@ -858,9 +858,9 @@ export class AssetService {
 
       const items = await this.rest.getItems<IAppSettings>(
 
-        'AppSettings',
+        SETTINGS_LIST_TITLE,
 
-        'Id,Title,SupportGroup,TicketIDPrefix,Reviewed,SiteLogoURL,ColorScheme,AppearanceSettings,Version,AssetMgmtProc,DashboardName,DashboardDynamicNaming,DashboardHoverEnabled,DashboardFinExpEnabled,RequestFormTabs,RequestNewFormFields,WorkflowSettings,SampleDataSeeded,OpenNote,OpenEmailSubject,OpenEmailBody,IncompleteNote,IncompleteEmailSubject,IncompleteEmailBody,ClosedNote,ClosedEmailSubject,ClosedEmailBody,OnHoldNote,OnHoldEmailSubject,OnHoldEmailBody,AssignedToNote,AssignedToEmailSubject,AssignedToEmailBody',
+        'Id,Title,SupportGroup,TicketIDPrefix,Reviewed,SiteLogoURL,ColorScheme,AppearanceSettings,Version,AssetMgmtProc,DashboardName,DashboardDynamicNaming,DashboardHoverEnabled,DashboardFinExpEnabled,RequestFormTabs,RequestNewFormFields,WorkflowSettings,SampleDataSeeded',
 
         undefined,
 
@@ -905,10 +905,10 @@ export class AssetService {
 
     if (fields.AppearanceSettings !== undefined) {
       const provisioning = new ListProvisioningService(this.spHttpClient, this.webUrl);
-      await provisioning.ensureListFieldsReady('AppSettings');
+      await provisioning.ensureListFieldsReady(SETTINGS_LIST_TITLE);
     }
 
-    await this.rest.updateItem('AppSettings', id, fields as Record<string, SharePointFieldValue>);
+    await this.rest.updateItem(SETTINGS_LIST_TITLE, id, fields as Record<string, SharePointFieldValue>);
 
     const next = previous ? { ...previous, ...fields } : fields;
     const changes = computeAuditChanges(

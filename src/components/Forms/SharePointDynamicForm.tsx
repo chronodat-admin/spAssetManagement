@@ -35,6 +35,21 @@ import { AssetActivityTab } from '../Assets/AssetActivityTab';
 
 const ASSET_ACTIVITY_TAB_KEY = 'activity';
 
+/**
+ * The tab a freshly opened form should land on: the first real content tab,
+ * skipping the appended Activity tab and category template tab. Falls back to the
+ * first tab (or 'general') so early renders — before the column schema has loaded
+ * and only the Activity tab exists — don't strand the user on Activity.
+ */
+function preferredDefaultTabKey(
+  tabs: ReadonlyArray<{ key: string }>
+): string {
+  const contentTab = tabs.find(
+    (tab) => tab.key !== ASSET_ACTIVITY_TAB_KEY && !isTemplateTabKey(tab.key)
+  );
+  return contentTab?.key || tabs[0]?.key || 'general';
+}
+
 export interface ISharePointDynamicFormProps {
   listTitle: string;
   itemId?: number;
@@ -433,13 +448,31 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
     return tabs;
   }, [configuredTabs, activeTemplate, listTitle, itemId]);
 
-  const [activeTab, setActiveTab] = React.useState(displayTabs[0]?.key || 'general');
+  const [activeTab, setActiveTab] = React.useState(() => preferredDefaultTabKey(displayTabs));
+  // Tracks whether the user manually picked a tab, so schema-driven tab updates
+  // don't yank them off their selection.
+  const userPickedTabRef = React.useRef(false);
+
+  const desiredDefaultTab = React.useMemo(
+    () => preferredDefaultTabKey(displayTabs),
+    [displayTabs]
+  );
 
   React.useEffect(() => {
-    if (!displayTabs.some((tab) => tab.key === activeTab)) {
-      setActiveTab(displayTabs[0]?.key || 'general');
+    if (userPickedTabRef.current) {
+      // Only intervene if the user's chosen tab no longer exists.
+      if (!displayTabs.some((tab) => tab.key === activeTab)) {
+        userPickedTabRef.current = false;
+        setActiveTab(desiredDefaultTab);
+      }
+      return;
     }
-  }, [displayTabs, activeTab]);
+    // Keep an un-touched form on the preferred default tab as tabs resolve
+    // (columns load asynchronously, so the first render often only has Activity).
+    if (activeTab !== desiredDefaultTab) {
+      setActiveTab(desiredDefaultTab);
+    }
+  }, [displayTabs, desiredDefaultTab, activeTab]);
 
   const showingTemplateTab = isTemplateTabKey(activeTab) && Boolean(activeTemplate);
   const showingActivityTab =
@@ -512,6 +545,7 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
         );
         if (templateError) {
           setError(templateError);
+          userPickedTabRef.current = true;
           setActiveTab(templateTabKey(activeTemplate));
           return;
         }
@@ -777,7 +811,10 @@ export const SharePointDynamicForm: React.FC<ISharePointDynamicFormProps> = ({
                 activeTab === tab.key && 'asset-mgmt-form-tab--active',
                 activeTab === tab.key && styles.tabButtonActive
               )}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => {
+                userPickedTabRef.current = true;
+                setActiveTab(tab.key);
+              }}
             >
               {tab.label}
             </button>

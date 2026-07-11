@@ -76,9 +76,8 @@ import { SoftwareLicenseService } from '../../services/SoftwareLicenseService';
 import { resolveEmailDeliveryMode } from '../../lib/workflow-settings/emailIntegration';
 import { parseCustomFieldExtensions, parseFormSettings } from '../../lib/form-config/storage';
 import {
-  hydrateNotificationWorkflowsFromAppSettings,
-  serializeWorkflowSettings,
-  syncLegacyEmailFieldsFromWorkflows
+  parseWorkflowSettings,
+  serializeWorkflowSettings
 } from '../../lib/workflow-settings/storage';
 import { buildLegacyTicketPrefix } from '../../lib/workflow-settings/numberingEngine';
 import type { IWorkflowSettings } from '../../models/IWorkflowSettings';
@@ -297,7 +296,7 @@ export const Settings: React.FC<ISettingsProps> = ({
     };
   });
   const [workflowSettings, setWorkflowSettings] = React.useState<IWorkflowSettings>(() =>
-    hydrateNotificationWorkflowsFromAppSettings(settings)
+    parseWorkflowSettings(settings)
   );
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState('');
@@ -319,7 +318,7 @@ export const Settings: React.FC<ISettingsProps> = ({
         customFields: parseCustomFieldExtensions(settings)
       }
     });
-    setWorkflowSettings(hydrateNotificationWorkflowsFromAppSettings(settings));
+    setWorkflowSettings(parseWorkflowSettings(settings));
   }, [settings]);
 
   React.useEffect(() => {
@@ -374,7 +373,6 @@ export const Settings: React.FC<ISettingsProps> = ({
     }
 
     try {
-      const legacyEmailPatch = syncLegacyEmailFieldsFromWorkflows(workflowSettings, {});
       await riskService.updateAppSettings(settings.Id, {
         Title: resolveAppDisplayName(title),
         TicketIDPrefix: ticketPrefix.trim(),
@@ -386,7 +384,6 @@ export const Settings: React.FC<ISettingsProps> = ({
         DashboardHoverEnabled: dashboardHoverEnabled,
         DashboardFinExpEnabled: dashboardFinancialExposureEnabled,
         WorkflowSettings: serializeWorkflowSettings(workflowSettings),
-        ...legacyEmailPatch,
         ...buildFormSettingsForSave(settings, formSettings),
         Reviewed: 'Yes'
       });

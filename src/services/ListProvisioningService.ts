@@ -951,7 +951,7 @@ export class ListProvisioningService {
       return;
     }
 
-    await this.ensureListFieldsReady('AppSettings');
+    await this.ensureListFieldsReady(SETTINGS_LIST_TITLE);
     await this.getAssetService().updateAppSettings(settings.Id, {
       SampleDataSeeded: SAMPLE_DATA_SEEDED_VALUE
     });
@@ -963,7 +963,7 @@ export class ListProvisioningService {
       return;
     }
 
-    await this.ensureListFieldsReady('AppSettings');
+    await this.ensureListFieldsReady(SETTINGS_LIST_TITLE);
     await this.getAssetService().updateAppSettings(settings.Id, {
       SampleDataSeeded: 'No'
     });
@@ -1104,6 +1104,10 @@ export class ListProvisioningService {
 
     let added = 0;
     const keyIndex = await this.loadExistingSeedKeyIndex(operationalTitle, def);
+    // On a brand-new empty list there is nothing to collide with, so skip the per-row
+    // existence probe entirely. This halves the request count for large seed sets (e.g.
+    // ~100 AM_RolePermissions rows), which is a common trigger for HTTP 429 throttling.
+    const skipExistenceProbe = (list.ItemCount ?? 0) === 0 && keyIndex.size === 0;
     for (const row of def.seedData!) {
       const title = String(row.Title || '');
       const rowKey = getSeedRowKey(def.title, row);
@@ -1115,7 +1119,7 @@ export class ListProvisioningService {
         continue;
       }
 
-      if (await this.isSeedRowAlreadyInList(def.title, operationalTitle, row)) {
+      if (!skipExistenceProbe && (await this.isSeedRowAlreadyInList(def.title, operationalTitle, row))) {
         markSeedRowIndexed(keyIndex, def.title, row);
         continue;
       }
@@ -1186,6 +1190,7 @@ export class ListProvisioningService {
     });
 
     const keyIndex = await this.loadExistingSeedKeyIndex(def.title, def);
+    const skipExistenceProbe = (list.ItemCount ?? 0) === 0 && keyIndex.size === 0;
 
     for (const row of def.seedData || []) {
       const parentTitle = String(row.ParentCategoryTitle || '');
@@ -1199,7 +1204,10 @@ export class ListProvisioningService {
         continue;
       }
 
-      if (await this.isSeedRowAlreadyInList(def.title, def.title, row, { parentCategoryId: parentId })) {
+      if (
+        !skipExistenceProbe &&
+        (await this.isSeedRowAlreadyInList(def.title, def.title, row, { parentCategoryId: parentId }))
+      ) {
         markSeedRowIndexed(keyIndex, def.title, row);
         continue;
       }
@@ -1245,6 +1253,7 @@ export class ListProvisioningService {
 
     let added = 0;
     const keyIndex = await this.loadExistingSeedKeyIndex(def.title, def);
+    const skipExistenceProbe = (list.ItemCount ?? 0) === 0 && keyIndex.size === 0;
 
     for (const row of def.seedData || []) {
       const title = String(row.Title || '');
@@ -1252,7 +1261,7 @@ export class ListProvisioningService {
         continue;
       }
 
-      if (await this.isSeedRowAlreadyInList(def.title, def.title, row)) {
+      if (!skipExistenceProbe && (await this.isSeedRowAlreadyInList(def.title, def.title, row))) {
         markSeedRowIndexed(keyIndex, def.title, row);
         continue;
       }
@@ -1609,6 +1618,7 @@ export class ListProvisioningService {
     });
 
     const keyIndex = await this.loadExistingSeedKeyIndex(def.title, def);
+    const skipExistenceProbe = (list.ItemCount ?? 0) === 0 && keyIndex.size === 0;
 
     for (const row of def.seedData || []) {
       const title = String(row.Title || '');
@@ -1616,7 +1626,7 @@ export class ListProvisioningService {
         continue;
       }
 
-      if (await this.isSeedRowAlreadyInList(def.title, def.title, row)) {
+      if (!skipExistenceProbe && (await this.isSeedRowAlreadyInList(def.title, def.title, row))) {
         markSeedRowIndexed(keyIndex, def.title, row);
         continue;
       }
@@ -1930,7 +1940,7 @@ export class ListProvisioningService {
         list.title !== 'AM_Assets' &&
         list.title !== PROJECTS_LIST_TITLE &&
         list.title !== SUB_CATEGORIES_LIST_TITLE &&
-        list.title !== 'AppSettings'
+        list.title !== SETTINGS_LIST_TITLE
     );
     for (const def of simpleLists) {
       await this.clearSeedItemsForListDef(def, result);
@@ -2211,7 +2221,7 @@ export class ListProvisioningService {
         return;
       }
 
-      await this.ensureListFieldsReady('AppSettings');
+      await this.ensureListFieldsReady(SETTINGS_LIST_TITLE);
       await this.getAssetService().updateAppSettings(settings.Id, {
         SampleDataSeeded: 'No'
       });
