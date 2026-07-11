@@ -89,7 +89,9 @@ def paste_icon(base: Image.Image, cfg: dict, base_dir: Path) -> None:
 
 
 def paste_logo(base: Image.Image, cfg: dict, base_dir: Path) -> None:
-    logo_cfg = cfg["logo"]
+    logo_cfg = cfg.get("logo")
+    if not logo_cfg:  # logo intentionally omitted from this thumbnail
+        return
     W, H = base.size
     logo = Image.open(resolve(base_dir, cfg["logo_file"])).convert("RGBA")
     if cfg.get("logo_tint"):
