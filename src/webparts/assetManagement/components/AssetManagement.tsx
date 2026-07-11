@@ -262,8 +262,8 @@ const AssetManagementImpl: React.FC<IAssetManagementProps> = ({
     scrollAppContentToTop();
   }, [currentPage]);
 
-  const refreshProvisioningStatus = React.useCallback(async (): Promise<void> => {
-    const status = await provisioningService.getProvisioningStatus();
+  const refreshProvisioningStatus = React.useCallback(async (options?: { fast?: boolean }): Promise<void> => {
+    const status = await provisioningService.getProvisioningStatus(options);
     setProvisioningStatus(status);
   }, [provisioningService]);
 
@@ -297,7 +297,7 @@ const AssetManagementImpl: React.FC<IAssetManagementProps> = ({
   }, [assetService, setupComplete]);
 
   React.useEffect(() => {
-    void refreshProvisioningStatus();
+    void refreshProvisioningStatus({ fast: true });
   }, [refreshProvisioningStatus]);
 
   React.useEffect(() => {
@@ -492,10 +492,14 @@ const AssetManagementImpl: React.FC<IAssetManagementProps> = ({
       );
     }
 
-    if (!provisioningStatus?.isComplete && currentPage === 'dashboard') {
+    if (!setupComplete && currentPage === 'dashboard') {
+      if (!provisioningStatus) {
+        return <AppLoadingSkeleton />;
+      }
+
       return (
         <>
-          {!showSetupWizard && provisioningStatus ? (
+          {!showSetupWizard ? (
             <SetupPromptBanner
               status={provisioningStatus}
               isSiteOwner={permissions.canAccessSettings}
