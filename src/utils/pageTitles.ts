@@ -1,6 +1,6 @@
 ﻿import type { AppPage } from '../models/IAssetApp';
-import type { TranslateFn } from '../i18n/pageLabels';
-import { getLocalizedPageSubtitle, getLocalizedPageTitle } from '../i18n/pageLabels';
+import type { TranslateFn } from '../i18n/pageLabels.js';
+import { getLocalizedPageSubtitle, getLocalizedPageTitle } from '../i18n/pageLabels.js';
 
 /** @deprecated Use getLocalizedPageTitle with useTranslation instead. */
 export const PAGE_SUBTITLES: Partial<Record<AppPage, string>> = {

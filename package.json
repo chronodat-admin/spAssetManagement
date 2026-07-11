@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.18",
+  "version": "1.0.0.25",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -22,6 +22,7 @@
     "verify:version": "node scripts/verify-version-sync.mjs",
     "verify:display-name": "node scripts/verify-app-display-name.mjs",
     "verify:store": "node scripts/verify-store-readiness.mjs && node scripts/verify-store-icons.mjs && node scripts/verify-store-screenshots.mjs",
+    "verify:sppkg-teams": "node scripts/verify-sppkg-teams.mjs",
     "assets:icons": "python scripts/generate-app-icons.py",
     "assets:sppkg": "python scripts/prepare-sppkg-assets.py",
     "teams:package": "powershell -ExecutionPolicy Bypass -File teams/build-package.ps1",
@@ -49,7 +50,7 @@
     "test:e2e:setup": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --project=setup --headed",
     "test:e2e:ui": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --ui",
     "test:e2e:headed": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --headed",
-    "ship": "node scripts/sync-publisher-manifests.mjs && node scripts/sync-version.mjs && npm run assets:icons && npm run teams:package:m365 && npm run assets:sppkg && node scripts/clean-release.mjs && gulp bundle --ship && gulp package-solution --ship && npm run fix:sppkg-teams"
+    "ship": "node scripts/sync-publisher-manifests.mjs && node scripts/sync-version.mjs && npm run assets:icons && npm run teams:package:m365 && npm run assets:sppkg && node scripts/clean-release.mjs && gulp bundle --ship && gulp package-solution --ship"
   },
   "dependencies": {
     "@fluentui/react-components": "^9.74.1",

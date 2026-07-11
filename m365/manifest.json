@@ -1,18 +1,18 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
   "manifestVersion": "1.17",
-  "version": "1.0.18",
-  "id": "87724d54-e89b-4512-921c-b4d1e3532cc2",
+  "version": "1.0.25",
+  "id": "120fe796-4604-4ea0-81e8-d69ac485cbc9",
   "name": {
     "short": "Asset Management Hub",
     "full": "Asset Management Hub"
   },
   "description": {
-    "short": "Asset management for Microsoft 365",
+    "short": "Asset management for SharePoint and Teams",
     "full": "Asset Management Hub provides a SharePoint-backed asset register, assignments, inventory, and reporting experience across Microsoft 365."
   },
   "developer": {
-    "name": "Chronodat",
+    "name": "Chronodat LLC",
     "websiteUrl": "https://www.chronodat.com/",
     "privacyUrl": "https://www.chronodat.com/Privacy",
     "termsOfUseUrl": "https://www.chronodat.com/terms-conditions"

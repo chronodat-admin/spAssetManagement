@@ -7,7 +7,7 @@
     "default": {
       "pageUrl": "https://YOUR-TENANT.sharepoint.com/sites/YOUR-SITE/SitePages/Home.aspx?debug=true&noredir=true",
       "customActions": {
-        "87724d54-e89b-4512-921c-b4d1e3532cc2": {
+        "120fe796-4604-4ea0-81e8-d69ac485cbc9": {
           "4fa4ca04-c98a-4723-8671-f69956f65f26": {
             "location": "ClientSideExtension.ApplicationCustomizer",
             "properties": {}

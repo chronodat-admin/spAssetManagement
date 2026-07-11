@@ -62,7 +62,7 @@ asset-management-spfx/
 
 | Component | GUID |
 |-----------|------|
-| Solution | `87724d54-e89b-4512-921c-b4d1e3532cc2` |
+| Solution | `120fe796-4604-4ea0-81e8-d69ac485cbc9` |
 | Feature | `cbc74d6d-aa77-4c02-b177-05d8a3c5a702` |
 | Web part | `4fa4ca04-c98a-4723-8671-f69956f65f26` |
 | Form customizer | `013cb786-7445-49dc-aebd-9c4e8706fd98` |

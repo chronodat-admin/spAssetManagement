@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 PROJECT_ASSETS = Path.home() / ".cursor" / "projects" / "c-spAssetManagement" / "assets"
@@ -48,6 +48,8 @@ CATALOG_SIZE = 96
 TEAMS_COLOR_SIZE = 192
 TEAMS_OUTLINE_SIZE = 32
 CORNER_RATIO = 0.22
+# Fraction of the icon tile the box artwork should fill (source leaves big blue margins).
+TILE_FILL_RATIO = 0.92
 TILE_BG = (245, 247, 250)
 # Match spServiceDesk / Microsoft Teams accent gradient tile.
 BLUE_LIGHT = (0, 120, 212)
@@ -155,9 +157,50 @@ def rounded_mask(size: int, radius: int) -> Image.Image:
     return big.resize((size, size), Image.Resampling.LANCZOS)
 
 
+def zoom_to_subject(source: Path, fill: float = TILE_FILL_RATIO) -> Image.Image:
+    """Center-crop into the blue tile margin so the artwork fills more of the icon.
+
+    The source render leaves large empty blue borders (the box sits low-right),
+    which makes the logo look small. We find the real subject bounding box,
+    recenter on it, and crop a square that lets the subject occupy `fill` of the
+    tile — without clipping and without seams (the whole background stays the
+    source's blue gradient).
+    """
+    rgba = Image.open(source).convert("RGBA")
+    arr = np.asarray(rgba).astype(int)
+    h, w = arr.shape[:2]
+    r, g, b, a = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], arr[:, :, 3]
+    dark = (r < 60) & (g < 60) & (b < 70)
+    blue1 = (b > np.maximum(r, g) + 8) & (b > 70)
+    blue2 = (b > 55) & (g > 35) & (r < 55) & ((b - r) > 25)
+    background = (a < 32) | dark | blue1 | blue2
+    fg = ~background
+    if not fg.any():
+        return rgba
+
+    ys, xs = np.where(fg)
+    x0, x1 = int(xs.min()), int(xs.max())
+    y0, y1 = int(ys.min()), int(ys.max())
+    cx = (x0 + x1) / 2.0
+    cy = (y0 + y1) / 2.0
+    subject = max(x1 - x0 + 1, y1 - y0 + 1)
+
+    side = subject / max(0.1, min(fill, 1.0))
+    max_centered = 2 * min(cx, w - cx, cy, h - cy)
+    side = min(side, max_centered)
+    side = max(side, subject)  # never clip the subject
+    half = side / 2.0
+
+    left = max(0, int(round(cx - half)))
+    top = max(0, int(round(cy - half)))
+    right = min(w, int(round(cx + half)))
+    bottom = min(h, int(round(cy + half)))
+    return rgba.crop((left, top, right, bottom))
+
+
 def build_master(source: Path, size: int = MASTER_SIZE) -> Image.Image:
     """Scale the AI/source artwork to a square master with rounded corners."""
-    cropped = crop_source_artwork(source)
+    cropped = zoom_to_subject(source)
 
     side = max(cropped.size)
     square = create_blue_gradient_square(side)
@@ -230,35 +273,43 @@ def save_catalog_rgb(master: Image.Image, dst: Path, size: int = CATALOG_SIZE) -
     print(f"  {dst.relative_to(ROOT)} ({size}x{size} RGB)")
 
 
-def build_two_cube_outline(size: int = TEAMS_OUTLINE_SIZE) -> Image.Image:
-    """White two-cube glyph on transparent for Teams outline."""
+def build_asset_box_outline(size: int = TEAMS_OUTLINE_SIZE) -> Image.Image:
+    """White centered parcel glyph on transparent for Teams outline."""
     scale = 16
     canvas = size * scale
-    alpha = Image.new("L", (canvas, canvas), 0)
-    draw = ImageDraw.Draw(alpha)
-
-    def cube_points(ox: float, oy: float, s: float) -> list[tuple[int, int]]:
-        def pt(fx: float, fy: float) -> tuple[int, int]:
-            return int((ox + fx * s) * canvas), int((oy + fy * s) * canvas)
-
-        top = pt(0.50, 0.12)
-        upper_right = pt(0.86, 0.30)
-        upper_left = pt(0.14, 0.30)
-        center = pt(0.50, 0.52)
-        lower_right = pt(0.86, 0.68)
-        lower_left = pt(0.14, 0.68)
-        bottom = pt(0.50, 0.88)
-        return [top, upper_right, lower_right, bottom, lower_left, upper_left, center]
-
-    for ox, oy, s in ((0.04, 0.08, 0.42), (0.38, 0.08, 0.42)):
-        points = cube_points(ox, oy, s)
-        top, upper_right, lower_right, bottom, lower_left, upper_left, center = points
-        draw.polygon([top, upper_right, lower_right, bottom, lower_left, upper_left], fill=255)
-        gap = max(2, int(canvas * 0.03))
-        for a, b in ((upper_left, center), (upper_right, center), (center, bottom)):
-            draw.line([a, b], fill=0, width=gap)
-
     glyph = Image.new("RGBA", (canvas, canvas), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(glyph)
+
+    def pt(x: float, y: float) -> tuple[int, int]:
+        return int(x * canvas), int(y * canvas)
+
+    stroke = max(1, int(canvas * 0.085))
+    radius = int(canvas * 0.035)
+
+    # Big isometric shipping box filling most of the 32x32 slot so it reads clearly in
+    # the Teams left rail, styled to match the parcel-box app logo.
+    top = [pt(0.50, 0.06), pt(0.94, 0.29), pt(0.50, 0.52), pt(0.06, 0.29)]
+    left = [pt(0.06, 0.29), pt(0.50, 0.52), pt(0.50, 0.94), pt(0.06, 0.71)]
+    right = [pt(0.50, 0.52), pt(0.94, 0.29), pt(0.94, 0.71), pt(0.50, 0.94)]
+    for polygon in (top, left, right):
+        draw.line(polygon + [polygon[0]], fill=(255, 255, 255, 255), width=stroke, joint="curve")
+
+    # Lid flap seam down the middle of the top face (the packing-tape line) — makes it
+    # read as a closed shipping box, matching the logo, not an abstract cube.
+    draw.line(
+        [pt(0.50, 0.06), pt(0.50, 0.52)],
+        fill=(255, 255, 255, 255),
+        width=max(1, int(stroke * 0.7)),
+        joint="curve",
+    )
+
+    # Barcode-style label on the front-left face, echoing the logo's asset tag.
+    label = [pt(0.19, 0.54), pt(0.33, 0.61), pt(0.33, 0.72), pt(0.19, 0.64)]
+    draw.line(label + [label[0]], fill=(255, 255, 255, 255), width=max(1, int(stroke * 0.5)), joint="curve")
+
+    # Slight softening avoids jagged edges after downsampling.
+    alpha = glyph.getchannel("A")
+    alpha = alpha.filter(ImageFilter.GaussianBlur(radius=radius / 8))
     glyph.putalpha(alpha)
     return glyph.resize((size, size), Image.Resampling.LANCZOS)
 
@@ -276,7 +327,7 @@ def main() -> None:
     save_rgba(master, RUNTIME_BRAND_ICON, CATALOG_SIZE)
     save_rgba(build_nav_icon(source), RUNTIME_NAV_ICON, CATALOG_SIZE)
 
-    outline = build_two_cube_outline(TEAMS_OUTLINE_SIZE)
+    outline = build_asset_box_outline(TEAMS_OUTLINE_SIZE)
     TEAMS_OUTLINE.parent.mkdir(parents=True, exist_ok=True)
     outline.save(TEAMS_OUTLINE, "PNG", optimize=True)
     print(f"  {TEAMS_OUTLINE.relative_to(ROOT)} ({TEAMS_OUTLINE_SIZE}x{TEAMS_OUTLINE_SIZE} outline)")

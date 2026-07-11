@@ -10,6 +10,8 @@ This is the index. Companion docs:
 |-----|---------|
 | [`microsoft-store-submission.md`](../microsoft-store-submission.md) | Pre-submission checklist + upload rules |
 | [`partner-center-long-description.html`](./partner-center-long-description.html) | Ready-to-paste store description |
+| [`02-teams-after-install.md`](./02-teams-after-install.md) | Enable Teams via App Catalog Sync |
+| [`03-teams-and-store-hardening-playbook.md`](./03-teams-and-store-hardening-playbook.md) | Reusable Teams/store hardening steps for any Chronodat app |
 | [`../presentation/image-generation-process.md`](../presentation/image-generation-process.md) | Presentation/video slide pipeline |
 | [`../presentation/90-second-video-script.md`](../presentation/90-second-video-script.md) | Video narration + timing |
 
@@ -61,7 +63,7 @@ change, update these sources and regenerate the relevant section:
 | Key Features | `src/components/Settings/settingsPageMeta.ts` + app navigation |
 | Microsoft Teams Integration | web part `supportedHosts` (`TeamsTab`, `TeamsPersonalApp`) |
 | Email Notifications | `Settings → Email Integration` (Graph / Chronodat API / Power Automate) |
-| Microsoft Intune Sync | Graph scope `DeviceManagementManagedDevices.Read.All` |
+| Microsoft Intune Sync | Optional Intune import flow; not requested in the default store package |
 | Component Information (policy 1170.1) | the two SPFx manifests (see §5) |
 | Prerequisites / Limitations | provisioning + `webApiPermissionRequests` + platform constraints |
 | Licensing / Get Started | subscription model (one license per site collection) |
@@ -149,14 +151,17 @@ Center → API access:
 | Scope | Used for |
 |-------|----------|
 | `Mail.Send` | Microsoft Graph workflow email notifications |
-| `User.Read` | Signed-in user profile |
-| `DeviceManagementManagedDevices.Read.All` | Optional Intune managed-device import |
+
+The default store package intentionally keeps Graph consent narrow. Optional Intune
+managed-device import requires separate tenant planning because
+`DeviceManagementManagedDevices.Read.All` can block SharePoint App Catalog
+Sync-to-Teams in tenants where the API permission is pending or not approved.
 
 **Component GUIDs** (fixed for the store upgrade path — never change):
 
 | Component | GUID |
 |-----------|------|
-| Solution | `87724d54-e89b-4512-921c-b4d1e3532cc2` |
+| Solution | `120fe796-4604-4ea0-81e8-d69ac485cbc9` |
 | Feature | `cbc74d6d-aa77-4c02-b177-05d8a3c5a702` |
 | Web part | `4fa4ca04-c98a-4723-8671-f69956f65f26` |
 | Form customizer | `013cb786-7445-49dc-aebd-9c4e8706fd98` |
@@ -183,11 +188,17 @@ All icons derive from the single branded source `assets/brand/app-icon.png`.
 # 2. Sync everything and build the package
 npm run ship
 # 3. Gate checks
-npm run verify:version && npm run verify:display-name && npm run verify:store
+npm run verify:version && npm run verify:display-name && npm run verify:store && npm run verify:sppkg-teams
 ```
 
 `verify:store` runs readiness + icon + screenshot validators. The full ordered
 checklist lives in [`microsoft-store-submission.md`](../microsoft-store-submission.md).
+
+For SharePoint App Catalog **Sync to Teams**, upload the `.sppkg` produced directly
+by `npm run ship`. Do **not** run `npm run fix:sppkg-teams` before upload; the package
+shape that successfully synced keeps `TeamsSPFxApp.zip` under
+`ClientSideAssets/TeamsSPFxApp.zip`. Full runbook:
+[`02-teams-after-install.md`](./02-teams-after-install.md).
 
 ---
 

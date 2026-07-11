@@ -413,7 +413,11 @@ const AssetManagementImpl: React.FC<IAssetManagementProps> = ({
   }, [assets, currentPage, context.pageContext.user, currentUserId]);
 
   if (displayMode === DisplayMode.Edit) {
-    return <EditModePlaceholder isTeamsHost={isTeamsHost} />;
+    return (
+      <AppearanceThemeProvider settings={settings} webUrl={webUrl} isTeamsHost={isTeamsHost}>
+        <EditModePlaceholder isTeamsHost={isTeamsHost} />
+      </AppearanceThemeProvider>
+    );
   }
 
   if (!bootstrapped || subscription.loading) {
