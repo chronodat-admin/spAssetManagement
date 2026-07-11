@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.28",
+  "version": "1.0.0.29",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
