@@ -18,6 +18,11 @@ SLIDES_DIR = REPO_ROOT / "assets" / "website" / "presentation"
 OUT_DIR = REPO_ROOT / "assets" / "website" / "presentation" / "video"
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
+# Optional animated intro/opening clip played before the welcome slide. Its
+# original audio is dropped so the same continuous presentation music bed plays
+# over it ("same music for the opening screen"). Override with --intro / --no-intro.
+INTRO_VIDEO = OUT_DIR / "intro-source.mp4"
+
 # 90-second timeline from docs/presentation/90-second-video-script.md
 SEGMENTS = [
     {
@@ -242,6 +247,47 @@ def slide_to_clip(slide_path: Path, duration: float, out_path: Path) -> None:
     )
 
 
+def intro_segment(video_path: Path, out_path: Path) -> float:
+    """Scale an external intro clip into the presentation frame and attach silent
+    stereo audio (so the global music bed — not the clip's own sound — plays over
+    the opening). Returns the clip's duration so it slots into the timeline."""
+    duration = probe_duration(video_path)
+    run(
+        [
+            FFMPEG,
+            "-y",
+            "-i",
+            str(video_path),
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=48000:cl=stereo",
+            "-vf",
+            (
+                f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=decrease,"
+                f"pad={WIDTH}:{HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black,"
+                f"fps={FPS},format=yuv420p"
+            ),
+            "-map",
+            "0:v:0",
+            "-map",
+            "1:a:0",
+            "-t",
+            f"{duration:.3f}",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            str(out_path),
+        ]
+    )
+    return duration
+
+
 def pad_audio_to(audio_path: Path, target_duration: float, out_path: Path) -> None:
     """Add a short lead-in and pad with trailing silence to exactly target_duration.
 
@@ -454,13 +500,29 @@ def combine_segments(segments: list[Path], durations: list[float], out_path: Pat
     )
 
 
-async def build(*, skip_tts: bool = False, music_volume: float = MUSIC_VOLUME) -> Path:
+async def build(
+    *,
+    skip_tts: bool = False,
+    music_volume: float = MUSIC_VOLUME,
+    intro: Path | None = None,
+) -> Path:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="amh-video-", dir=OUT_DIR))
 
     try:
         segment_files: list[Path] = []
         durations: list[float] = []
+
+        if intro is not None:
+            if not intro.exists():
+                raise FileNotFoundError(f"Missing intro clip: {intro}")
+            # Distinct name so it never collides with the SEGMENTS entry whose
+            # id is "intro" (which writes work/intro.mp4).
+            intro_file = work / "opening-intro-clip.mp4"
+            intro_dur = intro_segment(intro, intro_file)
+            segment_files.append(intro_file)
+            durations.append(intro_dur)
+            print(f"  [intro] {intro_dur:.1f}s — {intro.name}")
 
         for i, seg in enumerate(SEGMENTS):
             slide = SLIDES_DIR / seg["slide"]
@@ -551,11 +613,21 @@ def main() -> None:
         help="Background music level before ducking (0 disables music)",
     )
     parser.add_argument("--no-music", action="store_true", help="Disable background music")
+    parser.add_argument(
+        "--intro",
+        default=str(INTRO_VIDEO),
+        help="Animated intro clip prepended before the welcome slide (uses the shared music bed)",
+    )
+    parser.add_argument("--no-intro", action="store_true", help="Skip the animated intro clip")
     args = parser.parse_args()
     VOICE = args.voice
     music_volume = 0.0 if args.no_music else args.music_volume
-    print("Building 90-second presentation video...")
-    asyncio.run(build(skip_tts=args.skip_tts, music_volume=music_volume))
+    intro = None if args.no_intro else Path(args.intro)
+    if intro is not None and not intro.exists():
+        print(f"Note: intro clip not found ({intro}); building without it.")
+        intro = None
+    print("Building presentation video...")
+    asyncio.run(build(skip_tts=args.skip_tts, music_volume=music_volume, intro=intro))
 
 
 if __name__ == "__main__":

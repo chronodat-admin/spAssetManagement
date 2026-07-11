@@ -140,6 +140,12 @@ npm run assets:presentation-video     # -> assets/website/presentation/video/<ap
 - Cross-dissolves video **and** cross-fades audio together (0.7 s) so A/V stays in sync.
 - Lays a **soft ambient music bed** (synthesized locally with numpy — royalty-free) that
   automatically **ducks** under the voice via sidechain compression.
+- Optionally prepends an **animated intro/opening clip** before the welcome slide. The
+  clip's own audio is dropped so the same continuous music bed plays over the opening
+  ("same music for the opening screen"). Drop the file at
+  `assets/website/presentation/video/intro-source.mp4` and it is picked up automatically,
+  or point at any path with `--intro`. The clip is scaled/letterboxed to 1920×1080 and
+  cross-dissolves into the welcome slide like every other segment.
 
 Options:
 
@@ -148,6 +154,8 @@ python scripts/build-presentation-video.py --voice en-US-GuyNeural   # different
 python scripts/build-presentation-video.py --music-volume 0.3        # louder music bed
 python scripts/build-presentation-video.py --no-music                # no music
 python scripts/build-presentation-video.py --skip-tts                # silent (slides only)
+python scripts/build-presentation-video.py --intro path\to\clip.mp4  # custom intro clip
+python scripts/build-presentation-video.py --no-intro                # skip the intro clip
 ```
 
 Good voices: `en-US-JennyNeural`, `en-US-AriaNeural`, `en-US-GuyNeural`,
