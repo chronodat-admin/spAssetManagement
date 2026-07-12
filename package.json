@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.29",
+  "version": "1.0.0.30",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -16,6 +16,7 @@
     "test:spfx": "gulp test",
     "test:e2e": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts",
     "test:e2e:smoke": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --grep @smoke",
+    "test:e2e:crud": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts e2e/crud.spec.ts",
     "sync:publisher": "node scripts/sync-publisher-manifests.mjs",
     "sync:version": "node scripts/sync-version.mjs",
     "sync:icon": "python scripts/sync-webpart-icon.py",

@@ -5,6 +5,15 @@ import type {
   FieldRule,
   FormSettings
 } from './types';
+import {
+  ASSETS_LIST_TITLE,
+  CATEGORIES_LIST_TITLE,
+  LOCATIONS_LIST_TITLE,
+  PROJECTS_LIST_TITLE,
+  SUB_CATEGORIES_LIST_TITLE,
+  VENDORS_LIST_TITLE
+} from '../../models/IListDefinitions.js';
+import { getProvisioningListDisplayLabel } from '../../utils/provisioningListLabels.js';
 
 export type TabConfig = { key: string; label: string; fields: string[] };
 
@@ -29,37 +38,37 @@ export const FORM_ENTITY_OPTIONS: FormEntityOption[] = [
   {
     id: 'assets',
     entity: 'risks',
-    label: 'AM_Assets',
+    label: getProvisioningListDisplayLabel(ASSETS_LIST_TITLE),
     description: 'Tabs, built-in fields, and custom fields on asset create/edit forms.'
   },
   {
     id: 'categories',
     entity: 'lookups',
-    label: 'AM_Categories',
+    label: getProvisioningListDisplayLabel(CATEGORIES_LIST_TITLE),
     description: 'Category lookup list create/edit forms.'
   },
   {
     id: 'subCategories',
     entity: 'subCategories',
-    label: 'AM_SubCategories',
+    label: getProvisioningListDisplayLabel(SUB_CATEGORIES_LIST_TITLE),
     description: 'Sub-category lookup list create/edit forms.'
   },
   {
     id: 'vendors',
     entity: 'lookups',
-    label: 'AM_Vendors',
+    label: getProvisioningListDisplayLabel(VENDORS_LIST_TITLE),
     description: 'Vendor lookup list create/edit forms.'
   },
   {
     id: 'locations',
     entity: 'lookups',
-    label: 'AM_Locations',
+    label: getProvisioningListDisplayLabel(LOCATIONS_LIST_TITLE),
     description: 'Location lookup list create/edit forms.'
   },
   {
     id: 'projects',
     entity: 'projects',
-    label: 'AM_Projects',
+    label: getProvisioningListDisplayLabel(PROJECTS_LIST_TITLE),
     description: 'Project lookup list create/edit forms.'
   }
 ];

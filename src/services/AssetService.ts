@@ -414,7 +414,12 @@ export class AssetService {
       title === LEGACY_BUSINESS_LIST_TITLE ||
       title.toLowerCase() === 'business'
     ) {
-      this.invalidateDataCache(['business:*', 'risks:*']);
+      this.invalidateDataCache([
+        'business:*',
+        `lookup:${CATEGORIES_LIST_TITLE}:*`,
+        'subcategories:*',
+        'risks:*'
+      ]);
       return;
     }
     if (title === PROJECTS_LIST_TITLE) {
@@ -2697,10 +2702,10 @@ export class AssetService {
       if (await this.projectTitleExists(title, businessId)) {
         throw new Error(`"${title}" already exists for the selected business.`);
       }
-      if (!payload.Code) {
+      if (!payload.AM_Code) {
         const projectCode = await this.allocateEntityCodeOnCreate('project');
         if (projectCode) {
-          payload.Code = projectCode;
+          payload.AM_Code = projectCode;
         }
       }
     }

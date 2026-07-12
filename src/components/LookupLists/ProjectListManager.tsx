@@ -396,7 +396,7 @@ export const ProjectListManager: React.FC<IProjectListManagerProps> = ({
         subtitle={panelMode === 'create' ? 'Create a new project linked to a business.' : editingItem?.Title}
         riskService={riskService}
         settings={settings}
-        disabledFields={['Code']}
+        disabledFields={['AM_Code']}
         lookupOptions={lookupOptions}
         extraWide
         onClose={closePanel}

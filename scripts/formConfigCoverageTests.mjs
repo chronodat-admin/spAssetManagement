@@ -15,22 +15,22 @@ import {
 } from '../lib/models/IListDefinitions.js';
 
 describe('form settings entity options', () => {
-  it('lists AM_* SharePoint lists for configure-forms dropdown', () => {
+  it('lists user-facing display labels for configure-forms dropdown', () => {
     const labels = FORM_ENTITY_OPTIONS.map((entry) => entry.label);
     assert.deepEqual(labels, [
-      'AM_Assets',
-      'AM_Categories',
-      'AM_SubCategories',
-      'AM_Vendors',
-      'AM_Locations',
-      'AM_Projects'
+      'Assets',
+      'Categories',
+      'Sub-categories',
+      'Vendors',
+      'Locations',
+      'Projects'
     ]);
     assert.equal(new Set(FORM_ENTITY_OPTIONS.map((entry) => entry.id)).size, FORM_ENTITY_OPTIONS.length);
   });
 
   it('maps multiple lookup lists to shared lookups entity settings', () => {
     const lookupEntities = FORM_ENTITY_OPTIONS.filter((entry) =>
-      ['AM_Categories', 'AM_Vendors', 'AM_Locations'].includes(entry.label)
+      ['categories', 'vendors', 'locations'].includes(entry.id)
     );
     assert.equal(lookupEntities.every((entry) => entry.entity === 'lookups'), true);
   });
