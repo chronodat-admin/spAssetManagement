@@ -12,6 +12,7 @@ This is the index. Companion docs:
 | [`partner-center-long-description.html`](./partner-center-long-description.html) | Ready-to-paste store description |
 | [`02-teams-after-install.md`](./02-teams-after-install.md) | Enable Teams via App Catalog Sync |
 | [`03-teams-and-store-hardening-playbook.md`](./03-teams-and-store-hardening-playbook.md) | Reusable Teams/store hardening steps for any Chronodat app |
+| [`partner-center-and-billing-setup.md`](./partner-center-and-billing-setup.md) | Paste-ready Partner Center + Stripe submission text |
 | [`../presentation/image-generation-process.md`](../presentation/image-generation-process.md) | Presentation/video slide pipeline |
 | [`../presentation/90-second-video-script.md`](../presentation/90-second-video-script.md) | Video narration + timing |
 
