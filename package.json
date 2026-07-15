@@ -1,6 +1,6 @@
 {
   "name": "asset-management-spfx",
-  "version": "1.0.0.31",
+  "version": "1.0.0.32",
   "private": true,
   "engines": {
     "node": ">=22.0.0 <23.0.0"
@@ -12,7 +12,7 @@
     "serve": "gulp serve",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/listSchemaCoverageTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/sampleTagSeedTests.mjs scripts/assetSeedDataTests.mjs scripts/assetImageTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/numberingMigrationTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/storeValidationFixTests.mjs scripts/depreciationTests.mjs scripts/depreciationFilterTests.mjs scripts/assetDropdownFieldsTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs scripts/assetValidationTests.mjs scripts/assetExportTests.mjs scripts/dashboardAnalyticsTests.mjs scripts/auditPayloadTests.mjs scripts/serviceCrudTests.mjs scripts/settingsStorageTests.mjs scripts/versionLookupCoverageTests.mjs scripts/reportBuilderTests.mjs scripts/tenantWorkflowContractTests.mjs scripts/utilityCoverageTests.mjs scripts/formConfigCoverageTests.mjs scripts/subscriptionRolesCoverageTests.mjs scripts/moduleContractCoverageTests.mjs scripts/functionalityCoverageGateTests.mjs",
+    "test": "npm run build && node --test scripts/listItemQueryTests.mjs scripts/listSchemaCoverageTests.mjs scripts/seedDedupTests.mjs scripts/notificationTests.mjs scripts/sampleDataSeedTests.mjs scripts/sampleTagSeedTests.mjs scripts/assetSeedDataTests.mjs scripts/assetImageTests.mjs scripts/graphMailSendTests.mjs scripts/mergeCustomFieldsTests.mjs scripts/emailIntegrationTests.mjs scripts/numberingTests.mjs scripts/numberingMigrationTests.mjs scripts/listFormMutationTests.mjs scripts/assignmentTests.mjs scripts/storeValidationFixTests.mjs scripts/depreciationTests.mjs scripts/depreciationFilterTests.mjs scripts/assetDropdownFieldsTests.mjs scripts/assetListFilterTests.mjs scripts/assetDashboardStatsTests.mjs scripts/assetValidationTests.mjs scripts/assetExportTests.mjs scripts/dashboardAnalyticsTests.mjs scripts/auditPayloadTests.mjs scripts/serviceCrudTests.mjs scripts/settingsStorageTests.mjs scripts/versionLookupCoverageTests.mjs scripts/reportBuilderTests.mjs scripts/tenantWorkflowContractTests.mjs scripts/utilityCoverageTests.mjs scripts/barcodeUtilsTests.mjs scripts/formConfigCoverageTests.mjs scripts/subscriptionRolesCoverageTests.mjs scripts/moduleContractCoverageTests.mjs scripts/functionalityCoverageGateTests.mjs",
     "test:spfx": "gulp test",
     "test:e2e": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts",
     "test:e2e:smoke": "node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --grep @smoke",

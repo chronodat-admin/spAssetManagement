@@ -4,9 +4,9 @@
   };
 };
 
-const FALLBACK_VERSION = '1.0.0.31';
+const FALLBACK_VERSION = '1.0.0.32';
 
-/** Display label for the shell footer, e.g. v1.0.0.31-abc1234 */
+/** Display label for the shell footer, e.g. v1.0.0.32-abc1234 */
 export function getAppVersionLabel(): string {
   const version = process.env.ASSET_APP_VERSION || FALLBACK_VERSION;
   return version.startsWith('v') ? version : `v${version}`;

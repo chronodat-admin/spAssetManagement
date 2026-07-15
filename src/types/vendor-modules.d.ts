@@ -31,3 +31,21 @@ declare module 'papaparse' {
   const Papa: { parse: typeof parse };
   export default Papa;
 }
+
+declare module '@zxing/browser/esm/common/IScannerControls' {
+  export interface IScannerControls {
+    stop(): void;
+  }
+}
+
+declare module '@zxing/browser' {
+  import type { IScannerControls } from '@zxing/browser/esm/common/IScannerControls';
+
+  export class BrowserMultiFormatReader {
+    decodeFromVideoElement(
+      video: HTMLVideoElement,
+      callback: (result: { getText(): string } | undefined) => void
+    ): Promise<IScannerControls>;
+    static releaseAllStreams(): void;
+  }
+}

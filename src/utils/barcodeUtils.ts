@@ -1,44 +1,124 @@
-export function generateBarcodeSvg(value: string, options?: { width?: number; height?: number }): string {
-  const safeValue = escapeXml(value || '000000');
-  const barWidth = options?.width ?? 2;
-  const height = options?.height ?? 60;
-  const bars = buildPseudoBars(value || '0');
-  const totalWidth = bars.length * barWidth + 24;
-  const rects = bars
-    .map((on, index) =>
-      on
-        ? `<rect x="${12 + index * barWidth}" y="8" width="${barWidth}" height="${height}" fill="#111"/>`
-        : ''
-    )
+import { toDataURL } from 'qrcode';
+
+/**
+ * Code 128 symbol patterns (indices 0-106). Each entry is a run-length string of
+ * bar/space module widths, alternating bar-first. Index 103/104/105 are the
+ * Start A/B/C symbols and index 106 is the Stop symbol. These are the canonical
+ * ISO/IEC 15417 patterns, so the generated barcodes decode on real scanners and
+ * the browser BarcodeDetector used by the Scan Asset page.
+ */
+const CODE128_PATTERNS = [
+  '212222', '222122', '222221', '121223', '121322', '131222', '122213', '122312', '132212', '221213',
+  '221312', '231212', '112232', '122132', '122231', '113222', '123122', '123221', '223211', '221132',
+  '221231', '213212', '223112', '312131', '311222', '321122', '321221', '312212', '322112', '322211',
+  '212123', '212321', '232121', '111323', '131123', '131321', '112313', '132113', '132311', '211313',
+  '231113', '231311', '112133', '112331', '132131', '113123', '113321', '133121', '313121', '211331',
+  '231131', '213113', '213311', '213131', '311123', '311321', '331121', '312113', '312311', '332111',
+  '314111', '221411', '431111', '111224', '111422', '121124', '121421', '141122', '141221', '112214',
+  '112412', '122114', '122411', '142112', '142211', '241211', '221114', '413111', '241112', '134111',
+  '111242', '121142', '121241', '114212', '124112', '124211', '411212', '421112', '421211', '212141',
+  '214121', '412121', '111143', '111341', '131141', '114113', '114311', '411113', '411311', '113141',
+  '114131', '311141', '411131', '211412', '211214', '211232', '2331112'
+];
+
+const CODE128_START_B = 104;
+const CODE128_STOP = 106;
+
+/** Keep only characters Code 128 set B can encode (printable ASCII 32-127). */
+function sanitizeCode128Value(value: string): string {
+  const cleaned = (value || '')
+    .split('')
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code <= 127;
+    })
     .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${height + 28}">
+  return cleaned || '0';
+}
+
+function patternToModules(widths: string): string {
+  let modules = '';
+  for (let i = 0; i < widths.length; i += 1) {
+    const width = Number(widths[i]);
+    modules += (i % 2 === 0 ? '1' : '0').repeat(width);
+  }
+  return modules;
+}
+
+/**
+ * Encodes a value as a Code 128 (set B) module string where '1' is a bar module
+ * and '0' is a space module. Includes the Start B symbol, the mod-103 check
+ * symbol, and the Stop symbol. Exported so the encoding can be unit tested.
+ */
+export function encodeCode128(value: string): string {
+  const clean = sanitizeCode128Value(value);
+  const codes: number[] = [CODE128_START_B];
+  for (let i = 0; i < clean.length; i += 1) {
+    codes.push(clean.charCodeAt(i) - 32);
+  }
+  let checksum = CODE128_START_B;
+  for (let i = 1; i < codes.length; i += 1) {
+    checksum += codes[i] * i;
+  }
+  codes.push(checksum % 103);
+  codes.push(CODE128_STOP);
+  return codes.map((code) => patternToModules(CODE128_PATTERNS[code])).join('');
+}
+
+/**
+ * Renders a scannable Code 128 barcode as an inline SVG string. A light quiet
+ * zone is included on both sides so scanners can lock onto the symbol.
+ */
+export function generateBarcodeSvg(value: string, options?: { width?: number; height?: number }): string {
+  const moduleWidth = options?.width ?? 2;
+  const height = options?.height ?? 60;
+  const quietModules = 10;
+  const displayValue = escapeXml(sanitizeCode128Value(value));
+  const modules = encodeCode128(value);
+  const totalModules = modules.length + quietModules * 2;
+  const totalWidth = totalModules * moduleWidth;
+  const svgHeight = height + 24;
+
+  let rects = '';
+  let x = quietModules * moduleWidth;
+  let index = 0;
+  while (index < modules.length) {
+    if (modules[index] === '1') {
+      let run = 1;
+      while (modules[index + run] === '1') {
+        run += 1;
+      }
+      rects += `<rect x="${x}" y="8" width="${run * moduleWidth}" height="${height}" fill="#111"/>`;
+      x += run * moduleWidth;
+      index += run;
+    } else {
+      x += moduleWidth;
+      index += 1;
+    }
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${svgHeight}" viewBox="0 0 ${totalWidth} ${svgHeight}">
+    <rect x="0" y="0" width="${totalWidth}" height="${svgHeight}" fill="#ffffff"/>
     ${rects}
-    <text x="${totalWidth / 2}" y="${height + 22}" text-anchor="middle" font-size="12" font-family="Segoe UI, sans-serif">${safeValue}</text>
+    <text x="${totalWidth / 2}" y="${height + 20}" text-anchor="middle" font-size="12" font-family="Segoe UI, sans-serif">${displayValue}</text>
   </svg>`;
 }
 
+/**
+ * Renders a real (ISO/IEC 18004) QR code as a PNG data URL using the qrcode
+ * library. Returns an empty string if encoding fails so the caller can degrade
+ * gracefully.
+ */
 export async function generateQrDataUrl(value: string, size = 180): Promise<string> {
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
+  try {
+    return await toDataURL(value || 'asset', {
+      width: size,
+      margin: 1,
+      errorCorrectionLevel: 'M'
+    });
+  } catch {
     return '';
   }
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = '#111111';
-  const cells = buildQrMatrix(value || 'asset');
-  const cellSize = Math.floor(size / cells.length);
-  const offset = Math.floor((size - cellSize * cells.length) / 2);
-  for (let y = 0; y < cells.length; y += 1) {
-    for (let x = 0; x < cells[y].length; x += 1) {
-      if (cells[y][x]) {
-        ctx.fillRect(offset + x * cellSize, offset + y * cellSize, cellSize, cellSize);
-      }
-    }
-  }
-  return canvas.toDataURL('image/png');
 }
 
 export function buildAssetBarcodeValue(asset: { AM_Barcode?: string; AM_AssetId?: string; Id?: number }): string {
@@ -100,42 +180,4 @@ export function findAssetByScanValue<T extends { AM_Barcode?: string; AM_AssetId
 
 function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function buildPseudoBars(value: string): boolean[] {
-  const bars: boolean[] = [];
-  for (let i = 0; i < value.length; i += 1) {
-    const code = value.charCodeAt(i);
-    bars.push(true, false, code % 2 === 0, code % 3 === 0, false, true);
-  }
-  return bars;
-}
-
-function buildQrMatrix(value: string): boolean[][] {
-  const size = 21;
-  const matrix = Array.from({ length: size }, () => Array<boolean>(size).fill(false));
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-  }
-  for (let y = 1; y < size - 1; y += 1) {
-    for (let x = 1; x < size - 1; x += 1) {
-      const seed = (hash + x * 17 + y * 31) % 97;
-      matrix[y][x] = seed % 3 === 0;
-    }
-  }
-  drawFinder(matrix, 0, 0);
-  drawFinder(matrix, size - 7, 0);
-  drawFinder(matrix, 0, size - 7);
-  return matrix;
-}
-
-function drawFinder(matrix: boolean[][], row: number, col: number): void {
-  for (let y = 0; y < 7; y += 1) {
-    for (let x = 0; x < 7; x += 1) {
-      const border = x === 0 || y === 0 || x === 6 || y === 6;
-      const center = x >= 2 && x <= 4 && y >= 2 && y <= 4;
-      matrix[row + y][col + x] = border || center;
-    }
-  }
 }

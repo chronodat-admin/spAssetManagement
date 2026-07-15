@@ -4,7 +4,8 @@ interface BarcodeDetectorOptions {
 
 declare class BarcodeDetector {
   public constructor(options?: BarcodeDetectorOptions);
-  public detect(source: ImageBitmapSource): Promise<Array<{ rawValue: string }>>;
+  public static getSupportedFormats(): Promise<string[]>;
+  public detect(source: ImageBitmapSource): Promise<Array<{ rawValue: string; format?: string }>>;
 }
 
 interface Window {

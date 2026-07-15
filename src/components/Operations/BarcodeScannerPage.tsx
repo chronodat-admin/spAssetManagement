@@ -1,9 +1,9 @@
 import * as React from 'react';
-
 import {
   Button,
   Field,
   Input,
+  Spinner,
   Text,
   Title3,
   makeStyles,
@@ -17,7 +17,7 @@ import { ContentCard } from '../Layout/ContentCard';
 import { EmptyState } from '../Layout/EmptyState';
 import { useFormStyles } from '../Forms/formStyles';
 import { IAsset } from '../../models/IAssetApp';
-import { resolveScannedAsset } from '../../utils/barcodeUtils';
+import { parseScannedBarcode, resolveScannedAsset } from '../../utils/barcodeUtils';
 import { useTranslation } from '../../i18n/LocaleContext';
 import { AppMessageBar } from '../Layout/AppMessageBar';
 
@@ -26,6 +26,30 @@ export interface IBarcodeScannerPageProps {
   onViewAsset: (asset: IAsset) => void;
 }
 
+/**
+ * Formats we ask the browser BarcodeDetector to look for. The actual set is
+ * intersected with what the device supports at runtime so we never request a
+ * format that would make the constructor throw.
+ */
+const DESIRED_FORMATS = [
+  'qr_code',
+  'code_128',
+  'ean_13',
+  'ean_8',
+  'code_39',
+  'code_93',
+  'upc_a',
+  'upc_e',
+  'codabar',
+  'itf',
+  'data_matrix',
+  'pdf417',
+  'aztec'
+];
+
+/** Frames with a decode error before we surface the "having trouble" hint. */
+const DETECT_ERROR_THRESHOLD = 15;
+
 const useStyles = makeStyles({
   video: {
     width: '100%',
@@ -33,6 +57,11 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground2
+  },
+  status: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS
   },
   resultCard: {
     display: 'flex',
@@ -45,18 +74,6 @@ const useStyles = makeStyles({
   }
 });
 
-function applyScanResult(
-  rawValue: string,
-  assets: IAsset[],
-  setScanValue: React.Dispatch<React.SetStateAction<string>>,
-  setMatched: React.Dispatch<React.SetStateAction<IAsset | undefined>>,
-  setSearched: React.Dispatch<React.SetStateAction<boolean>>
-): void {
-  setScanValue(rawValue);
-  setMatched(resolveScannedAsset(assets, rawValue));
-  setSearched(true);
-}
-
 export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets, onViewAsset }) => {
   const { t } = useTranslation();
   const formStyles = useFormStyles();
@@ -65,41 +82,110 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
   const [matched, setMatched] = React.useState<IAsset | undefined>();
   const [searched, setSearched] = React.useState(false);
   const [cameraError, setCameraError] = React.useState('');
+  const [status, setStatus] = React.useState('');
+  const [scanning, setScanning] = React.useState(false);
+
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
   const detectorRef = React.useRef<BarcodeDetector | null>(null);
   const zxingReaderRef = React.useRef<BrowserMultiFormatReader | null>(null);
   const zxingControlsRef = React.useRef<IScannerControls | null>(null);
+  const activeRef = React.useRef(false);
+  const rafRef = React.useRef<number | null>(null);
+  const errorCountRef = React.useRef(0);
+  const scanLoopRef = React.useRef<() => void>();
+
+  const assetsRef = React.useRef(assets);
+  React.useEffect(() => {
+    assetsRef.current = assets;
+  }, [assets]);
+
+  const applyResult = React.useCallback((rawValue: string): void => {
+    const parsed = parseScannedBarcode(rawValue);
+    setScanValue(parsed);
+    setMatched(resolveScannedAsset(assetsRef.current, rawValue));
+    setSearched(true);
+  }, []);
 
   const handleSearch = (): void => {
-    setMatched(resolveScannedAsset(assets, scanValue));
-    setSearched(true);
+    activeRef.current = false;
+    setScanning(false);
+    applyResult(scanValue);
+  };
+
+  const handleScanAgain = (): void => {
+    setMatched(undefined);
+    setSearched(false);
+    setScanValue('');
+    errorCountRef.current = 0;
+    if (scanLoopRef.current) {
+      activeRef.current = true;
+      setScanning(true);
+      setStatus(t('barcode', 'scanning', 'Camera active — point at a barcode or QR code.'));
+      scanLoopRef.current();
+    }
   };
 
   React.useEffect(() => {
     let cancelled = false;
 
     const startBarcodeDetector = async (): Promise<void> => {
-      detectorRef.current = new BarcodeDetector({
-        formats: ['code_128', 'ean_13', 'qr_code', 'code_39']
-      });
+      let formats = DESIRED_FORMATS;
+      try {
+        const supported = await BarcodeDetector.getSupportedFormats();
+        const filtered = DESIRED_FORMATS.filter((format) => supported.includes(format));
+        if (filtered.length > 0) {
+          formats = filtered;
+        }
+      } catch {
+        // Fall back to the desired list if the device cannot report formats.
+      }
 
-      const tick = async (): Promise<void> => {
-        if (cancelled || !videoRef.current || !detectorRef.current) return;
+      detectorRef.current = new BarcodeDetector({ formats });
 
-        try {
-          const codes = await detectorRef.current.detect(videoRef.current);
-          if (codes[0]?.rawValue) {
-            applyScanResult(codes[0].rawValue, assets, setScanValue, setMatched, setSearched);
+      const scanLoop = async (): Promise<void> => {
+        if (cancelled || !activeRef.current) return;
+
+        const video = videoRef.current;
+        const detector = detectorRef.current;
+        if (video && detector) {
+          try {
+            const codes = await detector.detect(video);
+            errorCountRef.current = 0;
+            const raw = codes[0]?.rawValue;
+            if (raw) {
+              activeRef.current = false;
+              setScanning(false);
+              setStatus('');
+              applyResult(raw);
+              return;
+            }
+          } catch {
+            errorCountRef.current += 1;
+            if (errorCountRef.current === DETECT_ERROR_THRESHOLD) {
+              setStatus(
+                t(
+                  'barcode',
+                  'detectError',
+                  'Having trouble reading the code. Improve lighting, hold steady, or enter it manually.'
+                )
+              );
+            }
           }
-        } catch {
-          // ignore frame errors
         }
 
-        if (!cancelled) window.requestAnimationFrame(() => void tick());
+        rafRef.current = window.requestAnimationFrame(() => void scanLoop());
       };
 
-      void tick();
+      scanLoopRef.current = () => {
+        rafRef.current = window.requestAnimationFrame(() => void scanLoop());
+      };
+
+      activeRef.current = true;
+      errorCountRef.current = 0;
+      setScanning(true);
+      setStatus(t('barcode', 'scanning', 'Camera active — point at a barcode or QR code.'));
+      scanLoopRef.current();
     };
 
     const startZxingScanner = async (): Promise<void> => {
@@ -110,15 +196,21 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
         return;
       }
 
+      setScanning(true);
+      setStatus(t('barcode', 'scanning', 'Camera active — point at a barcode or QR code.'));
+
       zxingControlsRef.current = await reader.decodeFromVideoElement(
         videoRef.current,
-        (result) => {
+        (result: { getText(): string } | undefined) => {
           if (cancelled) {
             return;
           }
 
           if (result?.getText()) {
-            applyScanResult(result.getText(), assets, setScanValue, setMatched, setSearched);
+            activeRef.current = false;
+            setScanning(false);
+            setStatus('');
+            applyResult(result.getText());
           }
         }
       );
@@ -131,6 +223,8 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
         );
         return;
       }
+
+      setStatus(t('barcode', 'cameraStarting', 'Starting camera…'));
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -165,6 +259,11 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
 
     return () => {
       cancelled = true;
+      activeRef.current = false;
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       zxingControlsRef.current?.stop();
       zxingControlsRef.current = null;
       zxingReaderRef.current = null;
@@ -172,7 +271,7 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     };
-  }, [assets, t]);
+  }, [applyResult, t]);
 
   return (
     <ContentCard>
@@ -184,7 +283,15 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
         {cameraError ? (
           <AppMessageBar intent="warning">{cameraError}</AppMessageBar>
         ) : (
-          <video ref={videoRef} className={styles.video} muted playsInline />
+          <>
+            <video ref={videoRef} className={styles.video} muted playsInline />
+            {status ? (
+              <div className={styles.status}>
+                {scanning ? <Spinner size="tiny" /> : null}
+                <Text size={200}>{status}</Text>
+              </div>
+            ) : null}
+          </>
         )}
 
         <Field label={t('barcode', 'scan', 'Scan barcode')}>
@@ -206,6 +313,11 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
           <Button appearance="primary" icon={<SearchRegular />} onClick={handleSearch}>
             {t('common', 'search', 'Search')}
           </Button>
+          {!cameraError && searched && !scanning ? (
+            <Button appearance="secondary" icon={<BarcodeScannerRegular />} onClick={handleScanAgain}>
+              {t('barcode', 'scanAgain', 'Scan again')}
+            </Button>
+          ) : null}
         </div>
 
         {matched ? (
@@ -217,7 +329,7 @@ export const BarcodeScannerPage: React.FC<IBarcodeScannerPageProps> = ({ assets,
             </Text>
             <div>
               <Button appearance="secondary" onClick={() => onViewAsset(matched)}>
-                View asset
+                {t('common', 'view', 'View asset')}
               </Button>
             </div>
           </div>

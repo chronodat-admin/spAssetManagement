@@ -194,7 +194,12 @@ export const en: ITranslationDictionary = {
     idleDescription: 'Point your camera at a barcode or enter a code above to find an asset.',
     printLabels: 'Print labels',
     barcode: 'Barcode',
-    qrCode: 'QR Code'
+    qrCode: 'QR Code',
+    cameraStarting: 'Starting camera…',
+    scanning: 'Camera active — point at a barcode or QR code.',
+    detected: 'Detected code',
+    scanAgain: 'Scan again',
+    detectError: 'Having trouble reading the code. Improve lighting, hold steady, or enter it manually.'
   },
   requests: {
     newRequest: 'New request',

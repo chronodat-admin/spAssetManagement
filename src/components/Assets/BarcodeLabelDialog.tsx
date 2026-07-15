@@ -51,7 +51,9 @@ export const BarcodeLabelDialog: React.FC<IBarcodeLabelDialogProps> = ({ open, a
   }, [assets, open]);
 
   const handlePrint = (): void => {
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=800,height=900');
+    // Note: do NOT pass "noopener"/"noreferrer" here — per the HTML spec that
+    // makes window.open return null, leaving an empty popup we can't write to.
+    const popup = window.open('', '_blank', 'width=800,height=900');
     if (!popup) return;
     const labels = assets
       .map((asset) => {
@@ -66,10 +68,16 @@ export const BarcodeLabelDialog: React.FC<IBarcodeLabelDialogProps> = ({ open, a
         </section>`;
       })
       .join('');
-    popup.document.write(`<html><head><title>Asset labels</title></head><body>${labels}</body></html>`);
+    // Print from a body onload handler so the QR images finish decoding before
+    // the print dialog opens (otherwise labels can print blank).
+    popup.document.open();
+    popup.document.write(
+      `<!DOCTYPE html><html><head><title>Asset labels</title>` +
+        `<style>body{font-family:'Segoe UI',sans-serif;margin:24px;}h3{margin:0 0 4px;}p{margin:0 0 8px;color:#444;}` +
+        `@media print{section{page-break-inside:avoid;}}</style></head>` +
+        `<body onload="window.focus();window.print();">${labels}</body></html>`
+    );
     popup.document.close();
-    popup.focus();
-    popup.print();
   };
 
   return (
