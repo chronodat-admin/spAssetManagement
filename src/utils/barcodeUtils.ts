@@ -72,6 +72,12 @@ export function parseScannedBarcode(raw: string): string {
   }
 }
 
+export function resolveScannedAsset<
+  T extends { AM_Barcode?: string; AM_AssetId?: string; AM_SerialNumber?: string; Id?: number }
+>(assets: T[], raw: string): T | undefined {
+  return findAssetByScanValue(assets, parseScannedBarcode(raw));
+}
+
 export function findAssetByScanValue<T extends { AM_Barcode?: string; AM_AssetId?: string; AM_SerialNumber?: string; Id?: number }>(
   assets: T[],
   scanned: string

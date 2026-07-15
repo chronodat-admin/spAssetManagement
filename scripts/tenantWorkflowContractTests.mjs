@@ -61,7 +61,7 @@ describe('tenant workflow contracts', () => {
     assert.match(assetService, /private async logAudit/);
     assert.match(assetService, /this\.audit\.write/);
     assert.match(assetService, /this\.rest\.deleteItem\('AM_Assets', id\)/);
-    assert.match(assignmentService, /AM_Status/);
+    assert.match(assignmentService, /AM_StatusId/);
     assert.match(assignmentService, /updateItem\(ASSETS_LIST_TITLE/);
   });
 

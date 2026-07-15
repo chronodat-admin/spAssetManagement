@@ -9,6 +9,10 @@ import {
   validateReturnInput,
   isBookableAsset
 } from '../lib/utils/assignmentUtils.js';
+import {
+  buildAssetStatusIdCache,
+  resolveAssetStatusIdFromCache
+} from '../lib/utils/assignmentStatusLookup.js';
 
 describe('assignmentUtils', () => {
   it('validates assign input', () => {
@@ -54,5 +58,35 @@ describe('assignmentUtils', () => {
     assert.equal(isAssignedToUser(asset, { email: 'alex@example.com' }), true);
     assert.equal(isAssignedToUser(asset, { displayName: 'Alex Owner' }), true);
     assert.equal(isAssignedToUser(asset, { id: 99 }), false);
+  });
+});
+
+describe('AssignmentService SharePoint payloads', () => {
+  it('updates asset status via AM_StatusId lookup ids', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+    const source = fs.readFileSync(path.join(root, 'src/services/AssignmentService.ts'), 'utf8');
+
+    assert.match(source, /AM_StatusId/);
+    assert.doesNotMatch(source, /AM_Status:\s*'Assigned'/);
+    assert.doesNotMatch(source, /AM_Status:\s*resolveStatusAfterReturn\(\)/);
+    assert.match(source, /resolveAssetStatusId/);
+    assert.match(source, /ASSET_STATUSES_LIST_TITLE/);
+    assert.match(source, /buildAssetStatusIdCache/);
+  });
+});
+
+describe('assignmentStatusLookup', () => {
+  it('caches lookup titles once and resolves ids for assign/return', () => {
+    const cache = buildAssetStatusIdCache([
+      { Id: 1, Title: 'Available' },
+      { Id: 2, Title: 'Assigned' },
+      { Id: 3, Title: 'In Repair' }
+    ]);
+
+    assert.equal(resolveAssetStatusIdFromCache(cache, 'Assigned'), 2);
+    assert.equal(resolveAssetStatusIdFromCache(cache, 'Available'), 1);
   });
 });

@@ -325,6 +325,9 @@ export interface ISidebarProps {
 
   mobileOpen?: boolean;
 
+  /** In Teams, navigation uses a hamburger drawer instead of a persistent icon rail. */
+  teamsHost?: boolean;
+
   onNavigate: (page: AppPage) => void;
 
   onClose?: () => void;
@@ -356,6 +359,8 @@ export const Sidebar: React.FC<ISidebarProps> = ({
   mobile,
 
   mobileOpen,
+
+  teamsHost = false,
 
   onNavigate,
 
@@ -410,7 +415,8 @@ export const Sidebar: React.FC<ISidebarProps> = ({
 
 
 
-  const showLabels = mobile || !collapsed;
+  const showLabels = mobile || teamsHost || !collapsed;
+  const allowCollapse = !mobile && !teamsHost;
 
 
 
@@ -428,7 +434,7 @@ export const Sidebar: React.FC<ISidebarProps> = ({
 
         mobile && !mobileOpen && styles.rootMobileClosed,
 
-        !mobile && collapsed && styles.rootCollapsed
+        !mobile && collapsed && allowCollapse && styles.rootCollapsed
 
       )}
 
@@ -460,7 +466,7 @@ export const Sidebar: React.FC<ISidebarProps> = ({
 
       )}
 
-      {!mobile && collapsed && onToggleCollapse && (
+      {!mobile && collapsed && allowCollapse && onToggleCollapse && (
         <div className={styles.collapsedToggle}>
           <ToolbarButton
             aria-label="Expand navigation"
@@ -479,7 +485,7 @@ export const Sidebar: React.FC<ISidebarProps> = ({
             {showLabels && (
               <div className={styles.sectionHeader}>
                 <Caption1 className={styles.sectionLabel}>SETUP</Caption1>
-                {!mobile && onToggleCollapse && (
+                {!mobile && !teamsHost && onToggleCollapse && (
                   <ToolbarButton
                     aria-label="Collapse navigation"
                     icon={<NavigationRegular />}
@@ -511,7 +517,7 @@ export const Sidebar: React.FC<ISidebarProps> = ({
             {showLabels && (
               <div className={styles.sectionHeader}>
                 <Caption1 className={styles.sectionLabel}>{section}</Caption1>
-                {!mobile && sectionIndex === 0 && onToggleCollapse && (
+                {!mobile && !teamsHost && sectionIndex === 0 && onToggleCollapse && (
                   <ToolbarButton
                     aria-label="Collapse navigation"
                     icon={<NavigationRegular />}

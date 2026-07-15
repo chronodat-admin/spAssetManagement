@@ -718,6 +718,9 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
   const isMobile = useIsMobile();
 
+  const teamsDrawerNav = isTeamsHost;
+  const navAsDrawer = isMobile || teamsDrawerNav;
+
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
@@ -734,13 +737,13 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
   React.useEffect(() => {
 
-    if (!isMobile) {
+    if (!navAsDrawer) {
 
       setMobileNavOpen(false);
 
     }
 
-  }, [isMobile]);
+  }, [navAsDrawer]);
 
 
 
@@ -748,7 +751,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
     const scrollRoot = contentRef.current;
 
-    if (!isMobile || !mobileNavOpen || !scrollRoot) {
+    if (!navAsDrawer || !mobileNavOpen || !scrollRoot) {
 
       return undefined;
 
@@ -764,13 +767,13 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
     };
 
-  }, [isMobile, mobileNavOpen]);
+  }, [navAsDrawer, mobileNavOpen]);
 
 
 
   const handleToggleSidebar = (): void => {
 
-    if (isMobile) {
+    if (navAsDrawer) {
 
       setMobileNavOpen((prev) => !prev);
 
@@ -790,7 +793,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
     contentRef.current?.scrollTo({ top: 0, behavior: 'auto' });
 
-    if (isMobile) {
+    if (navAsDrawer) {
 
       setMobileNavOpen(false);
 
@@ -873,7 +876,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
       <div className={styles.shell}>
 
-      {isMobile && mobileNavOpen && (
+      {navAsDrawer && mobileNavOpen && (
 
         <button
 
@@ -889,16 +892,18 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
 
       )}
 
-      <div className={mergeClasses(styles.sidebarWrap, isMobile && styles.sidebarWrapMobile, 'asset-mgmt-no-print')}>
+      <div className={mergeClasses(styles.sidebarWrap, navAsDrawer && styles.sidebarWrapMobile, 'asset-mgmt-no-print')}>
       <Sidebar
 
         currentPage={currentPage}
 
-        collapsed={!isMobile && sidebarCollapsed}
+        collapsed={!navAsDrawer && sidebarCollapsed}
 
-        mobile={isMobile}
+        mobile={navAsDrawer}
 
         mobileOpen={mobileNavOpen}
+
+        teamsHost={teamsDrawerNav}
 
         onNavigate={handleNavigate}
 
@@ -924,7 +929,7 @@ export const AssetManagementShell: React.FC<IAssetManagementShellProps> = ({
         <div className={mergeClasses(styles.pageHeader, 'asset-mgmt-no-print')}>
           <div className={styles.pageTitleSection}>
             <div className={styles.pageTitleRow}>
-              {isMobile && (
+              {navAsDrawer && (
                 <ToolbarButton
                   aria-label={t('shell', 'openNavigation', 'Open navigation')}
                   icon={<NavigationRegular />}

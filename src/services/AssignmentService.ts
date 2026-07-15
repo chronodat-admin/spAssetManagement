@@ -1,8 +1,16 @@
 import { SPHttpClient } from '@microsoft/sp-http';
 
-import { ASSETS_LIST_TITLE, ASSIGNMENTS_LIST_TITLE } from '../models/IListDefinitions';
+import {
+  ASSETS_LIST_TITLE,
+  ASSET_STATUSES_LIST_TITLE,
+  ASSIGNMENTS_LIST_TITLE
+} from '../models/IListDefinitions';
 import type { IAssignment } from '../models/IAsset';
 import { resolveStatusAfterReturn } from '../utils/assignmentUtils';
+import {
+  buildAssetStatusIdCache,
+  resolveAssetStatusIdFromCache
+} from '../utils/assignmentStatusLookup';
 import { SharePointRestService } from './SharePointRestService';
 
 export interface IAssignAssetInput {
@@ -34,16 +42,30 @@ const ASSIGNMENT_SELECT =
 /** Assignment transactions against AM_Assets and AM_Assignments. */
 export class AssignmentService {
   private readonly rest: SharePointRestService;
+  private assetStatusIdsByTitle: Map<string, number> | undefined;
 
   public constructor(spHttpClient: SPHttpClient, webUrl: string) {
     this.rest = new SharePointRestService(spHttpClient, webUrl);
   }
 
+  private async resolveAssetStatusId(statusTitle: string): Promise<number> {
+    if (!this.assetStatusIdsByTitle) {
+      const statuses = await this.rest.getAllItems<{ Id: number; Title: string }>(
+        ASSET_STATUSES_LIST_TITLE,
+        'Id,Title'
+      );
+      this.assetStatusIdsByTitle = buildAssetStatusIdCache(statuses);
+    }
+
+    return resolveAssetStatusIdFromCache(this.assetStatusIdsByTitle, statusTitle);
+  }
+
   public async assignAsset(input: IAssignAssetInput): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
+    const assignedStatusId = await this.resolveAssetStatusId('Assigned');
     await this.rest.updateItem(ASSETS_LIST_TITLE, input.assetId, {
       AM_AssignedToId: input.assigneeUserId,
-      AM_Status: 'Assigned',
+      AM_StatusId: assignedStatusId,
       AM_AssignedDate: today
     });
 
@@ -72,9 +94,10 @@ export class AssignmentService {
 
   public async returnAsset(input: IReturnAssetInput): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
+    const availableStatusId = await this.resolveAssetStatusId(resolveStatusAfterReturn());
     await this.rest.updateItem(ASSETS_LIST_TITLE, input.assetId, {
       AM_AssignedToId: null,
-      AM_Status: resolveStatusAfterReturn(),
+      AM_StatusId: availableStatusId,
       AM_AssignedDate: null
     });
 

@@ -257,6 +257,7 @@
   "utils/assetValidation.ts",
   "utils/assetVersionHistory.ts",
   "utils/assignmentUtils.ts",
+  "utils/assignmentStatusLookup.ts",
   "utils/auditLogDisplayUtils.ts",
   "utils/auditLogUtils.ts",
   "utils/barcodeUtils.ts",

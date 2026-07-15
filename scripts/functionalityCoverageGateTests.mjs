@@ -68,7 +68,8 @@ const FUNCTIONALITY_AREAS = [
   { id: 'depreciation-engine', signals: ['DepreciationService', 'depreciationTests'] },
   { id: 'list-schema', signals: ['ASSET_MANAGEMENT_LISTS', 'listSchemaCoverageTests'] },
   { id: 'asset-version-history', signals: ['AssetActivityTab', 'assetVersionHistory'] },
-  { id: 'dashboard-analytics', signals: ['dashboardAnalyticsTests', 'Warranty (90d)'] }
+  { id: 'dashboard-analytics', signals: ['dashboardAnalyticsTests', 'Warranty (90d)'] },
+  { id: 'store-validation-fixes', signals: ['storeValidationFixTests', 'teamsDrawerNav', '@zxing/browser'] }
 ];
 
 describe('functionality coverage gate', () => {
